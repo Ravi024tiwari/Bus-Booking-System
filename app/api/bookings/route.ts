@@ -4,8 +4,9 @@ import jwt from 'jsonwebtoken';
 import Razorpay from 'razorpay';
 import dbConnect from '@/lib/db';
 import { Trip, SeatState, Order } from '@/models';
+import { bookingSchema } from '@/lib/validations';
 
-// Initialize Razorpay client only if keys are present in env
+
 const getRazorpayInstance = () => {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'movego-super-secret-key-12345';
+    const jwtSecret = process.env.JWT_SECRET!;
     let decoded: any;
     try {
       decoded = jwt.verify(token, jwtSecret);
@@ -47,18 +48,22 @@ export async function POST(req: Request) {
 
     const userId = decoded.id;
 
-    // 2. Parse request payload
-    const { tripId, seatNumbers, passengerDetails } = await req.json();
+    // 2. Parse and validate request payload using Zod
+    const body = await req.json();
+    const result = bookingSchema.safeParse(body);
 
-    if (!tripId || !seatNumbers || !Array.isArray(seatNumbers) || seatNumbers.length === 0) {
+    if (!result.success) {
+      const errorMessage = result.error.issues[0]?.message || 'Invalid booking data';
       return NextResponse.json(
-        { success: false, message: 'Trip ID and list of seat numbers are required.' },
+        { success: false, message: errorMessage },
         { status: 400 }
       );
     }
 
-    // 3. Retrieve trip details and calculate price
-    const trip = await Trip.findById(tripId);
+    const { tripId, seatNumbers, passengerDetails, fromStop, toStop } = result.data;
+
+    // 3. Retrieve trip details, populate route, and calculate price for the segment stops
+    const trip = await Trip.findById(tripId).populate('routeId');
     if (!trip) {
       return NextResponse.json(
         { success: false, message: 'Selected trip does not exist.' },
@@ -66,9 +71,53 @@ export async function POST(req: Request) {
       );
     }
 
-    const totalAmount = trip.fare * seatNumbers.length;
+    const route = trip.routeId as any;
+    if (!route || !route.stops) {
+      return NextResponse.json(
+        { success: false, message: 'Associated route stops not found.' },
+        { status: 400 }
+      );
+    }
 
-    // 4. Validate that all requested seats are currently held by THIS user
+    const boardingStop = route.stops.find(
+      (s: any) => s.stopName.toLowerCase() === fromStop.toLowerCase().trim()
+    );
+    const droppingStop = route.stops.find(
+      (s: any) => s.stopName.toLowerCase() === toStop.toLowerCase().trim()
+    );
+
+    if (!boardingStop || !droppingStop) {
+      return NextResponse.json(
+        { success: false, message: 'Selected boarding or dropping point does not exist on this route.' },
+        { status: 400 }
+      );
+    }
+
+    const fromSequence = boardingStop.sequence;
+    const toSequence = droppingStop.sequence;
+
+    if (fromSequence >= toSequence) {
+      return NextResponse.json(
+        { success: false, message: 'Boarding stop must be located before the dropping stop.' },
+        { status: 400 }
+      );
+    }
+
+    // Dynamic segment pricing
+    let segmentFare = 0;
+    route.stops.forEach((stop: any) => {
+      if (stop.sequence > fromSequence && stop.sequence <= toSequence) {
+        segmentFare += stop.fareFromPreviousStop;
+      }
+    });
+
+    if (segmentFare === 0) {
+      segmentFare = trip.fare; // fallback to full trip fare
+    }
+
+    const totalAmount = segmentFare * seatNumbers.length;
+
+    // 4. Validate that all requested seats are currently held by THIS user on this specific segment
     const now = new Date();
     for (const seatNo of seatNumbers) {
       const heldState = await SeatState.findOne({
@@ -76,14 +125,16 @@ export async function POST(req: Request) {
         seatNumber: seatNo,
         status: 'HELD',
         heldBy: userId,
-        heldUntil: { $gt: now }
+        heldUntil: { $gt: now },
+        fromSequence,
+        toSequence
       });
 
       if (!heldState) {
         return NextResponse.json(
           { 
             success: false, 
-            message: `Seat ${seatNo} is no longer locked by you. It may have expired. Please lock it again.` 
+            message: `Seat ${seatNo} is no longer locked by you for this journey segment. It may have expired. Please lock it again.` 
           },
           { status: 400 }
         );
@@ -96,7 +147,11 @@ export async function POST(req: Request) {
       tripId,
       seatNumbers,
       amount: totalAmount,
-      status: 'PENDING'
+      status: 'PENDING',
+      fromStop,
+      toStop,
+      fromSequence,
+      toSequence
     });
 
     // 6. Initialize payment gateway transaction

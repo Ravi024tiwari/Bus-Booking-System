@@ -2,26 +2,23 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/db';
 import { User } from '@/models';
+import { registerSchema } from '@/lib/validations';
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const { name, email, password, role } = await req.json();
+    const body = await req.json();
+    const result = registerSchema.safeParse(body);// here its parse the data for validation
 
-    // 1. Validation
-    if (!name || !email || !password || !role) {
+    if (!result.success) {
+      const errorMessage = result.error.issues[0]?.message || 'Invalid input data';
       return NextResponse.json(
-        { success: false, message: 'All fields are required.' },
+        { success: false, message: errorMessage },
         { status: 400 }
       );
     }
 
-    if (role !== 'passenger' && role !== 'operator') {
-      return NextResponse.json(
-        { success: false, message: 'Invalid user role selected.' },
-        { status: 400 }
-      );
-    }
+    const { name, email, password, role } = result.data;
 
     // 2. Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });

@@ -6,6 +6,10 @@ export interface IOrder extends Document {
   seatNumbers: string[];
   amount: number;
   status: 'PENDING' | 'PAYMENT_PENDING' | 'CONFIRMED' | 'PAYMENT_FAILED' | 'CANCELLED';
+  fromStop: string;
+  toStop: string;
+  fromSequence: number;
+  toSequence: number;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   createdAt: Date;
@@ -29,6 +33,22 @@ const OrderSchema = new Schema<IOrder>({
     required: true 
   }],
   amount: { 
+    type: Number, 
+    required: true 
+  },
+  fromStop: { 
+    type: String, 
+    required: true 
+  },
+  toStop: { 
+    type: String, 
+    required: true 
+  },
+  fromSequence: { 
+    type: Number, 
+    required: true 
+  },
+  toSequence: { 
     type: Number, 
     required: true 
   },

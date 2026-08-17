@@ -10,6 +10,7 @@ export async function GET() {
 
     // 1. Authenticate Passenger from secure Cookie
     const cookieStore = await cookies();
+
     const token = cookieStore.get('token')?.value;
 
     if (!token) {
@@ -19,7 +20,7 @@ export async function GET() {
       );
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'movego-super-secret-key-12345';
+    const jwtSecret = process.env.JWT_SECRET!;
     let decoded: any;
     try {
       decoded = jwt.verify(token, jwtSecret);

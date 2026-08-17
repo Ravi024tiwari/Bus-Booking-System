@@ -4,19 +4,23 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
 import { User } from '@/models';
+import { loginSchema } from '@/lib/validations';
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const { email, password } = await req.json();
+    const body = await req.json();
+    const result = loginSchema.safeParse(body);
 
-    // 1. Validation
-    if (!email || !password) {
+    if (!result.success) {
+      const errorMessage = result.error.issues[0]?.message || 'Invalid input data';
       return NextResponse.json(
-        { success: false, message: 'Email and password are required.' },
+        { success: false, message: errorMessage },
         { status: 400 }
       );
     }
+
+    const { email, password } = result.data;
 
     // 2. Find User
     const user = await User.findOne({ email: email.toLowerCase() });

@@ -25,6 +25,7 @@ nextApp.prepare().then(async () => {
   const server = http.createServer(app);
 
   // Initialize Socket.io
+  
   const io = new Server(server, {
     cors: {
       origin: '*',
@@ -80,34 +81,36 @@ nextApp.prepare().then(async () => {
     console.error('[Database] MongoDB connection error:', err);
   }
 
+  //BullMQ Worker for the release queue
+
   // Setup BullMQ Worker for release queue
   const releaseWorker = new Worker(
     'seat-release-queue',
     async (job: Job) => {
-      const { tripId, seatNo } = job.data;
-      console.log(`[BullMQ] Processing seat release job for Trip: ${tripId}, Seat: ${seatNo}`);
+      const { tripId, seatNo, fromSequence, toSequence } = job.data;
+      console.log(`[BullMQ] Processing seat release job for Trip: ${tripId}, Seat: ${seatNo} (${fromSequence}->${toSequence})`);
 
       try {
         const SeatState = mongoose.model('SeatState');
         
-        // Find if the seat is still in HELD status
-        const seatState = await SeatState.findOne({ tripId, seatNumber: seatNo });
+        // Find if the seat is still in HELD status matching the segment
+        const seatState = await SeatState.findOne({ 
+          tripId, 
+          seatNumber: seatNo,
+          fromSequence,
+          toSequence
+        });
         
         if (seatState && seatState.status === 'HELD') {
           // Release seat by deleting the hold record
           await SeatState.deleteOne({ _id: seatState._id });
-          console.log(`[BullMQ] Seat ${seatNo} on Trip ${tripId} has been released in DB.`);
-
-          // Delete Redis lock
-          const lockKey = `lock:${tripId}:${seatNo}`;
-          await redisConnection.del(lockKey);
-          console.log(`[BullMQ] Deleted Redis lock key: ${lockKey}`);
+          console.log(`[BullMQ] Seat ${seatNo} on Trip ${tripId} (${fromSequence}->${toSequence}) has been released in DB.`);
 
           // Broadcast release event to Socket.io clients in the trip room
-          io.to(tripId).emit('seat:released', { seatNo });
-          console.log(`[Socket] Broadcasted seat:released for Seat: ${seatNo}`);
+          io.to(tripId).emit('seat:released', { seatNo, fromSequence, toSequence });
+          console.log(`[Socket] Broadcasted seat:released for Seat: ${seatNo} (${fromSequence}->${toSequence})`);
         } else {
-          console.log(`[BullMQ] Seat ${seatNo} on Trip ${tripId} is already booked or not held. Release skipped.`);
+          console.log(`[BullMQ] Seat ${seatNo} on Trip ${tripId} (${fromSequence}->${toSequence}) is already booked or not held. Release skipped.`);
         }
       } catch (err) {
         console.error('[BullMQ] Error releasing seat:', err);

@@ -1,13 +1,18 @@
 import mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
-import { User, Bus, Trip, SeatState, Order, IdempotencyLog } from '../models';
+import { User, Bus, Trip, SeatState, Order, IdempotencyLog, Route, Review, TrackingSession } from '../models';
+import bcrypt from 'bcryptjs';
+import dns from 'dns';
 
 // Load environment variables
 dotenv.config();
 
-import dns from 'dns';
 dns.setDefaultResultOrder('ipv4first');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+} catch (err) {
+  console.warn('[DNS] Failed to set Google DNS servers:', err);
+}
 
 const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL;
 
@@ -25,33 +30,80 @@ async function seed() {
   await Promise.all([
     User.deleteMany({}),
     Bus.deleteMany({}),
+    Route.deleteMany({}),
     Trip.deleteMany({}),
     SeatState.deleteMany({}),
     Order.deleteMany({}),
+    Review.deleteMany({}),
+    TrackingSession.deleteMany({}),
     IdempotencyLog.deleteMany({}),
   ]);
 
   console.log('[Seeding] Database cleared. Creating users...');
 
+  // Generate Hashed Password
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash('password123', salt);
+
   // Create Operator
   const operator = await User.create({
     name: 'Royal Travels Operator',
     email: 'operator@royaltravels.com',
-    password: 'password123', // Plain text for local dev/testing
+    password: hashedPassword,
     role: 'operator',
+    operatorApprovalStatus: 'APPROVED',
   });
 
-  // Create Passenger
-  const passenger = await User.create({
+  // Create Passengers
+  const passenger1 = await User.create({
     name: 'John Doe',
     email: 'john@example.com',
-    password: 'password123',
+    password: hashedPassword,
     role: 'passenger',
   });
 
-  console.log('[Seeding] Users created. Creating buses...');
+  const passenger2 = await User.create({
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    password: hashedPassword,
+    role: 'passenger',
+  });
 
-  // Create Seater Bus: 10 rows, 4 columns (2x2 layout = 40 seats)
+  const passenger3 = await User.create({
+    name: 'Bob Johnson',
+    email: 'bob@example.com',
+    password: hashedPassword,
+    role: 'passenger',
+  });
+
+  console.log('[Seeding] Users created. Creating routes...');
+
+  // Create Routes
+  const route1 = await Route.create({
+    operatorId: operator._id,
+    source: 'Delhi',
+    destination: 'Jaipur',
+    stops: [
+      { stopName: 'Delhi ISBT', arrivalOffsetMinutes: 0, departureOffsetMinutes: 10, sequence: 1, fareFromPreviousStop: 0 },
+      { stopName: 'Gurugram IFFCO Chowk', arrivalOffsetMinutes: 45, departureOffsetMinutes: 50, sequence: 2, fareFromPreviousStop: 100 },
+      { stopName: 'Jaipur Sindhi Camp', arrivalOffsetMinutes: 300, departureOffsetMinutes: 310, sequence: 3, fareFromPreviousStop: 350 }
+    ]
+  });
+
+  const route2 = await Route.create({
+    operatorId: operator._id,
+    source: 'Mumbai',
+    destination: 'Pune',
+    stops: [
+      { stopName: 'Mumbai Borivali', arrivalOffsetMinutes: 0, departureOffsetMinutes: 15, sequence: 1, fareFromPreviousStop: 0 },
+      { stopName: 'Navi Mumbai Vashi', arrivalOffsetMinutes: 60, departureOffsetMinutes: 65, sequence: 2, fareFromPreviousStop: 150 },
+      { stopName: 'Pune Swargate', arrivalOffsetMinutes: 240, departureOffsetMinutes: 250, sequence: 3, fareFromPreviousStop: 600 }
+    ]
+  });
+
+  console.log('[Seeding] Routes created. Creating buses...');
+
+  // Create Seater Bus
   const seaterBus = await Bus.create({
     operatorId: operator._id,
     busNumber: 'DL 01 HA 1234',
@@ -59,14 +111,13 @@ async function seed() {
     capacity: 40,
     rows: 10,
     cols: 4,
-    sleeperSeats: [], // Seater bus has no sleepers
+    sleeperSeats: [],
   });
 
-  // Create Sleeper Bus: 6 rows, 2 columns per deck (total 2 decks: Lower & Upper)
-  // Let's create seat layouts. We can represent sleepers by naming them (e.g. L-1A, L-1B, U-1A, U-1B)
+  // Create Sleeper Bus
   const sleeperSeatsList: string[] = [];
   for (let r = 1; r <= 6; r++) {
-    sleeperSeatsList.push(`L-${r}A`, `L-${r}B`, `U-${r}A`, `U-1B`);
+    sleeperSeatsList.push(`L-${r}A`, `L-${r}B`, `U-${r}A`, `U-${r}B`);
   }
 
   const sleeperBus = await Bus.create({
@@ -75,50 +126,164 @@ async function seed() {
     type: 'AC Sleeper',
     capacity: 24,
     rows: 6,
-    cols: 2, // 2 columns of sleeper berths side by side
-    sleeperSeats: sleeperSeatsList, // All seats on this sleeper bus are sleepers
+    cols: 2,
+    sleeperSeats: sleeperSeatsList,
   });
 
-  console.log('[Seeding] Buses created. Creating scheduled trips...');
+  console.log('[Seeding] Buses created. Creating trips (current and historical)...');
 
   const now = new Date();
   
-  // Trip 1: Delhi to Jaipur (Seater Bus) - Departure today + 4 hours
+  // Trip 1: Delhi to Jaipur (Today + 4 hours)
   const departure1 = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-  const arrival1 = new Date(departure1.getTime() + 5 * 60 * 60 * 1000); // 5 hour journey
-  
+  const arrival1 = new Date(departure1.getTime() + 5 * 60 * 60 * 1000);
   const trip1 = await Trip.create({
     busId: seaterBus._id,
+    routeId: route1._id,
     busNumber: seaterBus.busNumber,
     busType: seaterBus.type,
     source: 'Delhi',
     destination: 'Jaipur',
     departureTime: departure1,
     arrivalTime: arrival1,
+    status: 'SCHEDULED',
     fare: 450,
   });
 
-  // Trip 2: Mumbai to Pune (Sleeper Bus) - Departure today + 6 hours
-  const departure2 = new Date(now.getTime() + 6 * 60 * 60 * 1000);
-  const arrival2 = new Date(departure2.getTime() + 4 * 60 * 60 * 1000); // 4 hour journey
-
+  // Trip 2: Mumbai to Pune (Today - in transit/boarding)
+  const departure2 = new Date(now.getTime() - 1 * 60 * 60 * 1000); // Departed 1 hour ago
+  const arrival2 = new Date(departure2.getTime() + 4 * 60 * 60 * 1000);
   const trip2 = await Trip.create({
     busId: sleeperBus._id,
+    routeId: route2._id,
     busNumber: sleeperBus.busNumber,
     busType: sleeperBus.type,
     source: 'Mumbai',
     destination: 'Pune',
     departureTime: departure2,
     arrivalTime: arrival2,
+    status: 'IN_TRANSIT',
     fare: 750,
   });
 
-  console.log('[Seeding] Trips created successfully!');
+  // Trip 3: Historical Trip (Yesterday) - Delhi to Jaipur
+  const departure3 = new Date(now.getTime() - 28 * 60 * 60 * 1000);
+  const arrival3 = new Date(departure3.getTime() + 5 * 60 * 60 * 1000);
+  const trip3 = await Trip.create({
+    busId: seaterBus._id,
+    routeId: route1._id,
+    busNumber: seaterBus.busNumber,
+    busType: seaterBus.type,
+    source: 'Delhi',
+    destination: 'Jaipur',
+    departureTime: departure3,
+    arrivalTime: arrival3,
+    status: 'ARRIVED',
+    fare: 450,
+  });
+
+  // Trip 4: Historical Trip (Yesterday) - Mumbai to Pune
+  const departure4 = new Date(now.getTime() - 30 * 60 * 60 * 1000);
+  const arrival4 = new Date(departure4.getTime() + 4 * 60 * 60 * 1000);
+  const trip4 = await Trip.create({
+    busId: sleeperBus._id,
+    routeId: route2._id,
+    busNumber: sleeperBus.busNumber,
+    busType: sleeperBus.type,
+    source: 'Mumbai',
+    destination: 'Pune',
+    departureTime: departure4,
+    arrivalTime: arrival4,
+    status: 'ARRIVED',
+    fare: 750,
+  });
+
+  console.log('[Seeding] Trips created. Creating bookings & seat states...');
+
+  // Seed bookings for current active Trip 1 (Delhi -> Jaipur)
+  const order1 = await Order.create({
+    passengerId: passenger1._id,
+    tripId: trip1._id,
+    seatNumbers: ['1A', '1B', '1C'],
+    amount: 1350,
+    status: 'CONFIRMED',
+    createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000) // Booked 2 hours ago
+  });
+
+  await SeatState.create({ tripId: trip1._id, seatNumber: '1A', status: 'BOOKED' });
+  await SeatState.create({ tripId: trip1._id, seatNumber: '1B', status: 'BOOKED' });
+  await SeatState.create({ tripId: trip1._id, seatNumber: '1C', status: 'BOOKED' });
+
+  // Seed bookings for Trip 2 (Mumbai -> Pune)
+  const order2 = await Order.create({
+    passengerId: passenger2._id,
+    tripId: trip2._id,
+    seatNumbers: ['L-1A', 'L-1B'],
+    amount: 1500,
+    status: 'CONFIRMED',
+    createdAt: new Date(now.getTime() - 3 * 60 * 60 * 1000)
+  });
+
+  await SeatState.create({ tripId: trip2._id, seatNumber: 'L-1A', status: 'BOOKED' });
+  await SeatState.create({ tripId: trip2._id, seatNumber: 'L-1B', status: 'BOOKED' });
+
+  // Seed historical bookings for Trip 3 (Yesterday)
+  await Order.create({
+    passengerId: passenger3._id,
+    tripId: trip3._id,
+    seatNumbers: ['2A', '2B'],
+    amount: 900,
+    status: 'CONFIRMED',
+    createdAt: new Date(now.getTime() - 32 * 60 * 60 * 1000)
+  });
+
+  // Seed historical bookings for Trip 4 (Yesterday)
+  await Order.create({
+    passengerId: passenger1._id,
+    tripId: trip4._id,
+    seatNumbers: ['L-2A', 'L-2B', 'U-2A'],
+    amount: 2250,
+    status: 'CONFIRMED',
+    createdAt: new Date(now.getTime() - 34 * 60 * 60 * 1000)
+  });
+
+  console.log('[Seeding] Bookings created. Creating reviews...');
+
+  // Create reviews for buses
+  await Review.create({
+    passengerId: passenger1._id,
+    busId: seaterBus._id,
+    bookingId: order1._id,
+    rating: 5,
+    comment: 'The bus was extremely comfortable, on time, and very clean. Excellent driver!',
+    createdAt: new Date(now.getTime() - 1 * 60 * 60 * 1000)
+  });
+
+  await Review.create({
+    passengerId: passenger2._id,
+    busId: sleeperBus._id,
+    bookingId: order2._id,
+    rating: 4,
+    comment: 'Charging ports were working, air conditioning was perfect. Had a minor delay leaving Vashi.',
+    createdAt: new Date(now.getTime() - 10 * 60 * 1000)
+  });
+
+  console.log('[Seeding] Reviews created. Creating live tracking sessions...');
+
+  // Create tracking session for Trip 2 (which is IN_TRANSIT)
+  await TrackingSession.create({
+    tripId: trip2._id,
+    latitude: 19.0760, // Near Mumbai/Navi Mumbai
+    longitude: 72.8777,
+    updatedAt: now
+  });
+
   console.log('----------------------------------------------------');
+  console.log('[Seeding] Seeding successfully completed!');
   console.log(`Operator Account:  operator@royaltravels.com / password123`);
   console.log(`Passenger Account: john@example.com / password123`);
-  console.log(`Trip 1 (Seater):   ${trip1.source} -> ${trip1.destination} (ID: ${trip1._id})`);
-  console.log(`Trip 2 (Sleeper):  ${trip2.source} -> ${trip2.destination} (ID: ${trip2._id})`);
+  console.log(`Delhi -> Jaipur (Today): ${trip1._id}`);
+  console.log(`Mumbai -> Pune (In-Transit): ${trip2._id}`);
   console.log('----------------------------------------------------');
 
   await mongoose.disconnect();

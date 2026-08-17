@@ -8,3 +8,4 @@ export * from './Review';
 export * from './IdempotencyLog';
 export * from './Notification';
 export * from './TrackingSession';
+export * from './Wishlist';

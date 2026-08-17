@@ -4,6 +4,8 @@ export interface ISeatState extends Document {
   tripId: mongoose.Types.ObjectId;
   seatNumber: string;
   status: 'AVAILABLE' | 'HELD' | 'BOOKED';
+  fromSequence: number;
+  toSequence: number;
   heldBy?: mongoose.Types.ObjectId;
   heldUntil?: Date; // Lock expiration time (only populated when status is HELD)
   bookedBy?: mongoose.Types.ObjectId;
@@ -26,6 +28,14 @@ const SeatStateSchema = new Schema<ISeatState>({
     default: 'AVAILABLE',
     required: true 
   },
+  fromSequence: {
+    type: Number,
+    required: true
+  },
+  toSequence: {
+    type: Number,
+    required: true
+  },
   heldBy: { 
     type: Schema.Types.ObjectId, 
     ref: 'User' 
@@ -43,7 +53,7 @@ const SeatStateSchema = new Schema<ISeatState>({
   }
 });
 
-// CRITICAL UNIQUE CONSTRAINT: Prevents double holding or double booking of a seat on the same trip
-SeatStateSchema.index({ tripId: 1, seatNumber: 1 }, { unique: true });
+// Segment-aware index for checking overlapping seat bookings quickly
+SeatStateSchema.index({ tripId: 1, seatNumber: 1, fromSequence: 1, toSequence: 1 });
 
 export const SeatState: Model<ISeatState> = mongoose.models.SeatState || mongoose.model<ISeatState>('SeatState', SeatStateSchema);

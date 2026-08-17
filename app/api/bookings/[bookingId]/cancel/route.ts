@@ -64,19 +64,17 @@ export async function POST(
     }
 
     // 3. Clear Seat Bookings & Locks in Database
-    // Release seats in MongoDB SeatState
+    // Release specific segments in MongoDB SeatState
     await SeatState.deleteMany({
       tripId: order.tripId,
-      seatNumber: { $in: order.seatNumbers }
+      seatNumber: { $in: order.seatNumbers },
+      fromSequence: order.fromSequence,
+      toSequence: order.toSequence
     });
 
-    // Delete Redis lock keys
+    // Cancel matching segment BullMQ release jobs
     for (const seatNo of order.seatNumbers) {
-      const lockKey = `lock:${order.tripId}:${seatNo}`;
-      await redis.del(lockKey);
-
-      // Cancel delayed queue job
-      const jobId = `release:${order.tripId}:${seatNo}`;
+      const jobId = `release:${order.tripId}:${seatNo}:${order.fromSequence}:${order.toSequence}`;
       const job = await releaseQueue.getJob(jobId);
       if (job) {
         await job.remove();

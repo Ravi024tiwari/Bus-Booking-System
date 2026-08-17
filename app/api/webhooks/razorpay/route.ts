@@ -76,12 +76,14 @@ export async function POST(req: Request) {
     // 4. Log the webhook key in IdempotencyLogs to lock duplicate threads
     await IdempotencyLog.create({ key: eventId });
 
-    // 5. Update booking and seat statuses atomically (fallback-safe update)
-    // Promote Held states to BOOKED status in MongoDB
+    // 5. Update booking and seat statuses atomically
+    // Promote segment HELD states to BOOKED status in MongoDB
     await SeatState.updateMany(
       {
         tripId: order.tripId,
-        seatNumber: { $in: order.seatNumbers }
+        seatNumber: { $in: order.seatNumbers },
+        fromSequence: order.fromSequence,
+        toSequence: order.toSequence
       },
       {
         $set: { status: 'BOOKED', bookedBy: order.passengerId, orderId: order._id },
@@ -89,12 +91,9 @@ export async function POST(req: Request) {
       }
     );
 
-    // Delete Redis Lock keys & cancel BullMQ jobs
+    // Cancel matching segment BullMQ release jobs
     for (const seatNo of order.seatNumbers) {
-      const lockKey = `lock:${order.tripId}:${seatNo}`;
-      await redis.del(lockKey);
-
-      const jobId = `release:${order.tripId}:${seatNo}`;
+      const jobId = `release:${order.tripId}:${seatNo}:${order.fromSequence}:${order.toSequence}`;
       const job = await releaseQueue.getJob(jobId);
       if (job) {
         await job.remove();
