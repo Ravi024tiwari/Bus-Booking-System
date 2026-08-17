@@ -33,6 +33,9 @@ nextApp.prepare().then(async () => {
     },
   });
 
+  // Keep track of the last time we updated MongoDB for each trip to throttle DB writes
+  const lastDbUpdateTimes = new Map<string, number>();
+
   // Socket.io connection handling
   io.on('connection', (socket) => {
     console.log(`[Socket] Client connected: ${socket.id}`);
@@ -50,7 +53,51 @@ nextApp.prepare().then(async () => {
     });
 
     // Driver/Operator updates live location coordinates
-    socket.on('update-location', ({ tripId, lat, lng }: { tripId: string; lat: number; lng: number }) => {
+    socket.on('update-location', async ({ tripId, lat, lng }: { tripId: string; lat: number; lng: number }) => {
+      try {
+        const redisKey = `trip:${tripId}:location`;
+        
+        // 1. Store in Redis instantly (cache)
+        await redisConnection.hset(redisKey, {
+          latitude: lat.toString(),
+          longitude: lng.toString(),
+          updatedAt: Date.now().toString(),
+        });
+        
+        // Expire after 24 hours
+        await redisConnection.expire(redisKey, 86400);
+
+        // 2. Throttle MongoDB write-back to every 1 minute (60000ms)
+        const now = Date.now();
+        const lastUpdate = lastDbUpdateTimes.get(tripId) || 0;
+        if (now - lastUpdate >= 60000) {
+          lastDbUpdateTimes.set(tripId, now);
+
+          // Update MongoDB asynchronously without blocking client broadcast
+          const TrackingSessionModel = mongoose.models.TrackingSession || mongoose.model('TrackingSession');
+          if (TrackingSessionModel) {
+            TrackingSessionModel.findOneAndUpdate(
+              { tripId: new mongoose.Types.ObjectId(tripId) },
+              {
+                latitude: lat,
+                longitude: lng,
+                updatedAt: new Date(now),
+              },
+              { upsert: true, new: true }
+            )
+              .then(() => {
+                console.log(`[Socket/DB] Throttled DB write successful for Trip: ${tripId}`);
+              })
+              .catch((err) => {
+                console.error(`[Socket/DB] Error updating TrackingSession for Trip ${tripId}:`, err);
+              });
+          }
+        }
+      } catch (err) {
+        console.error('[Socket] Live Location Update tracking error:', err);
+      }
+
+      // Broadcast coordinates to all clients in the trip room
       io.to(tripId).emit('location-updated', { lat, lng });
       console.log(`[Socket] Live Location Update -> Trip: ${tripId}, Lat: ${lat}, Lng: ${lng}`);
     });
