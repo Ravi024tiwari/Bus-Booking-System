@@ -110,7 +110,7 @@ export async function POST(req: Request) {
         stream.on('data', async (keys) => {
           if (keys.length) {
             const pipeline = redis.pipeline();
-            keys.forEach((key) => pipeline.del(key));
+            keys.forEach((key: string) => pipeline.del(key));
             await pipeline.exec();
             console.log(`[Review API] Invalidated operator dashboard cache keys:`, keys);
           }
