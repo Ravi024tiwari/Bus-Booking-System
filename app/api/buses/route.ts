@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import redis from '@/lib/redis';
-import { Bus } from '@/models';
+import { Bus, Trip, Route } from '@/models';
 import { busSchema } from '@/lib/validations';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { verifyAuth } from '@/lib/auth-proxy';
@@ -173,7 +173,7 @@ export async function POST(req: Request) {
  * GET /api/buses - List operator's registered buses.
  * Permitted roles: operator, admin
  */
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await dbConnect();
 
@@ -187,9 +187,29 @@ export async function GET() {
     }
 
     const operatorId = user.id;
-    const cacheKey = `operator:buses:${operatorId}`;
 
-    // 2. Fetch from Redis Cache
+    // 2. Parse query filters
+    const { searchParams } = new URL(req.url);
+    const traveling = searchParams.get('traveling') === 'true';
+    const routeId = searchParams.get('routeId') || undefined;
+    const source = searchParams.get('source') || undefined;
+    const destination = searchParams.get('destination') || undefined;
+
+    // 3. Resolve Cache Key
+    const isFiltered = traveling || routeId || (source && destination);
+    let cacheKey = `operator:buses:${operatorId}`;
+    let cacheTTL = 3600; // 1 hour for default
+
+    if (isFiltered) {
+      const hashParts: string[] = [];
+      if (traveling) hashParts.push('traveling');
+      if (routeId) hashParts.push(`route:${routeId}`);
+      if (source && destination) hashParts.push(`segment:${source}:${destination}`);
+      cacheKey = `operator:buses:${operatorId}:filtered:${hashParts.join(':')}`;
+      cacheTTL = 30; // 30 seconds for filtered
+    }
+
+    // 4. Fetch from Redis Cache
     try {
       const cachedBuses = await redis.get(cacheKey);
       if (cachedBuses) {
@@ -203,28 +223,132 @@ export async function GET() {
       console.warn('[List Buses API] Redis fetch error:', redisErr);
     }
 
-    // 3. Cache Miss - Query MongoDB
-    // Admins can see all buses, operators only see their own
-    const query = user.role === 'admin' ? {} : { operatorId };
-    const buses = await Bus.find(query).sort({ createdAt: -1 });
+    // 5. Cache Miss - Determine matching Bus IDs based on filters
+    const busFilter: any = user.role === 'admin' ? {} : { operatorId };
+    let targetBusIds: string[] | null = null;
+    let activeTrips: any[] = [];
 
-    const formattedBuses = buses.map((bus) => ({
-      id: bus._id.toString(),
-      busNumber: bus.busNumber,
-      type: bus.type,
-      capacity: bus.capacity,
-      rows: bus.rows,
-      cols: bus.cols,
-      sleeperSeats: bus.sleeperSeats,
-      amenities: bus.amenities,
-      images: bus.images.map(optimizeImageUrl),
-      createdAt: bus.createdAt,
-    }));
+    // Filter A: Traveling (Active trips)
+    if (traveling) {
+      const activeTripsQuery: any = {
+        status: { $in: ['BOARDING', 'DEPARTED', 'IN_TRANSIT'] }
+      };
 
-    // 4. Save to Redis Cache (1 hour TTL)
+      // For operators, we only query trips matching their owned buses
+      if (user.role !== 'admin') {
+        const ownedBuses = await Bus.find(busFilter, '_id');
+        const ownedBusIds = ownedBuses.map(b => b._id);
+        activeTripsQuery.busId = { $in: ownedBusIds };
+      }
+
+      activeTrips = await Trip.find(activeTripsQuery).populate('routeId');
+      const travelingBusIds = activeTrips.map(t => t.busId.toString());
+      targetBusIds = travelingBusIds;
+    }
+
+    // Filter B: Search by Route ID
+    if (routeId) {
+      const routeTripsQuery: any = { routeId };
+      if (user.role !== 'admin') {
+        const ownedBuses = await Bus.find(busFilter, '_id');
+        const ownedBusIds = ownedBuses.map(b => b._id);
+        routeTripsQuery.busId = { $in: ownedBusIds };
+      }
+
+      const routeTrips = await Trip.find(routeTripsQuery);
+      const routeBusIds = routeTrips.map(t => t.busId.toString());
+
+      if (targetBusIds !== null) {
+        targetBusIds = targetBusIds.filter(id => routeBusIds.includes(id));
+      } else {
+        targetBusIds = routeBusIds;
+      }
+    }
+
+    // Filter C: Search by Source and Destination stops
+    if (source && destination) {
+      // Find matching routes (with case-insensitive stop checks and order validation)
+      const routes = await Route.find({
+        stops: {
+          $all: [
+            { $elemMatch: { stopName: { $regex: new RegExp(`^${source.trim()}$`, 'i') } } },
+            { $elemMatch: { stopName: { $regex: new RegExp(`^${destination.trim()}$`, 'i') } } }
+          ]
+        }
+      });
+
+      const matchedRouteIds: string[] = [];
+      for (const r of routes) {
+        const boardingStop = r.stops.find((s: any) => s.stopName.toLowerCase() === source.toLowerCase().trim());
+        const droppingStop = r.stops.find((s: any) => s.stopName.toLowerCase() === destination.toLowerCase().trim());
+        if (boardingStop && droppingStop && boardingStop.sequence < droppingStop.sequence) {
+          matchedRouteIds.push(r._id.toString());
+        }
+      }
+
+      // If source/destination provided but no matching route/trip exists, we return empty results early
+      if (matchedRouteIds.length === 0) {
+        return NextResponse.json({ success: true, data: [] });
+      }
+
+      const routeTripsQuery: any = { routeId: { $in: matchedRouteIds } };
+      if (user.role !== 'admin') {
+        const ownedBuses = await Bus.find(busFilter, '_id');
+        const ownedBusIds = ownedBuses.map(b => b._id);
+        routeTripsQuery.busId = { $in: ownedBusIds };
+      }
+
+      const segmentTrips = await Trip.find(routeTripsQuery);
+      const segmentBusIds = segmentTrips.map(t => t.busId.toString());
+
+      if (targetBusIds !== null) {
+        targetBusIds = targetBusIds.filter(id => segmentBusIds.includes(id));
+      } else {
+        targetBusIds = segmentBusIds;
+      }
+    }
+
+    // Apply the resolved Bus ID constraints to the final Bus query
+    if (targetBusIds !== null) {
+      busFilter._id = { $in: targetBusIds };
+    }
+
+    // Fetch the final filtered buses
+    const buses = await Bus.find(busFilter).sort({ createdAt: -1 });
+
+    const formattedBuses = buses.map((bus) => {
+      // Find active trip if traveling filter was used or we want to enrich traveling status
+      const busActiveTrip = activeTrips.find(t => t.busId.toString() === bus._id.toString());
+
+      return {
+        id: bus._id.toString(),
+        busNumber: bus.busNumber,
+        type: bus.type,
+        capacity: bus.capacity,
+        rows: bus.rows,
+        cols: bus.cols,
+        sleeperSeats: bus.sleeperSeats,
+        amenities: bus.amenities,
+        images: bus.images.map(optimizeImageUrl),
+        createdAt: bus.createdAt,
+        activeTrip: busActiveTrip ? {
+          id: busActiveTrip._id.toString(),
+          source: busActiveTrip.source,
+          destination: busActiveTrip.destination,
+          departureTime: busActiveTrip.departureTime,
+          arrivalTime: busActiveTrip.arrivalTime,
+          status: busActiveTrip.status,
+          routeName: busActiveTrip.routeId
+            ? `${(busActiveTrip.routeId as any).source} to ${(busActiveTrip.routeId as any).destination}`
+            : `${busActiveTrip.source} to ${busActiveTrip.destination}`
+        } : null
+      };
+    });
+
+    // 6. Save to Redis Cache (with dynamic TTL)
     try {
-      await redis.set(cacheKey, JSON.stringify(formattedBuses), 'EX', 3600);
-      console.log(`[List Buses API] Cached operator list under key: ${cacheKey}`);
+      await redis.set(cacheKey, JSON.stringify(formattedBuses), 'EX', cacheTTL);
+      console.log(`[List Buses API] Cached operator list under key: ${cacheKey} with TTL: ${cacheTTL}s`);
     } catch (redisErr) {
       console.warn('[List Buses API] Redis set error:', redisErr);
     }
