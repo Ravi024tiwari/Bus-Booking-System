@@ -23,8 +23,9 @@ export async function GET() {
       );
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'movego-super-secret-key-12345';
+    const jwtSecret = process.env.JWT_SECRET!;
     let decoded: any;
+
     try {
       decoded = jwt.verify(token, jwtSecret);
     } catch (err) {
@@ -99,7 +100,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'movego-super-secret-key-12345';
+    const jwtSecret = process.env.JWT_SECRET!;
     let decoded: any;
     try {
       decoded = jwt.verify(token, jwtSecret);

@@ -13,7 +13,6 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    // 1. Authenticate operator or admin
     const { user, errorResponse } = await verifyAuth(['operator', 'admin']);
     if (errorResponse || !user) {
       return errorResponse || NextResponse.json(
