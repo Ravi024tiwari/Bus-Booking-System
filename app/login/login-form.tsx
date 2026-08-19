@@ -94,7 +94,7 @@ export default function LoginForm() {
           } else if (role === 'admin') {
             router.push('/admin/dashboard');
           } else {
-            router.push('/');
+            router.push('/customer/dashboard');
           }
         }, 1500);
       } else {

@@ -82,6 +82,7 @@ export default function LoginPage() {
                   src="/images/rohit-avatar.jpg"
                   alt="Rohit Sharma"
                   fill
+                  sizes="44px"
                   className="object-cover"
                 />
               </div>
