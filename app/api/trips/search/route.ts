@@ -8,6 +8,7 @@ export async function GET(req: Request) {
   try {
     await dbConnect();
     const { searchParams } = new URL(req.url);
+   
 
     const rawParams = {
       source: searchParams.get('source') || undefined,
