@@ -7,15 +7,15 @@ import KpiCards from './kpi-cards';
 import RecentBookingsList from './recent-bookings';
 
 export const dynamic = 'force-dynamic';
-import { 
-  Bus, 
-  MapPin, 
-  Ticket, 
-  ChevronRight, 
-  ShieldCheck, 
-  Share2, 
-  MessageSquare, 
-  PhoneCall, 
+import {
+  Bus,
+  MapPin,
+  Ticket,
+  ChevronRight,
+  ShieldCheck,
+  Share2,
+  MessageSquare,
+  PhoneCall,
   ArrowRight,
   TrendingUp,
   Percent
@@ -48,7 +48,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      
+
       {/* GREETING SECTION */}
       <div className="flex flex-col select-none">
         <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -64,16 +64,16 @@ export default async function DashboardPage() {
 
       {/* MAIN SPLIT GRID LAYOUT */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">
-        
+
         {/* LEFT COLUMN: 8 spans */}
         <div className="lg:col-span-8 flex flex-col gap-6">
-          
+
           {/* UPCOMING TRIP SECTION */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)]">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-base text-zinc-900 dark:text-white">Upcoming Trips</h3>
-              <Link 
-                href="/customer/dashboard/trips" 
+              <Link
+                href="/customer/dashboard/trips"
                 className="text-xs font-bold text-violet-600 hover:text-violet-700"
               >
                 View All
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
 
             {/* Trip Detail Card */}
             <div className="flex flex-col md:flex-row gap-6 p-4 border border-zinc-100 dark:border-zinc-800/50 rounded-[2.2rem] hover:shadow-md transition-shadow duration-300 relative overflow-hidden">
-              
+
               {/* Bus image illustration */}
               <div className="relative w-full md:w-[180px] h-[120px] rounded-2xl overflow-hidden shrink-0 border border-zinc-100 dark:border-zinc-800 select-none">
                 <Image
@@ -91,6 +91,7 @@ export default async function DashboardPage() {
                   fill
                   sizes="(max-width: 768px) 100vw, 180px"
                   className="object-cover"
+                  loading='lazy'
                 />
               </div>
 
@@ -108,7 +109,7 @@ export default async function DashboardPage() {
                     <span className="text-zinc-400 font-bold">→</span>
                     <span>Mumbai</span>
                   </div>
-                  
+
                   <div className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-2.5 block leading-none">
                     24 May 2025 • 08:30 PM
                   </div>
@@ -137,7 +138,7 @@ export default async function DashboardPage() {
                     TG12345678
                   </span>
                 </div>
-                
+
                 <button className="mt-4 md:mt-0 py-2.5 w-full bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs rounded-xl shadow-md hover:opacity-90 active:scale-95 transition-all duration-200">
                   View Ticket
                 </button>
@@ -187,19 +188,20 @@ export default async function DashboardPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {popularRoutes.map((route, i) => (
-                <div 
+                <div
                   key={i}
                   className="group relative rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800 flex flex-col aspect-[4/5] hover:shadow-md transition-shadow duration-300 cursor-pointer"
                 >
-                  <Image 
-                    src={route.image} 
+                  <Image
+                    src={route.image}
                     alt={`${route.source} to ${route.destination}`}
                     fill
                     sizes="(max-width: 768px) 50vw, 20vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading='lazy'
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  
+
                   <div className="absolute bottom-4 left-4 right-4 text-white z-10 flex flex-col select-none">
                     <span className="text-xs font-black block leading-none">
                       {route.source} → {route.destination}
@@ -216,7 +218,7 @@ export default async function DashboardPage() {
           {/* REFER & EARN BANNER */}
           <div className="bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] rounded-[2rem] p-6 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl shadow-[#ff2d88]/10 select-none">
             <div className="absolute top-[-20%] left-[-10%] w-[200px] h-[200px] bg-white/10 rounded-full blur-[50px] pointer-events-none" />
-            
+
             <div className="flex items-center gap-4.5 z-10">
               <div className="bg-white/15 p-3 rounded-2xl border border-white/20 backdrop-blur-md text-white shrink-0">
                 <Share2 className="h-6 w-6" />
@@ -238,11 +240,11 @@ export default async function DashboardPage() {
 
         {/* RIGHT COLUMN: 4 spans */}
         <div className="lg:col-span-4 flex flex-col gap-6">
-          
+
           {/* QUICK ACTIONS CARD */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)]">
             <h3 className="font-extrabold text-base text-zinc-900 dark:text-white select-none">Quick Actions</h3>
-            
+
             <div className="flex flex-col gap-3">
               {[
                 { label: 'Book New Ticket', desc: 'Search & book buses', path: '/customer/dashboard/book', color: 'bg-orange-500/10 text-orange-500 border-orange-500/15' },
@@ -250,7 +252,7 @@ export default async function DashboardPage() {
                 { label: 'Cancel Ticket', desc: 'Hassle-free cancellation', path: '/customer/dashboard/bookings', color: 'bg-pink-500/10 text-pink-500 border-pink-500/15' },
                 { label: 'Download Invoice', desc: 'Download your invoice bills', path: '/customer/dashboard/payments', color: 'bg-violet-500/10 text-violet-500 border-violet-500/15' }
               ].map((act, i) => (
-                <Link 
+                <Link
                   key={i}
                   href={act.path}
                   className="flex items-center justify-between p-3.5 border border-zinc-100 dark:border-zinc-800/50 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors duration-200 group"
@@ -278,8 +280,8 @@ export default async function DashboardPage() {
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] select-none">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-base text-zinc-900 dark:text-white">Exclusive Offers</h3>
-              <Link 
-                href="/customer/dashboard/offers" 
+              <Link
+                href="/customer/dashboard/offers"
                 className="text-xs font-bold text-violet-600 hover:text-violet-700"
               >
                 View All
@@ -288,13 +290,13 @@ export default async function DashboardPage() {
 
             {/* Slider container */}
             <div className="flex flex-col gap-4">
-              
+
               {/* Premium coupon card */}
               <div className="relative bg-gradient-to-br from-[#533be1] to-[#a33be1] rounded-[2.2rem] p-6 text-white overflow-hidden shadow-lg flex flex-col gap-6 justify-between aspect-[1.3] group">
                 {/* Decorative glows */}
                 <div className="absolute top-[-10%] right-[-10%] w-[120px] h-[120px] bg-white/10 rounded-full blur-[30px] pointer-events-none" />
                 <div className="absolute bottom-[-15%] left-[-15%] w-[150px] h-[150px] bg-[#ff2d88]/20 rounded-full blur-[50px] pointer-events-none" />
-                
+
                 {/* Background bus overlay */}
                 <div className="absolute right-0 bottom-0 w-[55%] h-[60%] opacity-40 pointer-events-none">
                   <Image
@@ -303,6 +305,7 @@ export default async function DashboardPage() {
                     fill
                     sizes="(max-width: 768px) 50vw, 20vw"
                     className="object-cover rounded-tl-[2rem]"
+                    loading='lazy'
                   />
                 </div>
 
@@ -335,7 +338,7 @@ export default async function DashboardPage() {
                   { title: 'Upto ₹300 OFF', desc: 'On Round Trip Bookings', code: 'ROUND300' },
                   { title: 'Get 15% OFF', desc: 'On Bookings above ₹1500', code: 'SAVE15' }
                 ].map((promo, idx) => (
-                  <div 
+                  <div
                     key={idx}
                     className="flex items-center justify-between p-3.5 border border-zinc-100 dark:border-zinc-800/50 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/10 hover:shadow-sm transition-shadow duration-200"
                   >
@@ -352,7 +355,7 @@ export default async function DashboardPage() {
                         </span>
                       </div>
                     </div>
-                    
+
                     <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/50 text-[10px] font-black tracking-wider uppercase rounded-xl leading-none select-all text-zinc-800 dark:text-zinc-200 shadow-sm">
                       {promo.code}
                     </span>
@@ -375,7 +378,7 @@ export default async function DashboardPage() {
 
             <div className="flex flex-col gap-3">
               {/* Chat option */}
-              <a 
+              <a
                 href="/customer/dashboard/help"
                 className="flex items-center gap-3.5 p-3.5 border border-zinc-100 dark:border-zinc-800/50 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors duration-200"
               >
@@ -389,7 +392,7 @@ export default async function DashboardPage() {
               </a>
 
               {/* Phone call option */}
-              <a 
+              <a
                 href="tel:+9118001234567"
                 className="flex items-center gap-3.5 p-3.5 border border-zinc-100 dark:border-zinc-800/50 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors duration-200"
               >
