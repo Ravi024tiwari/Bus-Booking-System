@@ -64,7 +64,10 @@ export async function GET() {
       role: user.role,
       gender: user.gender || null,
       age: user.age || null,
-      profileImage: user.profileImage || null
+      profileImage: user.profileImage || null,
+      phoneNumber: user.phoneNumber || null,
+      emergencyContactName: user.emergencyContactName || null,
+      emergencyContactPhone: user.emergencyContactPhone || null
     };
 
     // 4. Save to Redis with 1-hour Expiry

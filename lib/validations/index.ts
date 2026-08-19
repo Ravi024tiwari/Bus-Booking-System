@@ -88,6 +88,11 @@ export const updateProfileSchema = z.object({
     .optional()
     .transform((val) => (val && val.trim() !== '' ? parseInt(val, 10) : undefined))
     .pipe(z.number().min(1, 'Age must be at least 1').max(120, 'Age must be less than 120').optional()),
+  phoneNumber: z.string().trim().min(10, 'Phone number must be at least 10 digits').max(15, 'Phone number cannot exceed 15 digits').optional(),
+  emergencyContactName: z.string().trim().min(2, 'Emergency contact name must be at least 2 characters').optional(),
+  emergencyContactPhone: z.string().trim().min(10, 'Emergency contact phone must be at least 10 digits').max(15, 'Emergency contact phone cannot exceed 15 digits').optional(),
+  currentPassword: z.string().trim().optional(),
+  newPassword: z.string().trim().min(6, 'New password must be at least 6 characters').optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
