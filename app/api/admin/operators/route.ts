@@ -184,7 +184,7 @@ export async function PATCH(req: Request) {
     }
 
     const validation = updateStatusSchema.safeParse(body);
-    
+
     if (!validation.success) {
       const errorMessage = validation.error.issues[0]?.message || 'Invalid input data';
       return NextResponse.json(
