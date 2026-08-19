@@ -27,6 +27,16 @@ import {
   Crown
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuTrigger, 
+  DropdownMenuContent, 
+  DropdownMenuGroup,
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator 
+} from '@/components/ui/dropdown-menu';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -48,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'My Trips', path: '/customer/dashboard/trips', icon: Compass },
     { name: 'Favourite Routes', path: '/customer/dashboard/routes', icon: Heart },
     { name: 'Payment Methods', path: '/customer/dashboard/payments', icon: CreditCard },
-    { name: 'Profile', path: '/customer/dashboard/profile', icon: UserIcon },
+    { name: 'Profile', path: '/customer/profile', icon: UserIcon },
     { name: 'Offers & Rewards', path: '/customer/dashboard/offers', icon: Gift },
     { name: 'Help & Support', path: '/customer/dashboard/help', icon: HelpCircle },
   ];
@@ -236,15 +246,57 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   Premium Member <Crown className="h-3 w-3 text-amber-500 fill-amber-500" />
                 </span>
               </div>
-              <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-[#ff2d88]/40 shrink-0 cursor-pointer shadow-md hover:scale-105 transition-transform duration-200">
-                <Image
-                  src={userProfile?.avatar || '/images/rohit-avatar.jpg'}
-                  alt={userProfile?.name || 'Ravi Tiwari'}
-                  fill
-                  sizes="44px"
-                  className="object-cover"
-                />
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-[#ff2d88]/40 shrink-0 cursor-pointer shadow-md hover:scale-105 transition-transform duration-200 block outline-none">
+                  <Avatar className="w-full h-full">
+                    <AvatarImage 
+                      src={userProfile?.avatar || '/images/rohit-avatar.jpg'} 
+                      alt={userProfile?.name || 'Ravi Tiwari'} 
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-zinc-200 dark:bg-zinc-800 font-extrabold text-zinc-700 dark:text-zinc-300 flex items-center justify-center h-full w-full">
+                      {userProfile?.name ? userProfile.name.split(' ').map(n => n[0]).join('') : 'RT'}
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 mt-2 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800/50 p-1.5 shadow-xl select-none z-[100]">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="px-3 py-2 text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                      My Account
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator className="h-px bg-zinc-100 dark:bg-zinc-800/50 my-1" />
+                  <DropdownMenuItem 
+                    onClick={() => router.push('/customer/profile')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 cursor-pointer transition-colors duration-150 outline-none w-full"
+                  >
+                    <UserIcon className="h-4 w-4" />
+                    My Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => router.push('/customer/profile#settings')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 cursor-pointer transition-colors duration-150 outline-none w-full"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    Account Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => router.push('/customer/dashboard/trips')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 cursor-pointer transition-colors duration-150 outline-none w-full"
+                  >
+                    <Compass className="h-4 w-4" />
+                    My Trips
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="h-px bg-zinc-100 dark:bg-zinc-800/50 my-1" />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer transition-colors duration-150 w-full text-left outline-none"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
           </div>

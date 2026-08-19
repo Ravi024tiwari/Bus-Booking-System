@@ -9,6 +9,9 @@ export interface IUser extends Document {
   gender?: 'male' | 'female' | 'other';
   age?: number;
   profileImage?: string;
+  phoneNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
   createdAt: Date;
 }
 
@@ -43,6 +46,15 @@ const UserSchema = new Schema<IUser>({
     type: Number
   },
   profileImage: {
+    type: String
+  },
+  phoneNumber: {
+    type: String
+  },
+  emergencyContactName: {
+    type: String
+  },
+  emergencyContactPhone: {
     type: String
   },
   createdAt: { type: Date, default: Date.now }
