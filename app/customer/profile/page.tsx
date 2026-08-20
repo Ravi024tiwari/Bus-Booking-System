@@ -246,6 +246,7 @@ export default function ProfilePage() {
                     src={photoPreview || '/images/rohit-avatar.jpg'}
                     alt={formData.name || 'Profile avatar'}
                     fill
+                    loading='lazy'
                     sizes="96px"
                     className="object-cover group-hover:opacity-75 transition-opacity duration-300"
                   />
