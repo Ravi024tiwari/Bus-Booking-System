@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
 import { User } from '@/models';
+import { auth } from '@/lib/auth';
 
 export interface AuthenticatedUser {
   id: string;
@@ -29,7 +30,30 @@ export async function verifyAuth(
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
-    if (!token) {
+    let userId: string | null = null;
+
+    // 2. Decode and verify JWT (if present)
+    if (token) {
+      const jwtSecret = process.env.JWT_SECRET || 'movego-super-secret-key-12345';
+      try {
+        const decoded: any = jwt.verify(token, jwtSecret);
+        userId = decoded.id;
+      } catch (err) {
+        // Invalid or expired credentials token, let it fall through to check Better Auth
+      }
+    }
+
+    // 3. Check for a Better Auth session (Google Login)
+    if (!userId) {
+      const session = await auth.api.getSession({
+        headers: await headers(),
+      });
+      if (session) {
+        userId = session.user.id;
+      }
+    }
+
+    if (!userId) {
       return {
         user: null,
         errorResponse: NextResponse.json(
@@ -39,23 +63,8 @@ export async function verifyAuth(
       };
     }
 
-    // 2. Decode and verify JWT
-    const jwtSecret = process.env.JWT_SECRET || 'movego-super-secret-key-12345';
-    let decoded: any;
-    try {
-      decoded = jwt.verify(token, jwtSecret);
-    } catch (err) {
-      return {
-        user: null,
-        errorResponse: NextResponse.json(
-          { success: false, message: 'Invalid or expired session token. Please log in again.' },
-          { status: 401 }
-        ),
-      };
-    }
-
-    // 3. Retrieve current user record from Database (confirms live approval status)
-    const user = await User.findById(decoded.id);
+    // 4. Retrieve current user record from Database (confirms live approval status)
+    const user = await User.findById(userId);
     if (!user) {
       return {
         user: null,

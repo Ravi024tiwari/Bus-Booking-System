@@ -15,6 +15,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { loginSchema } from '@/lib/validations';
+import { authClient } from '@/lib/auth-client';
 
 type LoginInput = z.infer<typeof loginSchema>;
 
@@ -111,6 +112,21 @@ export default function LoginForm() {
       if (errorMessage.includes('password') || errorMessage.includes('Password')) {
         setErrors(prev => ({ ...prev, password: 'Password is incorrect' }));
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/customer/dashboard',
+      });
+    } catch (error: any) {
+      console.error('Google sign-in error:', error);
+      toast.error(error.message || 'An error occurred during Google sign-in.');
     } finally {
       setLoading(false);
     }
@@ -272,7 +288,9 @@ export default function LoginForm() {
         {/* Google */}
         <button 
           type="button"
-          className="flex items-center justify-center py-3 px-4 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 bg-white/50 dark:bg-zinc-950/20 active:scale-95 transition-all duration-200"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          className="flex items-center justify-center py-3 px-4 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 bg-white/50 dark:bg-zinc-950/20 active:scale-95 transition-all duration-200 disabled:opacity-50"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
