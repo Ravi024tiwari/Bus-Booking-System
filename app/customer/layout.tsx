@@ -186,6 +186,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               fill
               sizes="(max-width: 1024px) 100vw, 216px"
               className="object-cover opacity-60"
+              loading='eager'
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0e0a30] via-transparent to-transparent" />
           </div>
