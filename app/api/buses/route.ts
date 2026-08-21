@@ -37,6 +37,7 @@ export async function POST(req: Request) {
 
     // 2. Parse request payload as FormData (handles multi-file uploads)
     const formData = await req.formData();
+    const routeId = formData.get('routeId')?.toString() || undefined;
     const busNumber = formData.get('busNumber')?.toString() || undefined;
     const type = formData.get('type')?.toString() || undefined;
     const capacity = formData.get('capacity')?.toString() || undefined;
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
 
     // Validate using Zod
     const validationResult = busSchema.safeParse({
+      routeId,
       busNumber,
       type,
       capacity,
@@ -62,6 +64,7 @@ export async function POST(req: Request) {
     }
 
     const {
+      routeId: validatedRouteId,
       busNumber: validatedBusNumber,
       type: validatedType,
       capacity: validatedCapacity,
@@ -71,7 +74,16 @@ export async function POST(req: Request) {
       amenities: validatedAmenities = [],
     } = validationResult.data;
 
-    // 3. Grid boundary validation: rows * cols must accommodate the capacity
+    // 3. Ensure referenced Route exists
+    const routeExists = await Route.findById(validatedRouteId);
+    if (!routeExists) {
+      return NextResponse.json(
+        { success: false, message: 'Referenced route does not exist.' },
+        { status: 404 }
+      );
+    }
+
+    // 4. Grid boundary validation: rows * cols must accommodate the capacity
     if (validatedRows * validatedCols < validatedCapacity) {
       return NextResponse.json(
         {
@@ -82,7 +94,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Ensure Bus License Plate is unique
+    // 5. Ensure Bus License Plate is unique
     const existingBus = await Bus.findOne({ busNumber: validatedBusNumber });
     if (existingBus) {
       return NextResponse.json(
@@ -122,6 +134,7 @@ export async function POST(req: Request) {
     // 6. Create Bus in database
     const newBus = await Bus.create({
       operatorId,
+      routeId: validatedRouteId,
       busNumber: validatedBusNumber,
       type: validatedType,
       capacity: validatedCapacity,
@@ -147,6 +160,7 @@ export async function POST(req: Request) {
         message: 'Bus registered successfully.',
         data: {
           id: newBus._id.toString(),
+          routeId: newBus.routeId.toString(),
           busNumber: newBus.busNumber,
           type: newBus.type,
           capacity: newBus.capacity,
@@ -314,7 +328,7 @@ export async function GET(req: Request) {
     }
 
     // Fetch the final filtered buses
-    const buses = await Bus.find(busFilter).sort({ createdAt: -1 });
+    const buses = await Bus.find(busFilter).populate('routeId').sort({ createdAt: -1 });
 
     const formattedBuses = buses.map((bus) => {
       // Find active trip if traveling filter was used or we want to enrich traveling status
@@ -322,6 +336,12 @@ export async function GET(req: Request) {
 
       return {
         id: bus._id.toString(),
+        routeId: bus.routeId ? (bus.routeId as any)._id?.toString() || bus.routeId.toString() : undefined,
+        route: bus.routeId ? {
+          id: (bus.routeId as any)._id?.toString() || bus.routeId.toString(),
+          source: (bus.routeId as any).source,
+          destination: (bus.routeId as any).destination
+        } : null,
         busNumber: bus.busNumber,
         type: bus.type,
         capacity: bus.capacity,

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { user, errorResponse } = await verifyAuth(['operator', 'admin']);
+    const { user, errorResponse } = await verifyAuth(['admin']);
     if (errorResponse || !user) {
       return errorResponse || NextResponse.json(
         { success: false, message: 'Authentication required.' },
@@ -93,8 +93,8 @@ export async function POST(req: Request) {
       stops: sortedStops,
     });
 
-    // 5. Invalidate Redis Caches
-    const cacheKey = `operator:routes:${operatorId}`;
+    // 5. Invalidate Redis Caches (Global routes cache)
+    const cacheKey = 'global:routes';
     try {
       await redis.del(cacheKey);
       console.log(`[Create Route] Cache invalidated for key: ${cacheKey}`);
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
  * GET /api/routes - List operator's route templates.
  * Permitted roles: operator, admin
  */
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await dbConnect();
 
@@ -143,25 +143,28 @@ export async function GET() {
       );
     }
 
-    const operatorId = user.id;
-    const cacheKey = `operator:routes:${operatorId}`;
+    const { searchParams } = new URL(req.url);
+    const bypassCache = searchParams.get('bypassCache') === 'true';
+    const cacheKey = 'global:routes';
 
     // 2. Fetch from Redis Cache
-    try {
-      const cachedRoutes = await redis.get(cacheKey);
-      if (cachedRoutes) {
-        console.log(`[List Routes API] Cache hit for key: ${cacheKey}`);
-        return NextResponse.json({
-          success: true,
-          data: JSON.parse(cachedRoutes),
-        });
+    if (!bypassCache) {
+      try {
+        const cachedRoutes = await redis.get(cacheKey);
+        if (cachedRoutes) {
+          console.log(`[List Routes API] Cache hit for key: ${cacheKey}`);
+          return NextResponse.json({
+            success: true,
+            data: JSON.parse(cachedRoutes),
+          });
+        }
+      } catch (redisErr) {
+        console.warn('[List Routes API] Redis fetch error:', redisErr);
       }
-    } catch (redisErr) {
-      console.warn('[List Routes API] Redis fetch error:', redisErr);
     }
 
-    // 3. Cache Miss - Query MongoDB
-    const query = user.role === 'admin' ? {} : { operatorId };
+    // 3. Cache Miss / Force Fetch - Query MongoDB (All routes are global templates created by admins)
+    const query = {};
     const routes = await Route.find(query).sort({ createdAt: -1 });
 
     const formattedRoutes = routes.map((route) => ({
@@ -173,11 +176,13 @@ export async function GET() {
     }));
 
     // 4. Save to Redis Cache (1 hour TTL)
-    try {
-      await redis.set(cacheKey, JSON.stringify(formattedRoutes), 'EX', 3600);
-      console.log(`[List Routes API] Cached routes list under key: ${cacheKey}`);
-    } catch (redisErr) {
-      console.warn('[List Routes API] Redis set error:', redisErr);
+    if (!bypassCache) {
+      try {
+        await redis.set(cacheKey, JSON.stringify(formattedRoutes), 'EX', 3600);
+        console.log(`[List Routes API] Cached routes list under key: ${cacheKey}`);
+      } catch (redisErr) {
+        console.warn('[List Routes API] Redis set error:', redisErr);
+      }
     }
 
     return NextResponse.json({
