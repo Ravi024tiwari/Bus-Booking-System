@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IBus extends Document {
   operatorId: mongoose.Types.ObjectId;
+  routeId: mongoose.Types.ObjectId;
   busNumber: string;
   type: 'AC Sleeper' | 'Non-AC Sleeper' | 'AC Seater' | 'Non-AC Seater';
   capacity: number;
@@ -19,6 +20,12 @@ const BusSchema = new Schema<IBus>({
     ref: 'User', 
     required: true,
     index: true // Indexed to optimize operator dashboard loading
+  },
+  routeId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Route',
+    required: true,
+    index: true // Indexed to optimize queries like find buses by route
   },
   busNumber: { 
     type: String, 

@@ -99,6 +99,7 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 // 6. Bus Validation Schema
 export const busSchema = z.object({
+  routeId: z.string().min(1, 'Route reference is required'),
   busNumber: z.string().trim().min(3, 'Bus number must be at least 3 characters').toUpperCase(),
   type: z.enum(['AC Sleeper', 'Non-AC Sleeper', 'AC Seater', 'Non-AC Seater'], {
     message: 'Bus type must be AC/Non-AC Sleeper or AC/Non-AC Seater',
