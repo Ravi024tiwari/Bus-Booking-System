@@ -19,6 +19,9 @@ const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL || 'mongodb:
 const redisConnection = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
 });
+redisConnection.on('error', (err) => {
+  console.error('[Redis Shared Connection Error]:', err);
+});
 
 nextApp.prepare().then(async () => {
   const app = express();

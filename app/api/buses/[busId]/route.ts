@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
 import redis from '@/lib/redis';
 import { Bus, Trip } from '@/models';
@@ -120,6 +121,7 @@ export async function PUT(
 
     // 3. Parse and validate payload
     const formData = await req.formData();
+    const routeId = formData.get('routeId')?.toString() || undefined;
     const busNumber = formData.get('busNumber')?.toString() || undefined;
     const type = formData.get('type')?.toString() || undefined;
     const capacity = formData.get('capacity')?.toString() || undefined;
@@ -129,6 +131,7 @@ export async function PUT(
     const amenities = formData.get('amenities')?.toString() || undefined;
 
     const validationResult = busSchema.safeParse({
+      routeId,
       busNumber,
       type,
       capacity,
@@ -144,6 +147,7 @@ export async function PUT(
     }
 
     const {
+      routeId: validatedRouteId,
       busNumber: validatedBusNumber,
       type: validatedType,
       capacity: validatedCapacity,
@@ -242,6 +246,7 @@ export async function PUT(
     }
 
     // 6. Save Updates
+    bus.routeId = new mongoose.Types.ObjectId(validatedRouteId);
     bus.busNumber = validatedBusNumber;
     bus.type = validatedType;
     bus.capacity = validatedCapacity;
@@ -270,6 +275,7 @@ export async function PUT(
       message: 'Bus details updated successfully.',
       data: {
         id: bus._id.toString(),
+        routeId: bus.routeId.toString(),
         busNumber: bus.busNumber,
         type: bus.type,
         capacity: bus.capacity,

@@ -22,7 +22,7 @@ export default function BusHeroBanner({
     <div 
       onMouseEnter={() => setIsHeaderHovered(true)}
       onMouseLeave={() => setIsHeaderHovered(false)}
-      className="relative rounded-[2.5rem] overflow-hidden min-h-[240px] sm:min-h-[260px] md:min-h-[280px] flex items-center p-8 sm:p-10 md:p-12 bg-zinc-900 border border-zinc-850 shadow-[0_15px_40px_rgba(0,0,0,0.2)] select-none cursor-pointer group shrink-0"
+      className="relative rounded-[2.5rem] overflow-hidden min-h-[180px] xs:min-h-[220px] sm:min-h-[260px] md:min-h-[280px] flex items-center p-6 xs:p-8 sm:p-10 md:p-12 bg-zinc-900 border border-zinc-850 shadow-[0_15px_40px_rgba(0,0,0,0.2)] select-none cursor-pointer group shrink-0"
     >
       {/* Background Image Div with Zoom transition */}
       <div 
@@ -37,7 +37,7 @@ export default function BusHeroBanner({
 
       {/* Content over background with slight hover translation */}
       <div 
-        className="relative z-20 flex flex-col gap-3 max-w-2xl text-left transition-all duration-500 ease-out"
+        className="relative z-20 flex flex-col gap-2.5 max-w-2xl text-left transition-all duration-500 ease-out"
         style={{
           transform: isHeaderHovered ? 'translateX(8px)' : 'translateX(0)'
         }}
@@ -47,11 +47,11 @@ export default function BusHeroBanner({
           {subBadgeText}
         </span>
         
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-none mt-1">
+        <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight leading-none mt-1">
           {title}
         </h1>
         
-        <p className="text-xs sm:text-sm text-zinc-300 dark:text-zinc-400 font-semibold leading-relaxed mt-3">
+        <p className="text-[10px] xs:text-xs sm:text-sm text-zinc-300 dark:text-zinc-400 font-semibold leading-relaxed mt-2.5">
           {description}
         </p>
       </div>
