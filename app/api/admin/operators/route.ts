@@ -4,6 +4,7 @@ import dbConnect from '@/lib/db';
 import redis from '@/lib/redis';
 import { User } from '@/models';
 import { verifyAuth } from '@/lib/auth-proxy';
+import { getAdminOperatorsList } from '@/lib/admin-operators';
 
 // Zod validation schema for updating operator approval status
 const updateStatusSchema = z.object({
@@ -16,8 +17,7 @@ const updateStatusSchema = z.object({
 /**
  * GET /api/admin/operators
  * Admin-only route to retrieve all operators.
- * Supports status filtering, regex search on name/email, and pagination.
- * Returns overall counts per status to simplify UI tab rendering.
+ * Supports status filtering, regex search on name/email, date range, and pagination.
  */
 export async function GET(req: Request) {
   try {
@@ -31,114 +31,36 @@ export async function GET(req: Request) {
       );
     }
 
-    await dbConnect();
-
-    // 2. Parse query parameters
-
     const { searchParams } = new URL(req.url);
-
-    const status = searchParams.get('status'); // PENDING | APPROVED | REJECTED | ALL
-
-    const search = searchParams.get('search');
+    const status = searchParams.get('status') || undefined;
+    const search = searchParams.get('search') || undefined;
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const joinedStartParam = searchParams.get('joinedStart');
+    const joinedEndParam = searchParams.get('joinedEnd');
 
-    const skip = (page - 1) * limit;
+    const joinedStart = joinedStartParam ? new Date(joinedStartParam) : undefined;
+    const joinedEnd = joinedEndParam ? new Date(joinedEndParam) : undefined;
 
-    // 3. Construct MongoDB query
-    const query: any = { role: 'operator' };
-
-    // Apply status filter if provided and not 'ALL' (case-insensitive checking)
-    if (status && status.toUpperCase() !== 'ALL') {
-      const upperStatus = status.toUpperCase();
-      if (['PENDING', 'APPROVED', 'REJECTED'].includes(upperStatus)) {
-        query.operatorApprovalStatus = upperStatus;
-      } else {
-        return NextResponse.json(
-          { success: false, message: 'Invalid status filter value. Allowed: PENDING, APPROVED, REJECTED, ALL' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Apply search filter if provided
-    if (search && search.trim() !== '') {
-      const searchRegex = new RegExp(search.trim(), 'i');
-      query.$or = [
-        { name: { $regex: searchRegex } },
-        { email: { $regex: searchRegex } }
-      ];
-    }
-
-    // 4. Fetch matching operators with pagination
-
-    const operators = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const totalMatching = await User.countDocuments(query);
-
-    // 5. Gather status stats for all operators under the current search filter
-    const statsQuery: any = { role: 'operator' };
-    if (search && search.trim() !== '') {
-      const searchRegex = new RegExp(search.trim(), 'i');
-      statsQuery.$or = [
-        { name: { $regex: searchRegex } },
-        { email: { $regex: searchRegex } }
-      ];
-    }
-
-    const statsGroup = await User.aggregate([
-      { $match: statsQuery },
-      {
-        $group: {
-          _id: '$operatorApprovalStatus',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-
-    const stats = {
-      total: 0,
-      pending: 0,
-      approved: 0,
-      rejected: 0
-    };
-
-    statsGroup.forEach((group: any) => {
-      const count = group.count;
-      const statusKey = group._id;
-      if (statusKey === 'PENDING') stats.pending = count;
-      else if (statusKey === 'APPROVED') stats.approved = count;
-      else if (statusKey === 'REJECTED') stats.rejected = count;
-      stats.total += count;
+    const { operators, total } = await getAdminOperatorsList({
+      status,
+      search,
+      page,
+      limit,
+      joinedStart,
+      joinedEnd
     });
-
-    const formattedOperators = operators.map(op => ({
-      id: op._id.toString(),
-      name: op.name,
-      email: op.email,
-      role: op.role,
-      operatorApprovalStatus: op.operatorApprovalStatus,
-      gender: op.gender || null,
-      age: op.age || null,
-      profileImage: op.profileImage || null,
-      createdAt: op.createdAt
-    }));
 
     return NextResponse.json({
       success: true,
       data: {
-        operators: formattedOperators,
+        operators,
         pagination: {
-          total: totalMatching,
+          total,
           page,
           limit,
-          totalPages: Math.ceil(totalMatching / limit)
-        },
-        stats
+          totalPages: Math.ceil(total / limit)
+        }
       }
     });
 
