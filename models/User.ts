@@ -24,7 +24,13 @@ const UserSchema = new Schema<IUser>({
     type: String, 
     required: true, 
     unique: true, 
-    index: true 
+    index: true,
+    validate: {
+      validator: function(v: string) {
+        return /^\S+@\S+\.\S+$/.test(v);
+      },
+      message: (props: any) => `${props.value} is not a valid email address!`
+    }
   },
   password: { type: String },
   role: { 
@@ -49,13 +55,25 @@ const UserSchema = new Schema<IUser>({
     type: String
   },
   phoneNumber: {
-    type: String
+    type: String,
+    validate: {
+      validator: function(v: string) {
+        return !v || /^\d{10}$/.test(v);
+      },
+      message: (props: any) => `${props.value} must be exactly 10 digits!`
+    }
   },
   emergencyContactName: {
     type: String
   },
   emergencyContactPhone: {
-    type: String
+    type: String,
+    validate: {
+      validator: function(v: string) {
+        return !v || /^\d{10}$/.test(v);
+      },
+      message: (props: any) => `${props.value} must be exactly 10 digits!`
+    }
   },
   createdAt: { type: Date, default: Date.now }
 });
