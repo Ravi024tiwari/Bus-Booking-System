@@ -80,6 +80,7 @@ export type ReviewInput = z.infer<typeof reviewSchema>;
 // 5. User Profile Update Schema
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50, 'Name must be less than 50 characters').optional(),
+  email: z.string().trim().toLowerCase().email('Invalid email address').optional(),
   gender: z.enum(['male', 'female', 'other'], {
     message: 'Gender must be male, female, or other',
   }).optional(),
@@ -88,9 +89,9 @@ export const updateProfileSchema = z.object({
     .optional()
     .transform((val) => (val && val.trim() !== '' ? parseInt(val, 10) : undefined))
     .pipe(z.number().min(1, 'Age must be at least 1').max(120, 'Age must be less than 120').optional()),
-  phoneNumber: z.string().trim().min(10, 'Phone number must be at least 10 digits').max(15, 'Phone number cannot exceed 15 digits').optional(),
+  phoneNumber: z.string().trim().regex(/^\d{10}$/, 'Phone number must be exactly 10 digits').optional(),
   emergencyContactName: z.string().trim().min(2, 'Emergency contact name must be at least 2 characters').optional(),
-  emergencyContactPhone: z.string().trim().min(10, 'Emergency contact phone must be at least 10 digits').max(15, 'Emergency contact phone cannot exceed 15 digits').optional(),
+  emergencyContactPhone: z.string().trim().regex(/^\d{10}$/, 'Emergency contact phone must be exactly 10 digits').optional(),
   currentPassword: z.string().trim().optional(),
   newPassword: z.string().trim().min(6, 'New password must be at least 6 characters').optional(),
 });
