@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { Trip, SeatState } from '@/models';
+import { Trip, SeatState, Bus } from '@/models';
+import { verifyAuth } from '@/lib/auth-proxy';
 
 export async function GET(
   req: Request,
@@ -111,3 +112,75 @@ export async function GET(
     );
   }
 }
+
+/**
+ * PATCH /api/trips/[tripId] - Update trip status.
+ * Permitted roles: operator, admin
+ */
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ tripId: string }> }
+) {
+  try {
+    await dbConnect();
+    const { tripId } = await params;
+
+    // 1. Authenticate approved operator or admin
+    const { user, errorResponse } = await verifyAuth(['operator', 'admin']);
+    if (errorResponse || !user) {
+      return errorResponse || NextResponse.json(
+        { success: false, message: 'Authentication required.' },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json();
+    const { status } = body;
+
+    const allowedStatuses = ['SCHEDULED', 'BOARDING', 'DEPARTED', 'IN_TRANSIT', 'ARRIVED', 'CANCELLED'];
+    if (!status || !allowedStatuses.includes(status)) {
+      return NextResponse.json(
+        { success: false, message: `Invalid status. Must be one of: ${allowedStatuses.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // 2. Fetch the Trip
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
+      return NextResponse.json(
+        { success: false, message: 'Trip not found.' },
+        { status: 404 }
+      );
+    }
+
+    // 3. Verify operator owns the bus for this trip
+    if (user.role === 'operator') {
+      const bus = await Bus.findById(trip.busId);
+      if (!bus || bus.operatorId.toString() !== user.id) {
+        return NextResponse.json(
+          { success: false, message: 'Access denied. You can only update trips for your own buses.' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 4. Update status
+    trip.status = status as any;
+    await trip.save();
+
+    return NextResponse.json({
+      success: true,
+      message: `Trip status updated to ${status} successfully.`,
+      data: trip
+    });
+
+  } catch (error: any) {
+    console.error('[Update Trip API] Fatal Error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error updating trip status.' },
+      { status: 500 }
+    );
+  }
+}
+
