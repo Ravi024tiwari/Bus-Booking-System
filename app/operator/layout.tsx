@@ -81,8 +81,8 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
   const menuItems = [
     { name: 'Dashboard', path: '/operator/dashboard', icon: LayoutDashboard },
     { name: 'My Buses', path: '/operator/buses', icon: Bus },
+    { name: 'Trips', path: '/operator/trips', icon: Calendar },
     { name: 'Live Tracking', path: '/operator/tracking', icon: MapPin },
-    { name: 'Schedules', path: '/operator/schedules', icon: Calendar },
     { name: 'Reviews', path: '/operator/reviews', icon: MessageSquare },
     { name: 'Profile', path: '/operator/profile', icon: UserIcon },
   ];
