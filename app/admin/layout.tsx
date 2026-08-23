@@ -82,13 +82,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const menuItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Users', path: '/admin/users', icon: Users },
     { name: 'Operators', path: '/admin/operators', icon: Building2 },
     { name: 'Buses', path: '/admin/buses', icon: Bus },
     { name: 'Routes', path: '/admin/routes', icon: MapPin },
     { name: 'Bookings', path: '/admin/bookings', icon: Calendar },
     { name: 'Payments', path: '/admin/payments', icon: CreditCard },
-    { name: 'Offers & Coupons', path: '/admin/offers', icon: Tag },
     { name: 'Reports & Analytics', path: '/admin/analytics', icon: BarChart3 },
     { name: 'Notifications', path: '/admin/notifications', icon: Bell, badge: 8 },
     { name: 'Support', path: '/admin/support', icon: HelpCircle },
