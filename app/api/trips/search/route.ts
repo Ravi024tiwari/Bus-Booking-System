@@ -19,6 +19,8 @@ export async function GET(req: Request) {
       minPrice: searchParams.get('minPrice') || undefined,
       maxPrice: searchParams.get('maxPrice') || undefined,
       sortBy: searchParams.get('sortBy') || undefined,
+      timeRange: searchParams.get('timeRange') || undefined,
+      departAfter: searchParams.get('departAfter') || undefined,
     };
 
     const result = tripSearchSchema.safeParse(rawParams);
@@ -30,16 +32,20 @@ export async function GET(req: Request) {
       );
     }
 
-    const { source, destination, busNumber, date, type: busTypeFilter, minPrice, maxPrice, sortBy } = result.data;
+    const { 
+      source, 
+      destination, 
+      busNumber, 
+      date, 
+      type: busTypeFilter, 
+      minPrice, 
+      maxPrice, 
+      sortBy,
+      timeRange,
+      departAfter 
+    } = result.data;
 
-    // 1. Build Date Range
-    const searchDate = new Date(date);
-    const startOfDay = new Date(searchDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(searchDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // 2. Resolve matching route sequences for segment query
+    // 1. Resolve matching route sequences for segment query
     const matchedRoutesMap = new Map<string, { fromSeq: number; toSeq: number; fromStopName: string; toStopName: string }>();
 
     if (source && destination) {
@@ -72,9 +78,9 @@ export async function GET(req: Request) {
       }
     }
 
-    // 3. Build Mongo Trip Query Filters
+    // 2. Build Mongo Trip Query Filters matching the timezone-safe date string
     const tripQuery: any = {
-      departureTime: { $gte: startOfDay, $lte: endOfDay }
+      date: date
     };
 
     if (busTypeFilter) {
@@ -87,7 +93,7 @@ export async function GET(req: Request) {
       tripQuery.routeId = { $in: Array.from(matchedRoutesMap.keys()) };
     }
 
-    // 4. Fetch Matching Trips
+    // 3. Fetch Matching Trips
     const trips = await Trip.find(tripQuery)
       .populate({
         path: 'busId',
@@ -98,10 +104,45 @@ export async function GET(req: Request) {
       })
       .populate('routeId');
 
+    // 4. Filter by departure time range or exact hour-minute threshold
+    let filteredTrips = trips;
+    if (departAfter || timeRange) {
+      filteredTrips = trips.filter((trip: any) => {
+        const depTime = new Date(trip.departureTime);
+        const hours = depTime.getHours();
+        const minutes = depTime.getMinutes();
+        const totalMinutes = hours * 60 + minutes;
+
+        if (departAfter) {
+          const [afterHours, afterMinutes] = departAfter.split(':').map(Number);
+          const limitMinutes = afterHours * 60 + afterMinutes;
+          if (totalMinutes < limitMinutes) return false;
+        }
+
+        if (timeRange) {
+          // morning: 06:00 - 11:59 (360 - 719)
+          // afternoon: 12:00 - 17:59 (720 - 1079)
+          // evening: 18:00 - 22:59 (1080 - 1379)
+          // night: 23:00 - 05:59 (1380 - 1439 or 0 - 359)
+          if (timeRange === 'morning') {
+            return totalMinutes >= 360 && totalMinutes < 720;
+          } else if (timeRange === 'afternoon') {
+            return totalMinutes >= 720 && totalMinutes < 1080;
+          } else if (timeRange === 'evening') {
+            return totalMinutes >= 1080 && totalMinutes < 1380;
+          } else if (timeRange === 'night') {
+            return totalMinutes >= 1380 || totalMinutes < 360;
+          }
+        }
+
+        return true;
+      });
+    }
+
     // 5. Augment results with Segment pricing & segment availability calculations
     const now = new Date();
     let results = await Promise.all(
-      trips.map(async (trip: any) => {
+      filteredTrips.map(async (trip: any) => {
         const bus = trip.busId;
         const totalSeats = bus ? bus.capacity : 40;
         const route = trip.routeId;

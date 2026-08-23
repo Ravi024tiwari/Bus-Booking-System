@@ -22,12 +22,12 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { busId, routeId, departureTime, fare } = body;
+    const { busId, routeId, date, departureTime, fare } = body;
 
     // Validate inputs
-    if (!busId || !routeId || !departureTime || fare === undefined) {
+    if (!busId || !routeId || !date || !departureTime || fare === undefined) {
       return NextResponse.json(
-        { success: false, message: 'Missing required fields: busId, routeId, departureTime, fare.' },
+        { success: false, message: 'Missing required fields: busId, routeId, date, departureTime, fare.' },
         { status: 400 }
       );
     }
@@ -39,7 +39,46 @@ export async function POST(req: Request) {
       );
     }
 
-    const parsedDeparture = new Date(departureTime);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return NextResponse.json(
+        { success: false, message: 'Date must be in YYYY-MM-DD format.' },
+        { status: 400 }
+      );
+    }
+
+    let parsedDeparture: Date;
+    const cleanDepTime = departureTime.trim();
+
+    // Check if it's a simple 12-hour or 24-hour time format
+    const match12 = cleanDepTime.toUpperCase().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+    const match24 = cleanDepTime.match(/^(\d{1,2}):(\d{2})$/);
+
+    if (match12 || match24) {
+      let hours = 0;
+      let minutes = 0;
+      if (match12) {
+        hours = parseInt(match12[1], 10);
+        minutes = parseInt(match12[2], 10);
+        const ampm = match12[3];
+        if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
+          return NextResponse.json({ success: false, message: 'Invalid departure time values.' }, { status: 400 });
+        }
+        if (ampm === 'PM' && hours < 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+      } else if (match24) {
+        hours = parseInt(match24[1], 10);
+        minutes = parseInt(match24[2], 10);
+        if (hours < 0 || hours >= 24 || minutes < 0 || minutes > 59) {
+          return NextResponse.json({ success: false, message: 'Invalid departure time values.' }, { status: 400 });
+        }
+      }
+
+      // Combine date and time timezone-safely
+      const [year, month, day] = date.split('-').map(Number);
+      parsedDeparture = new Date(year, month - 1, day, hours, minutes);
+    } else {
+      parsedDeparture = new Date(departureTime);
+    }
 
     if (isNaN(parsedDeparture.getTime())) {
       return NextResponse.json(
@@ -126,6 +165,7 @@ export async function POST(req: Request) {
       busType: bus.type,
       source: route.source,
       destination: route.destination,
+      date,
       departureTime: parsedDeparture,
       arrivalTime: parsedArrival,
       fare,
