@@ -47,6 +47,8 @@ export const tripSearchSchema = z.object({
     .transform((val) => (val ? parseFloat(val) : undefined))
     .pipe(z.number().min(0).optional()),
   sortBy: z.enum(['priceAsc', 'priceDesc', 'departure']).optional(),
+  timeRange: z.enum(['morning', 'afternoon', 'evening', 'night']).optional(),
+  departAfter: z.string().regex(/^\d{2}:\d{2}$/, 'departAfter must be in HH:MM format').optional(),
 }).refine(
   (data) => {
     return (data.source && data.destination) || data.busNumber;

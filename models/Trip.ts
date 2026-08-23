@@ -7,6 +7,7 @@ export interface ITrip extends Document {
   busType: string; // Denormalized for single-query search optimization
   source: string; // Denormalized from Route
   destination: string; // Denormalized from Route
+  date: string; // YYYY-MM-DD format for fast, timezone-safe queries
   departureTime: Date;
   arrivalTime: Date;
   fare: number;
@@ -44,6 +45,11 @@ const TripSchema = new Schema<ITrip>({
     required: true,
     index: true 
   },
+  date: {
+    type: String,
+    required: true,
+    index: true
+  },
   departureTime: { 
     type: Date, 
     required: true,
@@ -71,7 +77,7 @@ const TripSchema = new Schema<ITrip>({
 });
 
 // CRITICAL SEARCH INDEX: Optimizes queries searching for trip listings on specific dates
-TripSchema.index({ source: 1, destination: 1, departureTime: 1 });
+TripSchema.index({ source: 1, destination: 1, date: 1 });
 
 // CONFLICT CONTROL INDEX: Prevents double-scheduling the same physical bus at the same time
 TripSchema.index({ busId: 1, departureTime: 1 });
