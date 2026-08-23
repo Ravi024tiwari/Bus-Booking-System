@@ -186,6 +186,8 @@ export const routeSchema = z.object({
   ).refine((stops) => stops.length >= 2, {
     message: 'A route must contain at least 2 stops (source and destination)',
   }),
+  totalDistance: z.number().min(0, 'Distance cannot be negative').optional(),
+  description: z.string().trim().max(500, 'Description cannot exceed 500 characters').optional(),
 });
 
 export type RouteInput = z.infer<typeof routeSchema>;

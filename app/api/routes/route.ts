@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const operatorId = user.id;
+    const adminId = user.id;
 
 
     const body = await req.json();
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: errorMessage }, { status: 400 });
     }
 
-    const { source, destination, stops } = validationResult.data;
+    const { source, destination, stops, totalDistance, description } = validationResult.data;
 
     // 3. Sort stops by sequence and perform semantic validations
     const sortedStops = [...stops].sort((a, b) => a.sequence - b.sequence);
@@ -85,12 +85,38 @@ export async function POST(req: Request) {
       );
     }
 
+    // Duplicate Route Check (same stop sequence)
+    const existingRoutes = await Route.find({
+      source: { $regex: new RegExp(`^${source.trim()}$`, 'i') },
+      destination: { $regex: new RegExp(`^${destination.trim()}$`, 'i') }
+    });
+
+    for (const exRoute of existingRoutes) {
+      if (exRoute.stops.length === sortedStops.length) {
+        let isDuplicate = true;
+        for (let i = 0; i < sortedStops.length; i++) {
+          if (exRoute.stops[i].stopName.toLowerCase().trim() !== sortedStops[i].stopName.toLowerCase().trim()) {
+            isDuplicate = false;
+            break;
+          }
+        }
+        if (isDuplicate) {
+          return NextResponse.json(
+            { success: false, message: 'A route with the exact same sequence of stops already exists.' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     // 4. Save to MongoDB
     const newRoute = await Route.create({
-      operatorId,
+      adminId,
       source,
       destination,
       stops: sortedStops,
+      totalDistance: totalDistance || 0,
+      description: description || ''
     });
 
     // 5. Invalidate Redis Caches (Global routes cache)
@@ -111,6 +137,8 @@ export async function POST(req: Request) {
           source: newRoute.source,
           destination: newRoute.destination,
           stops: newRoute.stops,
+          totalDistance: newRoute.totalDistance,
+          description: newRoute.description,
           createdAt: newRoute.createdAt,
         },
       },
@@ -172,6 +200,8 @@ export async function GET(req: Request) {
       source: route.source,
       destination: route.destination,
       stops: route.stops,
+      totalDistance: route.totalDistance || 0,
+      description: route.description || '',
       createdAt: route.createdAt,
     }));
 

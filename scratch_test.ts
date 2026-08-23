@@ -2,12 +2,11 @@ import './lib/init-env'; // Must be first
 import mongoose from 'mongoose';
 import { holdSeat, releaseSeat } from './app/actions/seat';
 import { User, Bus, Route, Trip, SeatState, Wishlist } from './models';
-
-const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL || 'mongodb://127.0.0.1:27017/seatpulse';
+import dbConnect from './lib/db';
 
 async function testSegmentLocking() {
-  console.log('[Test] Connecting to database:', mongoUri);
-  await mongoose.connect(mongoUri);
+  console.log('[Test] Connecting to database...');
+  await dbConnect();
 
   console.log('[Test] Cleaning existing test collections...');
   // Find or create test users
@@ -23,24 +22,19 @@ async function testSegmentLocking() {
     { upsert: true, new: true }
   );
 
+  const testAdmin = await User.findOneAndUpdate(
+    { email: 'test_admin@example.com' },
+    { name: 'Test Admin', role: 'admin', password: 'hashedpassword123' },
+    { upsert: true, new: true }
+  );
+
   // Clean old test objects
   await Bus.deleteMany({ busNumber: 'TEST BUS 999' });
   await Route.deleteMany({ source: 'TestCityA', destination: 'TestCityC' });
 
-  // 1. Create a Seater Bus
-  const bus = await Bus.create({
-    operatorId: testOperator._id,
-    busNumber: 'TEST BUS 999',
-    type: 'AC Seater',
-    capacity: 10,
-    rows: 5,
-    cols: 2,
-    sleeperSeats: []
-  });
-
-  // 2. Create a Route with 3 stops (A -> B -> C)
+  // 1. Create a Route with 3 stops (A -> B -> C)
   const route = await Route.create({
-    operatorId: testOperator._id,
+    adminId: testAdmin._id,
     source: 'TestCityA',
     destination: 'TestCityC',
     stops: [
@@ -48,6 +42,18 @@ async function testSegmentLocking() {
       { stopName: 'TestCityB', arrivalOffsetMinutes: 60, departureOffsetMinutes: 70, sequence: 2, fareFromPreviousStop: 150 },
       { stopName: 'TestCityC', arrivalOffsetMinutes: 120, departureOffsetMinutes: 130, sequence: 3, fareFromPreviousStop: 250 }
     ]
+  });
+
+  // 2. Create a Seater Bus
+  const bus = await Bus.create({
+    operatorId: testOperator._id,
+    routeId: route._id,
+    busNumber: 'TEST BUS 999',
+    type: 'AC Seater',
+    capacity: 10,
+    rows: 5,
+    cols: 2,
+    sleeperSeats: []
   });
 
   // 3. Create a Scheduled Trip for today

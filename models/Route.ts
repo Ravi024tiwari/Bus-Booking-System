@@ -9,10 +9,12 @@ export interface IStop {
 }
 
 export interface IRoute extends Document {
-  operatorId: mongoose.Types.ObjectId;
+  adminId: mongoose.Types.ObjectId;
   source: string;
   destination: string;
   stops: IStop[];
+  totalDistance?: number;
+  description?: string;
   createdAt: Date;
 }
 
@@ -41,7 +43,7 @@ const StopSchema = new Schema<IStop>({
 });
 
 const RouteSchema = new Schema<IRoute>({
-  operatorId: { 
+  adminId: { 
     type: Schema.Types.ObjectId, 
     ref: 'User', 
     required: true,
@@ -58,6 +60,15 @@ const RouteSchema = new Schema<IRoute>({
     index: true 
   },
   stops: [StopSchema],// one route have multiple stops
+
+  totalDistance: {
+    type: Number,
+    default: 0
+  },
+  description: {
+    type: String,
+    default: ''
+  },
 
   createdAt: { 
     type: Date, 

@@ -110,7 +110,7 @@ export async function holdSeat(
       await redis.del(mutexKey);
 
       // 6. Schedule delayed seat release in BullMQ using segment-specific jobId
-      const jobId = `release:${tripId}:${seatNumber}:${fromSequence}:${toSequence}`;
+      const jobId = `release-${tripId}-${seatNumber}-${fromSequence}-${toSequence}`;
       const existingJob = await releaseQueue.getJob(jobId);
       if (existingJob) {
         await existingJob.remove();
@@ -224,7 +224,7 @@ export async function releaseSeat(
     await SeatState.deleteOne({ _id: seatState._id });
 
     // 4. Cancel the scheduled release queue job
-    const jobId = `release:${tripId}:${seatNumber}:${fromSequence}:${toSequence}`;
+    const jobId = `release-${tripId}-${seatNumber}-${fromSequence}-${toSequence}`;
     const job = await releaseQueue.getJob(jobId);
     if (job) {
       await job.remove();

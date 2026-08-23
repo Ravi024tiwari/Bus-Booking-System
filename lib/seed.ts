@@ -45,6 +45,14 @@ async function seed() {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash('password123', salt);
 
+  // Create Admin
+  const admin = await User.create({
+    name: 'System Admin',
+    email: 'admin@seatplus.com',
+    password: hashedPassword,
+    role: 'admin',
+  });
+
   // Create Operator
   const operator = await User.create({
     name: 'Royal Travels Operator',
@@ -80,7 +88,7 @@ async function seed() {
 
   // Create Routes
   const route1 = await Route.create({
-    operatorId: operator._id,
+    adminId: admin._id,
     source: 'Delhi',
     destination: 'Jaipur',
     stops: [
@@ -91,7 +99,7 @@ async function seed() {
   });
 
   const route2 = await Route.create({
-    operatorId: operator._id,
+    adminId: admin._id,
     source: 'Mumbai',
     destination: 'Pune',
     stops: [
