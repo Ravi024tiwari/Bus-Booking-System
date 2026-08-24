@@ -52,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const menuItems = [
     { name: 'Dashboard', path: '/customer/dashboard', icon: LayoutDashboard },
-    { name: 'Book Tickets', path: '/customer/dashboard/book', icon: Ticket },
+    { name: 'Booking Trips', path: '/customer/dashboard/book', icon: Ticket },
     { name: 'My Bookings', path: '/customer/dashboard/bookings', icon: Calendar },
     { name: 'Live Tracking', path: '/customer/dashboard/tracking', icon: MapPin },
     { name: 'My Trips', path: '/customer/dashboard/trips', icon: Compass },

@@ -247,7 +247,7 @@ export default async function DashboardPage() {
 
             <div className="flex flex-col gap-3">
               {[
-                { label: 'Book New Ticket', desc: 'Search & book buses', path: '/customer/dashboard/book', color: 'bg-orange-500/10 text-orange-500 border-orange-500/15' },
+                { label: 'Booking Trips', desc: 'Search & book buses', path: '/customer/dashboard/book', color: 'bg-rose-500/10 text-rose-600 border-rose-500/15' },
                 { label: 'Live Bus Tracking', desc: 'Track your bus in real-time', path: '/customer/dashboard/tracking', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/15' },
                 { label: 'Cancel Ticket', desc: 'Hassle-free cancellation', path: '/customer/dashboard/bookings', color: 'bg-pink-500/10 text-pink-500 border-pink-500/15' },
                 { label: 'Download Invoice', desc: 'Download your invoice bills', path: '/customer/dashboard/payments', color: 'bg-violet-500/10 text-violet-500 border-violet-500/15' }
