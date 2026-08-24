@@ -43,14 +43,14 @@ export default async function TripDetailPage({ params }: PageProps) {
         .populate('routeId');
 
       if (!trip) {
-        redirect('/customer/dashboard/book');
+        redirect('/customer/book');
       }
 
       const bus = trip.busId as any;
       const route = trip.routeId as any;
 
       if (!route) {
-        redirect('/customer/dashboard/book');
+        redirect('/customer/book');
       }
 
       // Format Stop Details
@@ -107,7 +107,7 @@ export default async function TripDetailPage({ params }: PageProps) {
     }
   } catch (err) {
     console.error('[Customer Trip Details Server Page] Error:', err);
-    redirect('/customer/dashboard/book');
+    redirect('/customer/book');
   }
 
   return (

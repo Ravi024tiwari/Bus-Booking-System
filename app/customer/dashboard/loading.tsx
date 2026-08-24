@@ -4,13 +4,11 @@ export default function DashboardLoading() {
   return (
     <div className="flex flex-col gap-6 w-full animate-pulse select-none">
       
-      {/* GREETING SKELETON */}
       <div className="flex flex-col gap-2.5">
         <div className="h-8 w-64 bg-zinc-200 dark:bg-zinc-800 rounded-2xl" />
         <div className="h-4 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
       </div>
 
-      {/* KPI CARDS SKELETONS (4 columns) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {[...Array(4)].map((_, i) => (
           <div 
@@ -27,13 +25,10 @@ export default function DashboardLoading() {
         ))}
       </div>
 
-      {/* MAIN SPLIT GRID SKELETONS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">
         
-        {/* LEFT COLUMN: 8 spans */}
         <div className="lg:col-span-8 flex flex-col gap-6">
           
-          {/* UPCOMING TRIP SKELETON */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
@@ -44,7 +39,6 @@ export default function DashboardLoading() {
               {/* Image Skeleton */}
               <div className="w-full md:w-[180px] h-[120px] bg-zinc-200 dark:bg-zinc-800 rounded-2xl shrink-0" />
               
-              {/* Central Text Skeleton */}
               <div className="flex-1 flex flex-col justify-between py-1 gap-2.5">
                 <div className="flex flex-col gap-2">
                   <div className="h-4 w-12 bg-zinc-200 dark:bg-zinc-800 rounded" />
@@ -57,7 +51,6 @@ export default function DashboardLoading() {
                 </div>
               </div>
 
-              {/* Right Button & PNR Skeleton */}
               <div className="flex flex-col justify-between py-1 shrink-0 md:pl-6 md:w-[150px] gap-4">
                 <div className="flex flex-col gap-2">
                   <div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded self-start md:self-end" />
@@ -68,7 +61,6 @@ export default function DashboardLoading() {
             </div>
           </div>
 
-          {/* RECENT BOOKINGS LIST SKELETON */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <div className="h-5 w-36 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />

@@ -778,7 +778,7 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
         <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400">
           <Link href="/customer/dashboard" className="hover:text-zinc-600">Dashboard</Link>
           <span>/</span>
-          <Link href="/customer/dashboard/book" className="hover:text-zinc-600">Booking Trips</Link>
+          <Link href="/customer/book" className="hover:text-zinc-600">Booking Trips</Link>
           <span>/</span>
           <span className="text-zinc-600 dark:text-zinc-300 font-extrabold font-mono">Trip Details</span>
         </div>

@@ -59,23 +59,18 @@ export default function BookTripsClient({
   const [trips] = useState<TripItem[]>(initialTrips);
   const [filteredTrips, setFilteredTrips] = useState<TripItem[]>(initialTrips);
 
-  // Layout View Mode (List vs Grid)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
 
-  // Filter States
   const [filterSource, setFilterSource] = useState('All');
   const [filterDestination, setFilterDestination] = useState('All');
   const [filterDate, setFilterDate] = useState('');
   const [filterOperator, setFilterOperator] = useState('All');
   const [filterTime, setFilterTime] = useState('All');
 
-  // Sort State
   const [sortBy, setSortBy] = useState('departure');
 
-  // Tab State: All, Today, Upcoming
   const [activeTab, setActiveTab] = useState<'all' | 'today' | 'upcoming'>('all');
 
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
 
@@ -99,22 +94,18 @@ export default function BookTripsClient({
       result = result.filter(t => t.source.toLowerCase() === filterSource.toLowerCase());
     }
 
-    // Destination Filter
     if (filterDestination !== 'All') {
       result = result.filter(t => t.destination.toLowerCase() === filterDestination.toLowerCase());
     }
 
-    // Date Filter
     if (filterDate) {
       result = result.filter(t => t.date === filterDate);
     }
 
-    // Operator Filter
     if (filterOperator !== 'All') {
       result = result.filter(t => t.operatorName === filterOperator);
     }
 
-    // Time of Day Filter
     if (filterTime !== 'All') {
       result = result.filter(t => {
         const depTime = new Date(t.departureTime);
@@ -127,14 +118,12 @@ export default function BookTripsClient({
       });
     }
 
-    // Tab Filters
     if (activeTab === 'today') {
       result = result.filter(t => t.date === todayStr);
     } else if (activeTab === 'upcoming') {
       result = result.filter(t => t.date > todayStr);
     }
 
-    // Sort Logic
     if (sortBy === 'departure') {
       result.sort((a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime());
     } else if (sortBy === 'fareAsc') {
@@ -189,7 +178,6 @@ export default function BookTripsClient({
           style={{ backgroundImage: "url('/images/customer_bus_banner.jpg')" }}
         />
         
-        {/* Pinkish-red & dark gradient overlay for professional high-contrast branding */}
         <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/60 to-transparent z-10" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#ff2d88]/15 via-transparent to-zinc-950/50 z-10" />
         
@@ -436,8 +424,8 @@ export default function BookTripsClient({
                   trip={trip} 
                   imageIndex={idx}
                   layout={viewMode}
-                  onBook={(tripId) => router.push(`/customer/dashboard/book/${tripId}`)}
-                  onViewDetails={(tripId) => router.push(`/customer/dashboard/book/${tripId}`)}
+                  onBook={(tripId) => router.push(`/customer/book/${tripId}`)}
+                  onViewDetails={(tripId) => router.push(`/customer/book/${tripId}`)}
                 />
               </motion.div>
             ))}

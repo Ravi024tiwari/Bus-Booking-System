@@ -22,7 +22,7 @@ export default async function BookingTripsPage() {
       redirect('/login');
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'movego-super-secret-key-12345';
+    const jwtSecret = process.env.JWT_SECRET!;
     const decoded: any = jwt.verify(token, jwtSecret);
 
     if (decoded && decoded.id) {
