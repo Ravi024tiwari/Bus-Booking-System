@@ -53,9 +53,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const menuItems = [
     { name: 'Dashboard', path: '/customer/dashboard', icon: LayoutDashboard },
     { name: 'Booking Trips', path: '/customer/book', icon: Ticket },
-    { name: 'My Bookings', path: '/customer/dashboard/bookings', icon: Calendar },
+    { name: 'My Bookings', path: '/customer/bookings', icon: Calendar },
     { name: 'Live Tracking', path: '/customer/dashboard/tracking', icon: MapPin },
-    { name: 'My Trips', path: '/customer/dashboard/trips', icon: Compass },
+    { name: 'My Trips', path: '/customer/trips', icon: Compass },
     { name: 'Favourite Routes', path: '/customer/dashboard/routes', icon: Heart },
     { name: 'Payment Methods', path: '/customer/dashboard/payments', icon: CreditCard },
     { name: 'Profile', path: '/customer/profile', icon: UserIcon },

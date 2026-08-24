@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
 import { Order } from '@/models';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await dbConnect();
 
@@ -33,9 +33,17 @@ export async function GET() {
 
     const userId = decoded.id;
 
-    // 2. Fetch Passenger bookings and populate Trip info
+    // Parse URL pagination params
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const skip = (page - 1) * limit;
+
+    // 2. Fetch Passenger bookings (paginated) and populate Trip info
     const bookings = await Order.find({ passengerId: userId })
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .populate({
         path: 'tripId',
         populate: {
@@ -43,6 +51,9 @@ export async function GET() {
           select: 'busNumber type operatorId'
         }
       });
+
+    const total = await Order.countDocuments({ passengerId: userId });
+    const hasMore = skip + bookings.length < total;
 
     const formattedBookings = bookings.map((booking: any) => {
       const trip = booking.tripId;
@@ -54,7 +65,10 @@ export async function GET() {
         amount: booking.amount,
         status: booking.status,
         createdAt: booking.createdAt,
+        razorpayOrderId: booking.razorpayOrderId || null,
         razorpayPaymentId: booking.razorpayPaymentId || null,
+        fromStop: booking.fromStop,
+        toStop: booking.toStop,
         tripDetails: trip ? {
           id: trip._id,
           source: trip.source,
@@ -70,7 +84,13 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      data: formattedBookings
+      data: formattedBookings,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore
+      }
     });
 
   } catch (err: any) {
