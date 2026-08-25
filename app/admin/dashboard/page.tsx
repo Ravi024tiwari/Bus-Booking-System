@@ -94,12 +94,10 @@ export default async function AdminDashboardPage() {
       {/* Grid of Main Dashboard widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Recent Bookings table (8 columns) */}
         <div className="lg:col-span-8">
           <AdminRecentBookings bookings={recentBookings} />
         </div>
 
-        {/* Booking Overview Line Chart (4 columns) */}
         <div className="lg:col-span-4">
           <AdminBookingOverview />
         </div>

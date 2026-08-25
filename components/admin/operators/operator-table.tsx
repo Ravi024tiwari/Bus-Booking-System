@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { MoreVertical, Eye, Edit2, Bus, Calendar, Ban, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -27,6 +28,7 @@ interface OperatorTableProps {
 }
 
 export default function OperatorTable({ operators, pagination, onPageChange, onRefresh }: OperatorTableProps) {
+  const router = useRouter();
   const [selectedOperator, setSelectedOperator] = useState<OperatorDetails | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -226,7 +228,7 @@ export default function OperatorTable({ operators, pagination, onPageChange, onR
                           <DropdownMenuSeparator className="h-px bg-zinc-100 dark:bg-zinc-800/50 my-1" />
 
                           <DropdownMenuItem 
-                            onClick={() => toast.success(`Showing buses list filter for: ${op.name}`)}
+                            onClick={() => router.push(`/admin/buses?operator=${op.id}`)}
                             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 cursor-pointer outline-none w-full"
                           >
                             <Bus className="h-3.5 w-3.5" />

@@ -10,7 +10,13 @@ import BusesClient from './buses-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminBusesPage() {
+export default async function AdminBusesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ operator?: string }>;
+}) {
+  const { operator } = await searchParams;
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
@@ -41,7 +47,7 @@ export default async function AdminBusesPage() {
   const [initialKPIs, initialFilterOptions, initialBusesResult] = await Promise.all([
     getAdminBusesKPIs(),
     getAdminBusesFiltersOptions(),
-    getAdminBusesList({ page: 1, limit: 12 })
+    getAdminBusesList({ page: 1, limit: 12, operator })
   ]);
 
   return (
@@ -50,6 +56,7 @@ export default async function AdminBusesPage() {
       initialFilterOptions={initialFilterOptions}
       initialBuses={initialBusesResult.buses}
       initialTotal={initialBusesResult.total}
+      selectedOperatorId={operator}
     />
   );
 }

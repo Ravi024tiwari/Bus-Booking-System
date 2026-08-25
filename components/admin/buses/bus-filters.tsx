@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 
 interface BusFiltersProps {
@@ -8,6 +8,7 @@ interface BusFiltersProps {
     operators: Array<{ id: string; name: string }>;
     routes: Array<{ id: string; source: string; destination: string }>;
   };
+  initialOperator?: string;
   onFilter: (filters: {
     search: string;
     route: string;
@@ -18,12 +19,16 @@ interface BusFiltersProps {
   onReset: () => void;
 }
 
-export default function BusFilters({ filterOptions, onFilter, onReset }: BusFiltersProps) {
+export default function BusFilters({ filterOptions, initialOperator = 'ALL', onFilter, onReset }: BusFiltersProps) {
   const [search, setSearch] = useState('');
   const [route, setRoute] = useState('ALL');
-  const [operator, setOperator] = useState('ALL');
+  const [operator, setOperator] = useState(initialOperator);
   const [type, setType] = useState('ALL');
   const [status, setStatus] = useState('ALL');
+
+  useEffect(() => {
+    setOperator(initialOperator);
+  }, [initialOperator]);
 
   const handleApply = (e: React.FormEvent) => {
     e.preventDefault();

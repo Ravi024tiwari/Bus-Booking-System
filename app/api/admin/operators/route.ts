@@ -105,7 +105,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const validation = updateStatusSchema.safeParse(body);
+    const validation = updateStatusSchema.safeParse(body);// here firstly it will pasrse the req body with the backend
 
     if (!validation.success) {
       const errorMessage = validation.error.issues[0]?.message || 'Invalid input data';
@@ -134,7 +134,6 @@ export async function PATCH(req: Request) {
     const cacheKey = `user:profile:${operatorId}`;
     try {
       await redis.del(cacheKey);
-      console.log(`[Admin Operators PATCH API] Cache invalidated for operator key: ${cacheKey}`);
     } catch (redisErr) {
       console.warn('[Admin Operators PATCH API] Redis cache invalidation error:', redisErr);
     }

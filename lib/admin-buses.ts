@@ -197,7 +197,7 @@ export async function getAdminBusesList(params: {
         model: 'Volvo 9600',
         capacity: 36,
         route: { source: 'Raipur', destination: 'Mumbai' },
-        operator: { id: 'op1', name: 'TripGo Travels', email: 'tripgo@example.com', profileImage: null },
+        operator: { id: '1', name: 'TripGo Travels', email: 'tripgo@example.com', profileImage: null },
         status: 'ACTIVE',
         imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=600',
         amenities: ['WiFi', 'AC', 'Charging Port']
@@ -209,7 +209,7 @@ export async function getAdminBusesList(params: {
         model: 'Scania Multi-Axle',
         capacity: 41,
         route: { source: 'Delhi', destination: 'Jaipur' },
-        operator: { id: 'op2', name: 'Sharma Travels', email: 'sharma@example.com', profileImage: null },
+        operator: { id: '2', name: 'Sharma Travels', email: 'sharma@example.com', profileImage: null },
         status: 'MAINTENANCE',
         imageUrl: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&q=80&w=600',
         amenities: ['WiFi', 'AC', 'Charging Port']
@@ -221,7 +221,7 @@ export async function getAdminBusesList(params: {
         model: 'Volvo B11R',
         capacity: 40,
         route: { source: 'Bengaluru', destination: 'Hyderabad' },
-        operator: { id: 'op3', name: 'City Express', email: 'city@express.com', profileImage: null },
+        operator: { id: '3', name: 'City Express', email: 'city@express.com', profileImage: null },
         status: 'ACTIVE',
         imageUrl: 'https://images.unsplash.com/photo-1626125345510-4603468eedfb?auto=format&fit=crop&q=80&w=600',
         amenities: ['WiFi', 'AC', 'Charging Port', 'Blanket']
@@ -233,10 +233,10 @@ export async function getAdminBusesList(params: {
         model: 'Tata Marcopolo',
         capacity: 45,
         route: { source: 'Ahmedabad', destination: 'Surat' },
-        operator: { id: 'op4', name: 'Sai Ram Transport', email: 'sairam@transport.com', profileImage: null },
+        operator: { id: '4', name: 'Sai Ram Transport', email: 'sairam@transport.com', profileImage: null },
         status: 'INACTIVE',
         imageUrl: 'https://images.unsplash.com/photo-1561361513-2d000a50f0db?auto=format&fit=crop&q=80&w=600',
-        amenities: ['AC', 'Charging Port']
+        amenities: ['AC', 'Charging Point']
       },
       {
         id: 'b5',
@@ -245,7 +245,7 @@ export async function getAdminBusesList(params: {
         model: 'Volvo 9400',
         capacity: 36,
         route: { source: 'Lucknow', destination: 'Delhi' },
-        operator: { id: 'op5', name: 'GreenLine Travels', email: 'greenline@travels.com', profileImage: null },
+        operator: { id: '5', name: 'GreenLine Travels', email: 'greenline@travels.com', profileImage: null },
         status: 'ACTIVE',
         imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=600',
         amenities: ['WiFi', 'AC', 'Charging Port']
@@ -257,10 +257,10 @@ export async function getAdminBusesList(params: {
         model: 'Bharat Benz',
         capacity: 49,
         route: { source: 'Jaipur', destination: 'Udaipur' },
-        operator: { id: 'op6', name: 'Balaji Bus Service', email: 'balaji@example.com', profileImage: null },
+        operator: { id: '6', name: 'Balaji Bus Service', email: 'balaji@example.com', profileImage: null },
         status: 'MAINTENANCE',
         imageUrl: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&q=80&w=600',
-        amenities: ['AC', 'Charging Port']
+        amenities: ['AC', 'Charging Point']
       },
       {
         id: 'b7',
@@ -269,7 +269,7 @@ export async function getAdminBusesList(params: {
         model: 'Volvo B8R',
         capacity: 40,
         route: { source: 'Bhopal', destination: 'Indore' },
-        operator: { id: 'op7', name: 'Royal Roadways', email: 'royal@roadways.com', profileImage: null },
+        operator: { id: '7', name: 'Royal Roadways', email: 'royal@roadways.com', profileImage: null },
         status: 'ACTIVE',
         imageUrl: 'https://images.unsplash.com/photo-1626125345510-4603468eedfb?auto=format&fit=crop&q=80&w=600',
         amenities: ['WiFi', 'AC', 'Charging Port']
@@ -281,10 +281,10 @@ export async function getAdminBusesList(params: {
         model: 'Tata Starbus',
         capacity: 44,
         route: { source: 'Chandigarh', destination: 'Amritsar' },
-        operator: { id: 'op8', name: 'QuickRide Transport', email: 'quickride@example.com', profileImage: null },
+        operator: { id: '8', name: 'QuickRide Transport', email: 'quickride@example.com', profileImage: null },
         status: 'INACTIVE',
         imageUrl: 'https://images.unsplash.com/photo-1561361513-2d000a50f0db?auto=format&fit=crop&q=80&w=600',
-        amenities: ['AC', 'Charging Port']
+        amenities: ['AC', 'Charging Point']
       }
     ];
 
@@ -296,6 +296,9 @@ export async function getAdminBusesList(params: {
     }
     if (params.type && params.type !== 'ALL') {
       filteredFallback = filteredFallback.filter(b => b.type.toLowerCase().includes(params.type!.toLowerCase()));
+    }
+    if (params.operator && params.operator !== 'ALL') {
+      filteredFallback = filteredFallback.filter(b => b.operator?.id === params.operator);
     }
 
     return {
@@ -335,14 +338,14 @@ export async function getAdminBusesFiltersOptions(): Promise<{
 
   // Fallbacks if clean database
   const fallbackOperators = [
-    { id: 'op1', name: 'TripGo Travels' },
-    { id: 'op2', name: 'Sharma Travels' },
-    { id: 'op3', name: 'City Express' },
-    { id: 'op4', name: 'Sai Ram Transport' },
-    { id: 'op5', name: 'GreenLine Travels' },
-    { id: 'op6', name: 'Balaji Bus Service' },
-    { id: 'op7', name: 'Royal Roadways' },
-    { id: 'op8', name: 'QuickRide Transport' }
+    { id: '1', name: 'TripGo Travels' },
+    { id: '2', name: 'Sharma Travels' },
+    { id: '3', name: 'City Express' },
+    { id: '4', name: 'Sai Ram Transport' },
+    { id: '5', name: 'GreenLine Travels' },
+    { id: '6', name: 'Balaji Bus Service' },
+    { id: '7', name: 'Royal Roadways' },
+    { id: '8', name: 'QuickRide Transport' }
   ];
 
   const fallbackRoutes = [

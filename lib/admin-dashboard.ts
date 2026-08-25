@@ -265,9 +265,9 @@ export async function getAdminPendingApprovals(): Promise<PendingApprovals> {
   const documentVerifications = operatorRegistrations;
 
   return {
-    operatorRegistrations: operatorRegistrations || 4, // default fallbacks for demo visual richness
-    busApprovals: busApprovals || 9,
-    documentVerifications: documentVerifications || 4
+    operatorRegistrations: operatorRegistrations || 0, // default fallbacks for demo visual richness
+    busApprovals: busApprovals ||0,
+    documentVerifications: documentVerifications || 0,
   };
 }
 

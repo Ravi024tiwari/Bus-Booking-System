@@ -19,13 +19,15 @@ interface BusesClientProps {
   };
   initialBuses: AdminBusDetails[];
   initialTotal: number;
+  selectedOperatorId?: string;
 }
 
 export default function BusesClient({
   initialKPIs,
   initialFilterOptions,
   initialBuses,
-  initialTotal
+  initialTotal,
+  selectedOperatorId
 }: BusesClientProps) {
   const router = useRouter();
 
@@ -42,7 +44,7 @@ export default function BusesClient({
   const [filters, setFilters] = useState({
     search: '',
     route: 'ALL',
-    operator: 'ALL',
+    operator: selectedOperatorId || 'ALL',
     type: 'ALL',
     status: 'ALL'
   });
@@ -148,6 +150,7 @@ export default function BusesClient({
       {/* Horizontal filter widgets */}
       <BusFilters 
         filterOptions={initialFilterOptions} 
+        initialOperator={filters.operator}
         onFilter={handleFilter} 
         onReset={handleReset} 
       />
