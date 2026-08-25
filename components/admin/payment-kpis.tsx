@@ -1,0 +1,51 @@
+import React from 'react';
+
+interface PaymentKPIsProps {
+  totalRevenue: number;
+  totalPending: number;
+  totalSuccessfulCount: number;
+  totalFailedCount: number;
+}
+
+export default function PaymentKPIs({
+  totalRevenue,
+  totalPending,
+  totalSuccessfulCount,
+  totalFailedCount,
+}: PaymentKPIsProps) {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 select-none">
+      {/* Total Revenue */}
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.015)] relative overflow-hidden">
+        <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider block">Total Revenue</span>
+        <span className="text-2xl font-bold text-zinc-900 dark:text-white mt-1.5 block">
+          ₹{totalRevenue.toLocaleString('en-IN')}
+        </span>
+      </div>
+
+      {/* Pending Collections */}
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.015)] relative overflow-hidden">
+        <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider block">Pending Collections</span>
+        <span className="text-2xl font-bold text-zinc-900 dark:text-white mt-1.5 block">
+          ₹{totalPending.toLocaleString('en-IN')}
+        </span>
+      </div>
+
+      {/* Successful Bookings */}
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.015)] relative overflow-hidden">
+        <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider block">Successful Bookings</span>
+        <span className="text-2xl font-bold text-zinc-900 dark:text-white mt-1.5 block">
+          {totalSuccessfulCount} <span className="text-[11px] font-semibold text-zinc-400 font-sans">payments</span>
+        </span>
+      </div>
+
+      {/* Failed Transactions */}
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.015)] relative overflow-hidden">
+        <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider block">Failed Transactions</span>
+        <span className="text-2xl font-bold text-zinc-900 dark:text-white mt-1.5 block">
+          {totalFailedCount} <span className="text-[11px] font-semibold text-zinc-450 font-sans">failures</span>
+        </span>
+      </div>
+    </div>
+  );
+}
