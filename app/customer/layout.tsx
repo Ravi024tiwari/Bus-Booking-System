@@ -56,7 +56,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'My Bookings', path: '/customer/bookings', icon: Calendar },
     { name: 'Live Tracking', path: '/customer/dashboard/tracking', icon: MapPin },
     { name: 'My Trips', path: '/customer/trips', icon: Compass },
-    { name: 'Favourite Routes', path: '/customer/dashboard/routes', icon: Heart },
     { name: 'Profile', path: '/customer/profile', icon: UserIcon },
     { name: 'Offers & Rewards', path: '/customer/dashboard/offers', icon: Gift },
     { name: 'Help & Support', path: '/customer/help', icon: HelpCircle },

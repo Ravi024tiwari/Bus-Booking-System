@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import dbConnect from '@/lib/db';
+import redis from '@/lib/redis';
 import { Trip, SeatState, Bus } from '@/models';
 import { verifyAuth } from '@/lib/auth-proxy';
+
+// Zod validation schema for updating trip status
+const updateStatusSchema = z.object({
+  status: z.enum(['SCHEDULED', 'BOARDING', 'DEPARTED', 'IN_TRANSIT', 'ARRIVED', 'CANCELLED'], {
+    message: 'Status must be SCHEDULED, BOARDING, DEPARTED, IN_TRANSIT, ARRIVED, or CANCELLED',
+  }),
+});
 
 export async function GET(
   req: Request,
@@ -134,18 +143,29 @@ export async function PATCH(
       );
     }
 
-    const body = await req.json();
-    const { status } = body;
-
-    const allowedStatuses = ['SCHEDULED', 'BOARDING', 'DEPARTED', 'IN_TRANSIT', 'ARRIVED', 'CANCELLED'];
-    if (!status || !allowedStatuses.includes(status)) {
+    // 2. Parse and validate body
+    let body: any;
+    try {
+      body = await req.json();
+    } catch (e) {
       return NextResponse.json(
-        { success: false, message: `Invalid status. Must be one of: ${allowedStatuses.join(', ')}` },
+        { success: false, message: 'Invalid JSON request body.' },
         { status: 400 }
       );
     }
 
-    // 2. Fetch the Trip
+    const validation = updateStatusSchema.safeParse(body);
+    if (!validation.success) {
+      const errorMessage = validation.error.issues[0]?.message || 'Invalid input data';
+      return NextResponse.json(
+        { success: false, message: errorMessage },
+        { status: 400 }
+      );
+    }
+
+    const { status } = validation.data;
+
+    // 3. Fetch the Trip
     const trip = await Trip.findById(tripId);
     if (!trip) {
       return NextResponse.json(
@@ -154,10 +174,18 @@ export async function PATCH(
       );
     }
 
-    // 3. Verify operator owns the bus for this trip
+    const bus = await Bus.findById(trip.busId);
+    if (!bus) {
+      return NextResponse.json(
+        { success: false, message: 'Associated bus not found.' },
+        { status: 404 }
+      );
+    }
+
+    // 4. Verify operator owns the bus for this trip
+    let operatorId = bus.operatorId.toString();
     if (user.role === 'operator') {
-      const bus = await Bus.findById(trip.busId);
-      if (!bus || bus.operatorId.toString() !== user.id) {
+      if (operatorId !== user.id) {
         return NextResponse.json(
           { success: false, message: 'Access denied. You can only update trips for your own buses.' },
           { status: 403 }
@@ -165,9 +193,34 @@ export async function PATCH(
       }
     }
 
-    // 4. Update status
+    // 5. Update status
     trip.status = status as any;
     await trip.save();
+
+    // 6. Broadcast Socket.io state changes (real-time customer tracking view)
+    const io = (global as any).io;
+    if (io) {
+      io.to(tripId).emit('trip:status-updated', { tripId, status });
+      console.log(`[Trip Status Update] Socket.io broadcasted status ${status} for trip ${tripId}`);
+    }
+
+    // 7. Invalidate operator dashboard Redis caches
+    try {
+      const stream = redis.scanStream({
+        match: `operator:dashboard:*:${operatorId}*`,
+      });
+
+      stream.on('data', async (keys) => {
+        if (keys.length) {
+          const pipeline = redis.pipeline();
+          keys.forEach((key: string) => pipeline.del(key));
+          await pipeline.exec();
+          console.log(`[Trip Status Update] Invalidated operator dashboard cache keys:`, keys);
+        }
+      });
+    } catch (redisErr) {
+      console.warn('[Trip Status Update] Redis cache invalidation error:', redisErr);
+    }
 
     return NextResponse.json({
       success: true,
