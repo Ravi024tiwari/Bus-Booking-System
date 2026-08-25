@@ -52,7 +52,7 @@ export default async function DashboardPage() {
       {/* GREETING SECTION */}
       <div className="flex flex-col select-none">
         <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
-          Good Morning, {firstName} <span className="animate-bounce">👋</span>
+          Good Morning, {firstName} 
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 font-semibold mt-1">
           Where would you like to go today?
@@ -378,8 +378,8 @@ export default async function DashboardPage() {
 
             <div className="flex flex-col gap-3">
               {/* Chat option */}
-              <a
-                href="/customer/dashboard/help"
+              <Link
+                href="/customer/help"
                 className="flex items-center gap-3.5 p-3.5 border border-zinc-100 dark:border-zinc-800/50 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors duration-200"
               >
                 <div className="h-10 w-10 bg-indigo-500/10 text-indigo-500 rounded-xl flex items-center justify-center shrink-0 border border-indigo-500/15">
@@ -389,7 +389,7 @@ export default async function DashboardPage() {
                   <span className="text-xs font-black text-zinc-800 dark:text-zinc-200 leading-none">Chat with us</span>
                   <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-1 leading-none">Get instant online support</span>
                 </div>
-              </a>
+              </Link>
 
               {/* Phone call option */}
               <a

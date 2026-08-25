@@ -57,10 +57,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Live Tracking', path: '/customer/dashboard/tracking', icon: MapPin },
     { name: 'My Trips', path: '/customer/trips', icon: Compass },
     { name: 'Favourite Routes', path: '/customer/dashboard/routes', icon: Heart },
-    { name: 'Payment Methods', path: '/customer/dashboard/payments', icon: CreditCard },
     { name: 'Profile', path: '/customer/profile', icon: UserIcon },
     { name: 'Offers & Rewards', path: '/customer/dashboard/offers', icon: Gift },
-    { name: 'Help & Support', path: '/customer/dashboard/help', icon: HelpCircle },
+    { name: 'Help & Support', path: '/customer/help', icon: HelpCircle },
   ];
 
   const handleLogout = async () => {
