@@ -381,12 +381,143 @@ const uiSlice = createSlice({
     },
   },
 });
+// 5. Admin Bookings Slice (Operator Trips)
+export interface AdminTrip {
+  id: string;
+  busNumber: string;
+  busType: string;
+  source: string;
+  destination: string;
+  date: string;
+  departureTime: string;
+  arrivalTime: string;
+  fare: number;
+  status: 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_TRANSIT' | 'ARRIVED' | 'CANCELLED';
+  capacity: number;
+  seatsBooked: number;
+  operatorDetails: {
+    id: string;
+    name: string;
+    email: string;
+    phoneNumber: string;
+  } | null;
+  busImages?: string[];
+  formattedDate?: string;
+  formattedTime?: string;
+}
+
+interface TabCache {
+  list: AdminTrip[];
+  page: number;
+  hasMore: boolean;
+}
+
+interface AdminBookingsState {
+  all: TabCache;
+  today: TabCache;
+  upcoming: TabCache;
+  previous: TabCache;
+  loading: boolean;
+  error: string | null;
+  activeTab: 'all' | 'today' | 'upcoming' | 'previous';
+}
+
+const initialAdminBookingsState: AdminBookingsState = {
+  all: { list: [], page: 1, hasMore: true },
+  today: { list: [], page: 1, hasMore: true },
+  upcoming: { list: [], page: 1, hasMore: true },
+  previous: { list: [], page: 1, hasMore: true },
+  loading: false,
+  error: null,
+  activeTab: 'all',
+};
+
+export const fetchAdminBookings = createAsyncThunk(
+  'adminBookings/fetchAdminBookings',
+  async (
+    { page, limit, filter }: { page: number; limit: number; filter: 'all' | 'today' | 'upcoming' | 'previous' },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await fetch(`/api/admin/bookings?page=${page}&limit=${limit}&filter=${filter}`);
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch admin bookings.');
+      }
+      return { filter, page, data: data.data, pagination: data.pagination };
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+const adminBookingsSlice = createSlice({
+  name: 'adminBookings',
+  initialState: initialAdminBookingsState,
+  reducers: {
+    setActiveTab(state, action: PayloadAction<AdminBookingsState['activeTab']>) {
+      state.activeTab = action.payload;
+    },
+    clearAdminCache(state) {
+      state.all = { list: [], page: 1, hasMore: true };
+      state.today = { list: [], page: 1, hasMore: true };
+      state.upcoming = { list: [], page: 1, hasMore: true };
+      state.previous = { list: [], page: 1, hasMore: true };
+    }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAdminBookings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAdminBookings.fulfilled, (state, action) => {
+        state.loading = false;
+        const { filter, page, data, pagination } = action.payload;
+        
+        // Format dates and time for client presentation
+        const mapped = data.map((t: any) => {
+          const formattedDate = new Date(t.departureTime).toLocaleDateString('en-IN', {
+            day: 'numeric', month: 'short', year: 'numeric'
+          });
+          const formattedTime = new Date(t.departureTime).toLocaleTimeString('en-IN', {
+            hour: '2-digit', minute: '2-digit'
+          });
+
+          return {
+            ...t,
+            formattedDate,
+            formattedTime,
+          };
+        });
+
+        const tab = filter as 'all' | 'today' | 'upcoming' | 'previous';
+
+        if (page === 1) {
+          state[tab].list = mapped;
+        } else {
+          const existingIds = new Set(state[tab].list.map((t: any) => t.id));
+          const newItems = mapped.filter((t: any) => !existingIds.has(t.id));
+          state[tab].list = [...state[tab].list, ...newItems];
+        }
+        
+        state[tab].page = pagination.page;
+        state[tab].hasMore = pagination.hasMore;
+      })
+      .addCase(fetchAdminBookings.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || 'Failed to fetch admin bookings';
+      });
+  }
+});
+
 
 // Export actions
 export const { setUser, clearUser, setLoading, setError } = userSlice.actions;
 export const { setBookings, addBooking, setBookingsLoading, setBookingsError } = bookingsSlice.actions;
 export const { clearTrips } = tripsSlice.actions;
 export const { toggleSidebar, setSidebarOpen, toggleTheme, setTheme } = uiSlice.actions;
+export const { setActiveTab, clearAdminCache } = adminBookingsSlice.actions;
 
 // Configure Store
 export const store = configureStore({
@@ -395,6 +526,7 @@ export const store = configureStore({
     bookings: bookingsSlice.reducer,
     trips: tripsSlice.reducer,
     ui: uiSlice.reducer,
+    adminBookings: adminBookingsSlice.reducer,
   },
 });
 
