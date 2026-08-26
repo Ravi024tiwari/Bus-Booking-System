@@ -11,6 +11,9 @@ export interface ITrip extends Document {
   departureTime: Date;
   arrivalTime: Date;
   fare: number;
+  offerPercentage?: number;
+  offerLimit?: number;
+  offerBookedCount?: number;
   status: 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_TRANSIT' | 'ARRIVED' | 'CANCELLED';
   createdAt: Date;
 }
@@ -63,6 +66,18 @@ const TripSchema = new Schema<ITrip>({
     type: Number, 
     required: true,
     index: true 
+  },
+  offerPercentage: {
+    type: Number,
+    default: 0
+  },
+  offerLimit: {
+    type: Number,
+    default: 0
+  },
+  offerBookedCount: {
+    type: Number,
+    default: 0
   },
   status: { 
     type: String, 

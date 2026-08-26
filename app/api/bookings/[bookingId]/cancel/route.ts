@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
 import redis from '@/lib/redis';
 import releaseQueue from '@/lib/queue';
-import { Order, SeatState } from '@/models';
+import { Order, SeatState, Trip } from '@/models';
 
 export async function POST(
   req: Request,
@@ -82,8 +82,17 @@ export async function POST(
     }
 
     // 4. Update local order status to CANCELLED
+    const oldStatus = order.status;
     order.status = 'CANCELLED';
     await order.save();
+
+    // If order was CONFIRMED and had a discount applied, decrement offerBookedCount on Trip
+    if (oldStatus === 'CONFIRMED' && order.discountedSeatsCount && order.discountedSeatsCount > 0) {
+      await Trip.findByIdAndUpdate(order.tripId, {
+        $inc: { offerBookedCount: -order.discountedSeatsCount }
+      });
+      console.log(`[Cancel Booking] Decremented offerBookedCount by ${order.discountedSeatsCount} for Trip ${order.tripId}`);
+    }
 
     // 5. Broadcast Socket.io state changes (so seats turn green for other active users)
     const io = (global as any).io;

@@ -87,7 +87,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Routes', path: '/admin/routes', icon: MapPin },
     { name: 'Bookings', path: '/admin/bookings', icon: Calendar },
     { name: 'Payments', path: '/admin/payments', icon: CreditCard },
-    { name: 'Reports & Analytics', path: '/admin/analytics', icon: BarChart3 },
     { name: 'Notifications', path: '/admin/notifications', icon: Bell, badge: 8 },
     { name: 'Support', path: '/admin/support', icon: HelpCircle },
     { name: 'Settings', path: '/admin/settings', icon: Settings },

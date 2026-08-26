@@ -115,7 +115,38 @@ export async function POST(req: Request) {
       segmentFare = trip.fare; // fallback to full trip fare
     }
 
-    const totalAmount = segmentFare * seatNumbers.length;
+    // Apply operator offer if present on the trip
+    let discountedSeatsCount = 0;
+    let discountAmount = 0;
+    let totalAmount = segmentFare * seatNumbers.length;
+
+    if (trip.offerPercentage && trip.offerPercentage > 0 && trip.offerLimit && trip.offerLimit > 0) {
+      // Find how many discounted seats are already CONFIRMED or active PAYMENT_PENDING (within last 10 minutes)
+      const activeDiscountedOrders = await Order.find({
+        tripId: trip._id,
+        status: { $in: ['CONFIRMED', 'PAYMENT_PENDING'] },
+        $or: [
+          { status: 'CONFIRMED' },
+          { 
+            status: 'PAYMENT_PENDING', 
+            createdAt: { $gt: new Date(Date.now() - 10 * 60 * 1000) } 
+          }
+        ]
+      });
+
+      const alreadyAllocated = activeDiscountedOrders.reduce(
+        (sum: number, ord: any) => sum + (ord.discountedSeatsCount || 0), 
+        0
+      );
+      const remainingOfferSeats = Math.max(0, trip.offerLimit - alreadyAllocated);
+
+      if (remainingOfferSeats > 0) {
+        discountedSeatsCount = Math.min(seatNumbers.length, remainingOfferSeats);
+        const discountPerSeat = segmentFare * (trip.offerPercentage / 100);
+        discountAmount = Math.round(discountPerSeat * discountedSeatsCount);
+        totalAmount = (segmentFare * seatNumbers.length) - discountAmount;
+      }
+    }
 
     // 4. Validate that all requested seats are currently held by THIS user on this specific segment
     const now = new Date();
@@ -147,6 +178,8 @@ export async function POST(req: Request) {
       tripId,
       seatNumbers,
       amount: totalAmount,
+      discountAmount,
+      discountedSeatsCount,
       status: 'PENDING',
       fromStop,
       toStop,
@@ -191,6 +224,8 @@ export async function POST(req: Request) {
         tripId: trip._id,
         seatNumbers: localOrder.seatNumbers,
         amount: localOrder.amount,
+        discountAmount: localOrder.discountAmount,
+        discountedSeatsCount: localOrder.discountedSeatsCount,
         status: localOrder.status,
         razorpayOrderId: localOrder.razorpayOrderId,
         passengerName: decoded.name,

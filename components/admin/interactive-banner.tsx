@@ -86,7 +86,7 @@ export default function AdminInteractiveBanner() {
             transition={{ delay: 0.2 }}
             className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight"
           >
-            {greeting}, Admin! 👋
+            {greeting}, Admin!
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }}

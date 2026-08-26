@@ -60,6 +60,9 @@ interface TripItem {
   departureTime: string;
   arrivalTime: string;
   fare: number;
+  offerPercentage?: number;
+  offerLimit?: number;
+  offerBookedCount?: number;
   status: 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_TRANSIT' | 'ARRIVED' | 'CANCELLED';
   busCapacity: number;
   bookedSeatsCount: number;
@@ -98,6 +101,8 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
   const [tripDate, setTripDate] = useState('');
   const [departureTime, setDepartureTime] = useState('08:00 AM');
   const [customFare, setCustomFare] = useState<number | ''>('');
+  const [offerPercentage, setOfferPercentage] = useState<number | ''>('');
+  const [offerLimit, setOfferLimit] = useState<number | ''>('');
 
   // Dropdown menu state
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -267,7 +272,9 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
         routeId: selectedRouteId,
         date: tripDate,
         departureTime,
-        fare: Number(customFare)
+        fare: Number(customFare),
+        offerPercentage: offerPercentage === '' ? 0 : Number(offerPercentage),
+        offerLimit: offerLimit === '' ? 0 : Number(offerLimit)
       };
 
       const response = await axios.post('/api/trips', payload);
@@ -292,6 +299,9 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
           departureTime: new Date(saved.departureTime).toISOString(),
           arrivalTime: new Date(saved.arrivalTime).toISOString(),
           fare: saved.fare,
+          offerPercentage: saved.offerPercentage || 0,
+          offerLimit: saved.offerLimit || 0,
+          offerBookedCount: saved.offerBookedCount || 0,
           status: saved.status || 'SCHEDULED',
           createdAt: new Date(saved.createdAt).toISOString(),
           busCapacity: bus ? bus.capacity : 40,
@@ -307,6 +317,8 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
         setSelectedBusId('');
         setTripDate('');
         setDepartureTime('08:00 AM');
+        setOfferPercentage('');
+        setOfferLimit('');
       }
     } catch (err: any) {
       console.error('[Add Trip Form Error]:', err);
@@ -687,6 +699,34 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                   </div>
                 </div>
 
+                {/* Offer Details */}
+                <div className="flex items-center gap-3 min-w-[120px]">
+                  <div className="h-8.5 w-8.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100/30 dark:border-rose-950/15 flex items-center justify-center shrink-0">
+                    <span className="text-[#ff2d88] font-bold text-xs">%</span>
+                  </div>
+                  <div className="flex flex-col">
+                    {trip.offerPercentage && trip.offerPercentage > 0 ? (
+                      <>
+                        <span className="text-xs font-black text-rose-500">
+                          {trip.offerPercentage}% Off
+                        </span>
+                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-0.5">
+                          {trip.offerBookedCount || 0} / {trip.offerLimit} claimed
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xs font-bold text-zinc-400">
+                          No Offer
+                        </span>
+                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-0.5">
+                          --
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 {/* Fare */}
                 <div className="flex items-center gap-2 min-w-[70px]">
                   <span className="text-xs font-black text-zinc-400">₹</span>
@@ -874,6 +914,46 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                         placeholder="Price for full route"
                         className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none"
                       />
+                    </div>
+                  </div>
+
+                  {/* Offer Fields Group (Two columns) */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Offer Percentage */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">
+                        Offer Discount (%)
+                      </label>
+                      <div className="relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-2xl px-3 py-2 flex items-center gap-2">
+                        <span className="text-zinc-400 font-extrabold text-xs">%</span>
+                        <input 
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={offerPercentage}
+                          onChange={(e) => setOfferPercentage(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="e.g. 15"
+                          className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Offer Limit (First X passengers) */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">
+                        For First X Persons
+                      </label>
+                      <div className="relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-2xl px-3 py-2 flex items-center gap-2">
+                        <span className="text-zinc-400 font-extrabold text-xs">Pax</span>
+                        <input 
+                          type="number"
+                          min="0"
+                          value={offerLimit}
+                          onChange={(e) => setOfferLimit(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="e.g. 5"
+                          className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
 

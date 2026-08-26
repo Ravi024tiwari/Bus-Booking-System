@@ -280,7 +280,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     Account Settings
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    onClick={() => router.push('/customer/dashboard/trips')}
+                    onClick={() => router.push('/customer/trips')}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 cursor-pointer transition-colors duration-150 outline-none w-full"
                   >
                     <Compass className="h-4 w-4" />

@@ -218,6 +218,9 @@ export async function GET(req: Request) {
           fare: segmentFare,
           totalSeats,
           availableSeats,
+          offerPercentage: trip.offerPercentage || 0,
+          offerLimit: trip.offerLimit || 0,
+          offerBookedCount: trip.offerBookedCount || 0,
           rating: 4.5,
           amenities: bus?.amenities || ['WiFi', 'Charging Point', 'Water Bottle', 'Blanket']
         };

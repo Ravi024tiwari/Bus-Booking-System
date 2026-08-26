@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import dbConnect from '@/lib/db';
 import redis from '@/lib/redis';
 import releaseQueue from '@/lib/queue';
-import { Order, SeatState, IdempotencyLog } from '@/models';
+import { Order, SeatState, IdempotencyLog, Trip } from '@/models';
 
 // Handles secure Razorpay webhook posts
 export async function POST(req: Request) {
@@ -104,6 +104,14 @@ export async function POST(req: Request) {
     order.status = 'CONFIRMED';
     order.razorpayPaymentId = razorpayPaymentId;
     await order.save();
+
+    // Increment offerBookedCount if order has a discount applied
+    if (order.discountedSeatsCount && order.discountedSeatsCount > 0) {
+      await Trip.findByIdAndUpdate(order.tripId, {
+        $inc: { offerBookedCount: order.discountedSeatsCount }
+      });
+      console.log(`[Razorpay Webhook] Incremented offerBookedCount by ${order.discountedSeatsCount} for Trip ${order.tripId}`);
+    }
 
     console.log(`[Razorpay Webhook] Order ${order._id} confirmed for seats: ${order.seatNumbers}`);
 

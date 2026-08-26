@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { busId, routeId, date, departureTime, fare } = body;
+    const { busId, routeId, date, departureTime, fare, offerPercentage, offerLimit } = body;
 
     // Validate inputs
     if (!busId || !routeId || !date || !departureTime || fare === undefined) {
@@ -30,6 +30,29 @@ export async function POST(req: Request) {
         { success: false, message: 'Missing required fields: busId, routeId, date, departureTime, fare.' },
         { status: 400 }
       );
+    }
+
+    let parsedOfferPercentage = 0;
+    let parsedOfferLimit = 0;
+
+    if (offerPercentage !== undefined && offerPercentage !== null && offerPercentage !== '') {
+      parsedOfferPercentage = Number(offerPercentage);
+      if (isNaN(parsedOfferPercentage) || parsedOfferPercentage < 0 || parsedOfferPercentage > 100) {
+        return NextResponse.json(
+          { success: false, message: 'Offer percentage must be a number between 0 and 100.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (offerLimit !== undefined && offerLimit !== null && offerLimit !== '') {
+      parsedOfferLimit = Number(offerLimit);
+      if (isNaN(parsedOfferLimit) || parsedOfferLimit < 0) {
+        return NextResponse.json(
+          { success: false, message: 'Offer limit must be a non-negative number.' },
+          { status: 400 }
+        );
+      }
     }
 
     if (!mongoose.Types.ObjectId.isValid(busId) || !mongoose.Types.ObjectId.isValid(routeId)) {
@@ -169,6 +192,9 @@ export async function POST(req: Request) {
       departureTime: parsedDeparture,
       arrivalTime: parsedArrival,
       fare,
+      offerPercentage: parsedOfferPercentage,
+      offerLimit: parsedOfferLimit,
+      offerBookedCount: 0,
       status: 'SCHEDULED'
     });
 

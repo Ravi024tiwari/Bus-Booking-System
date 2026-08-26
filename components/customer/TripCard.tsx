@@ -23,6 +23,9 @@ interface TripItem {
   bookedSeatsCount: number;
   viaStops: string[];
   operatorName?: string;
+  offerPercentage?: number;
+  offerLimit?: number;
+  offerBookedCount?: number;
 }
 
 interface TripCardProps {
@@ -99,6 +102,12 @@ export default function TripCard({
             alt="Bus preview" 
             className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-300"
           />
+          {/* Offer Badge overlay */}
+          {trip.offerPercentage && trip.offerPercentage > 0 && (trip.offerLimit || 0) > (trip.offerBookedCount || 0) && (
+            <span className="absolute top-3 left-3 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm bg-gradient-to-r from-rose-500 to-rose-600 text-white z-10">
+              {trip.offerPercentage}% OFF
+            </span>
+          )}
           {/* Status Badge overlay */}
           <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm z-10 ${getStatusBadgeStyle(trip.status)}`}>
             {getStatusLabel(trip.status)}
@@ -193,6 +202,12 @@ export default function TripCard({
           alt="Bus preview" 
           className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-300"
         />
+        {/* Offer Badge overlay */}
+        {trip.offerPercentage && trip.offerPercentage > 0 && (trip.offerLimit || 0) > (trip.offerBookedCount || 0) && (
+          <span className="absolute top-3.5 left-3.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider shadow-sm bg-gradient-to-r from-rose-500 to-rose-600 text-white z-10">
+            {trip.offerPercentage}% OFF
+          </span>
+        )}
         {/* Status Badge overlay */}
         <span className={`absolute top-3.5 right-3.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider shadow-sm z-10 ${getStatusBadgeStyle(trip.status)}`}>
           {getStatusLabel(trip.status)}

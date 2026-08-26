@@ -49,6 +49,8 @@ export interface Booking {
   id: string;
   seatNumbers: string[];
   amount: number;
+  discountAmount?: number;
+  discountedSeatsCount?: number;
   status: 'PENDING' | 'PAYMENT_PENDING' | 'CONFIRMED' | 'PAYMENT_FAILED' | 'CANCELLED';
   createdAt: string;
   razorpayOrderId?: string;
@@ -512,12 +514,75 @@ const adminBookingsSlice = createSlice({
 });
 
 
+// 6. Rewards Slice
+interface RewardsState {
+  list: Booking[];
+  totalSavings: number;
+  claimedCount: number;
+  loading: boolean;
+  error: string | null;
+}
+
+const initialRewardsState: RewardsState = {
+  list: [],
+  totalSavings: 0,
+  claimedCount: 0,
+  loading: false,
+  error: null
+};
+
+export const fetchMyRewards = createAsyncThunk(
+  'rewards/fetchMyRewards',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch('/api/bookings/rewards');
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch rewards.');
+      }
+      return data.data; // returns { rewardsList, totalSavings, claimedCount }
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+const rewardsSlice = createSlice({
+  name: 'rewards',
+  initialState: initialRewardsState,
+  reducers: {
+    clearRewards(state) {
+      state.list = [];
+      state.totalSavings = 0;
+      state.claimedCount = 0;
+    }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchMyRewards.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchMyRewards.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = action.payload.rewardsList;
+        state.totalSavings = action.payload.totalSavings;
+        state.claimedCount = action.payload.claimedCount;
+      })
+      .addCase(fetchMyRewards.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || 'Failed to fetch rewards';
+      });
+  }
+});
+
 // Export actions
 export const { setUser, clearUser, setLoading, setError } = userSlice.actions;
 export const { setBookings, addBooking, setBookingsLoading, setBookingsError } = bookingsSlice.actions;
 export const { clearTrips } = tripsSlice.actions;
 export const { toggleSidebar, setSidebarOpen, toggleTheme, setTheme } = uiSlice.actions;
 export const { setActiveTab, clearAdminCache } = adminBookingsSlice.actions;
+export const { clearRewards } = rewardsSlice.actions;
 
 // Configure Store
 export const store = configureStore({
@@ -527,6 +592,7 @@ export const store = configureStore({
     trips: tripsSlice.reducer,
     ui: uiSlice.reducer,
     adminBookings: adminBookingsSlice.reducer,
+    rewards: rewardsSlice.reducer,
   },
 });
 

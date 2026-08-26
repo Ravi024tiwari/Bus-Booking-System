@@ -359,6 +359,21 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
   const segmentFare = getSelectedSegmentFare();
   const totalPrice = segmentFare * selectedSeats.length;
 
+  const offerPercentage = tripDetails.offerPercentage || 0;
+  const offerLimit = tripDetails.offerLimit || 0;
+  const offerBookedCount = tripDetails.offerBookedCount || 0;
+  const remainingOfferSeats = Math.max(0, offerLimit - offerBookedCount);
+
+  const discountedSeatsCount = offerPercentage > 0 && remainingOfferSeats > 0
+    ? Math.min(selectedSeats.length, remainingOfferSeats)
+    : 0;
+
+  const discountAmount = discountedSeatsCount > 0
+    ? Math.round(segmentFare * (offerPercentage / 100) * discountedSeatsCount)
+    : 0;
+
+  const finalPrice = totalPrice - discountAmount;
+
   const isBookingAllowed = tripDetails.status === 'SCHEDULED' || tripDetails.status === 'BOARDING';
 
   // Check overlap helper for client-side rendering
@@ -1119,12 +1134,20 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
               <div className="flex items-baseline gap-0.5 mt-2">
                 <span className="text-sm font-black text-zinc-450 font-mono">₹</span>
                 <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight leading-none font-mono">
-                  {totalPrice > 0 ? totalPrice : segmentFare}
+                  {selectedSeats.length > 0 ? finalPrice : segmentFare}
                 </span>
                 <span className="text-[11px] text-zinc-400 font-bold ml-1 font-mono">
                   {selectedSeats.length > 0 ? `for ${selectedSeats.length} seats` : '/ seat fare'}
                 </span>
               </div>
+
+              {/* Offer Info Tag */}
+              {offerPercentage > 0 && remainingOfferSeats > 0 && (
+                <div className="mt-2.5 bg-rose-500/10 text-rose-500 dark:bg-rose-950/20 dark:text-rose-400 px-3 py-1.5 rounded-xl border border-rose-500/10 text-[10px] font-black uppercase flex items-center justify-between">
+                  <span>{offerPercentage}% OFF Promo Applied!</span>
+                  <span>{remainingOfferSeats} seats remaining</span>
+                </div>
+              )}
             </div>
 
             <div className="h-px bg-zinc-150/50 dark:bg-zinc-800/50 w-full" />
@@ -1173,6 +1196,24 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
                     {selectedSeats.join(', ')}
                   </span>
                 </div>
+              )}
+
+              {/* Offer savings details */}
+              {discountAmount > 0 && (
+                <>
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-zinc-450 dark:text-zinc-500">Base Amount</span>
+                    <span className="font-extrabold text-zinc-800 dark:text-zinc-200 font-mono">
+                      ₹{totalPrice}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-rose-500 font-bold">Offer Discount ({discountedSeatsCount} seat{discountedSeatsCount > 1 ? 's' : ''})</span>
+                    <span className="font-black text-rose-500 font-mono">
+                      -₹{discountAmount}
+                    </span>
+                  </div>
+                </>
               )}
             </div>
 
@@ -1260,9 +1301,21 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
                     <span className="text-zinc-450">Reserved Seats</span>
                     <span className="text-[#ff2d88]">{selectedSeats.join(', ')}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-450">Base Amount</span>
+                        <span className="text-zinc-800 dark:text-zinc-200">₹{totalPrice}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-rose-500 font-bold">Offer Savings</span>
+                        <span className="text-rose-500">-₹{discountAmount}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between border-t border-zinc-200 dark:border-zinc-800 pt-3">
                     <span className="text-zinc-450 text-sm font-mono font-bold">Amount Due</span>
-                    <span className="text-base font-black text-zinc-900 dark:text-white font-mono">₹{totalPrice}</span>
+                    <span className="text-base font-black text-zinc-900 dark:text-white font-mono">₹{finalPrice}</span>
                   </div>
                 </div>
 

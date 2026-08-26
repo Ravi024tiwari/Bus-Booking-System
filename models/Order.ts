@@ -5,6 +5,8 @@ export interface IOrder extends Document {
   tripId: mongoose.Types.ObjectId;
   seatNumbers: string[];
   amount: number;
+  discountAmount?: number;
+  discountedSeatsCount?: number;
   status: 'PENDING' | 'PAYMENT_PENDING' | 'CONFIRMED' | 'PAYMENT_FAILED' | 'CANCELLED';
   fromStop: string;
   toStop: string;
@@ -35,6 +37,14 @@ const OrderSchema = new Schema<IOrder>({
   amount: { 
     type: Number, 
     required: true 
+  },
+  discountAmount: {
+    type: Number,
+    default: 0
+  },
+  discountedSeatsCount: {
+    type: Number,
+    default: 0
   },
   fromStop: { 
     type: String, 
