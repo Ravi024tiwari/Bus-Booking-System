@@ -66,6 +66,9 @@ interface TripDetails {
   stops: Stop[];
   amenities: string[];
   cancellationPolicy: Array<{ timeFrame: string; refundPercentage: string }>;
+  offerPercentage?: number;
+  offerLimit?: number;
+  offerBookedCount?: number;
 }
 
 interface TripDetailsClientProps {
