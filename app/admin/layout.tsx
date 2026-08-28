@@ -23,7 +23,6 @@ import {
   LogOut, 
   Menu, 
   X, 
-  Plus,
   Rocket
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -142,7 +141,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Reports & Analytics', path: '/admin/analytics', icon: BarChart3 },
     { name: 'Notifications', path: '/admin/notifications', icon: Bell, badge: unreadCount > 0 ? unreadCount : undefined },
     { name: 'Support', path: '/admin/support', icon: HelpCircle },
-    { name: 'Settings', path: '/admin/settings', icon: Settings },
   ];
 
   const handleLogout = async () => {
@@ -157,9 +155,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   };
 
-  const handleQuickAction = () => {
-    toast.success('Quick Action Triggered');
-  };
+
 
   return (
     <div className="min-h-screen flex bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-100">
@@ -321,14 +317,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Right Header items */}
           <div className="flex items-center gap-4 ml-auto">
             
-            {/* Quick Action Button */}
-            <button 
-              onClick={handleQuickAction}
-              className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-2xl shadow-md shadow-indigo-600/10 transition-colors cursor-pointer outline-none"
-            >
-              <Plus className="h-4.5 w-4.5 text-white shrink-0" />
-              Quick Action
-            </button>
+
 
             {/* Notification Bell */}
             <button className="relative p-2.5 bg-zinc-50 dark:bg-zinc-850 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-colors text-zinc-500 hover:text-zinc-800 dark:hover:text-white outline-none">
@@ -369,14 +358,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       Admin Settings
                     </DropdownMenuLabel>
                   </DropdownMenuGroup>
-                  <DropdownMenuSeparator className="h-px bg-zinc-100 dark:bg-zinc-800/50 my-1" />
-                  <DropdownMenuItem 
-                    onClick={() => router.push('/admin/settings')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 cursor-pointer outline-none w-full"
-                  >
-                    <Settings className="h-4 w-4" />
-                    System Configuration
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator className="h-px bg-zinc-100 dark:bg-zinc-800/50 my-1" />
                   <DropdownMenuItem 
                     onClick={handleLogout}

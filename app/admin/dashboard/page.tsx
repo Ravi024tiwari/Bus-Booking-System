@@ -28,7 +28,6 @@ import AdminInteractiveBanner from '@/components/admin/interactive-banner';
 import AdminBookingOverview from '@/components/admin/booking-overview';
 import AdminFleetStatus from '@/components/admin/fleet-status';
 import AdminAlertsNotifications from '@/components/admin/alerts-notifications';
-import AdminQuickActions from '@/components/admin/quick-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -124,21 +123,16 @@ export default async function AdminDashboardPage() {
 
       </div>
 
-      {/* Third Row of system events and quick actions */}
+      {/* Third Row of system events and top operators */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
         
         {/* Timeline activity stream */}
-        <div className="lg:col-span-4">
+        <div className="lg:col-span-6">
           <AdminRecentActivity activities={recentActivity} />
         </div>
 
-        {/* Actions panel */}
-        <div className="lg:col-span-4">
-          <AdminQuickActions />
-        </div>
-
         {/* Revenue leaderboard of top operators */}
-        <div className="lg:col-span-4">
+        <div className="lg:col-span-6">
           <AdminTopOperators operators={topOperators} />
         </div>
 
