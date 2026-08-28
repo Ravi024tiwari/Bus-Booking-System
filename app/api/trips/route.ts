@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { Trip, Bus, Route } from '@/models';
+import { Trip, Bus, Route, User, Notification } from '@/models';
 import { verifyAuth } from '@/lib/auth-proxy';
 import mongoose from 'mongoose';
 
@@ -197,6 +197,39 @@ export async function POST(req: Request) {
       offerBookedCount: 0,
       status: 'SCHEDULED'
     });
+
+    // Create Notification for Admins and Broadcast via Socket.io
+    try {
+      const admins = await User.find({ role: 'admin' }, '_id');
+      if (admins.length > 0) {
+        const operatorName = user.name;
+        const notificationTitle = 'New Trip Scheduled';
+        const notificationMessage = `${operatorName} has scheduled a new trip: ${route.source} ➔ ${route.destination} on ${date}.`;
+        
+        const notificationPromises = admins.map(async (admin) => {
+          return Notification.create({
+            userId: admin._id,
+            type: 'TRIP_ADDED',
+            title: notificationTitle,
+            message: notificationMessage,
+          });
+        });
+        await Promise.all(notificationPromises);
+        
+        const io = (global as any).io;
+        if (io) {
+          io.to('admin').emit('admin:notification', {
+            type: 'TRIP_ADDED',
+            title: notificationTitle,
+            message: notificationMessage,
+            createdAt: new Date(),
+          });
+          console.log(`[Socket] Broadcasted new trip alert to admin room: ${route.source} -> ${route.destination}`);
+        }
+      }
+    } catch (notifErr) {
+      console.error('[Create Trip] Failed to create or broadcast notification:', notifErr);
+    }
 
     return NextResponse.json(
       {

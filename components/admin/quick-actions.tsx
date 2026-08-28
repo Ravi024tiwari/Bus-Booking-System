@@ -16,7 +16,7 @@ export default function AdminQuickActions() {
       color: 'bg-indigo-50 text-indigo-500 hover:bg-indigo-100/80 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50',
     },
     {
-      label: 'Add Bus',
+      label: 'View Buses',
       icon: Bus,
       path: '/admin/buses',
       color: 'bg-emerald-50 text-emerald-500 hover:bg-emerald-100/80 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50',

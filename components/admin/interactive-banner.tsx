@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Clock, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Clock, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminInteractiveBanner() {
   const [time, setTime] = useState<Date | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [greeting, setGreeting] = useState('Welcome');
 
   // Real-time clock and greeting logic
@@ -24,12 +23,6 @@ export default function AdminInteractiveBanner() {
 
     return () => clearInterval(timer);
   }, []);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    toast.info(`Searching platform for: "${searchQuery}"`);
-  };
 
   const formattedTime = time ? time.toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -98,29 +91,7 @@ export default function AdminInteractiveBanner() {
           </motion.p>
         </div>
 
-        {/* Interactive Search Overlay */}
-        <motion.form 
-          onSubmit={handleSearchSubmit}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex items-center gap-2 bg-white/10 hover:bg-white/15 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/50 backdrop-blur-md border border-white/15 px-4 py-2.5 rounded-2xl w-full max-w-[340px] focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all duration-300 shadow-lg self-start md:self-end"
-        >
-          <Search className="h-4.5 w-4.5 text-zinc-300 shrink-0" />
-          <input 
-            type="text" 
-            placeholder="Quick search user or booking..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none w-full text-xs font-bold text-white placeholder-zinc-300"
-          />
-          <button 
-            type="submit"
-            className="text-[10px] uppercase font-black tracking-wider text-indigo-200 hover:text-white shrink-0 outline-none"
-          >
-            Go
-          </button>
-        </motion.form>
+
       </div>
 
       {/* Date badge */}
