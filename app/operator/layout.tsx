@@ -73,10 +73,8 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
       }
     };
 
-    if (!userProfile) {
-      fetchProfile();
-    }
-  }, [dispatch, userProfile, router]);
+    fetchProfile();
+  }, [dispatch, router]);
 
   const menuItems = [
     { name: 'Dashboard', path: '/operator/dashboard', icon: LayoutDashboard },

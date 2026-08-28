@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, setUser, clearUser, toggleSidebar, setSidebarOpen } from '@/store';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import { 
   Bus, 
   LayoutDashboard, 
@@ -22,7 +23,6 @@ import {
   LogOut, 
   Menu, 
   X, 
-  Search,
   Plus,
   Rocket
 } from 'lucide-react';
@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const userProfile = useSelector((state: RootState) => state.user.profile);
   const sidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch admin profile on mount to ensure session validity
   useEffect(() => {
@@ -75,10 +75,62 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     };
 
-    if (!userProfile) {
-      fetchProfile();
+    fetchProfile();
+  }, [dispatch, router]);
+
+  // Fetch unread notifications count from database
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await axios.get('/api/admin/notifications/unread-count');
+        if (response.data?.success) {
+          setUnreadCount(response.data.count);
+        }
+      } catch (err) {
+        console.error('Failed to fetch unread notifications count:', err);
+      }
+    };
+
+    if (userProfile) {
+      fetchUnreadCount();
     }
-  }, [dispatch, userProfile, router]);
+  }, [userProfile]);
+
+  // Automatically clear unread badge count when visiting the notifications page
+  useEffect(() => {
+    if (pathname === '/admin/notifications') {
+      setUnreadCount(0);
+    }
+  }, [pathname]);
+
+  // Connect to Socket.io on mount for real-time notifications
+  useEffect(() => {
+    const socket = io();
+
+    socket.on('connect', () => {
+      console.log('[Socket] Connected to server as Admin. ID:', socket.id);
+      // Join the admin room using the existing join-trip socket event handler
+      socket.emit('join-trip', 'admin');
+    });
+
+    socket.on('admin:notification', (data: { type: string; title: string; message: string; createdAt: string }) => {
+      console.log('[Socket] Admin notification received:', data);
+      
+      // Show Sonner floating toast notification
+      toast.success(data.title, {
+        description: data.message,
+        duration: 6000,
+      });
+
+      // Increment badge count dynamically
+      setUnreadCount((prev) => prev + 1);
+    });
+
+    // Cleanup connection on unmount
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const menuItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
@@ -88,7 +140,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Bookings', path: '/admin/bookings', icon: Calendar },
     { name: 'Payments', path: '/admin/payments', icon: CreditCard },
     { name: 'Reports & Analytics', path: '/admin/analytics', icon: BarChart3 },
-    { name: 'Notifications', path: '/admin/notifications', icon: Bell, badge: 8 },
+    { name: 'Notifications', path: '/admin/notifications', icon: Bell, badge: unreadCount > 0 ? unreadCount : undefined },
     { name: 'Support', path: '/admin/support', icon: HelpCircle },
     { name: 'Settings', path: '/admin/settings', icon: Settings },
   ];
@@ -266,20 +318,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
 
-          {/* Search Field */}
-          <div className="hidden sm:flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/20 dark:border-zinc-700/10 px-4 py-2.5 rounded-2xl w-full max-w-[400px] focus-within:ring-2 focus-within:ring-indigo-600/20 transition-all duration-300">
-            <Search className="h-4 w-4 text-zinc-400 shrink-0" />
-            <input 
-              type="text" 
-              placeholder="Search users, bookings, buses, routes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none w-full text-xs font-semibold text-zinc-700 dark:text-zinc-200 placeholder-zinc-400"
-            />
-          </div>
-
           {/* Right Header items */}
-          <div className="flex items-center gap-4 ml-auto sm:ml-0">
+          <div className="flex items-center gap-4 ml-auto">
             
             {/* Quick Action Button */}
             <button 
@@ -293,9 +333,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Notification Bell */}
             <button className="relative p-2.5 bg-zinc-50 dark:bg-zinc-850 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-colors text-zinc-500 hover:text-zinc-800 dark:hover:text-white outline-none">
               <Bell className="h-4.5 w-4.5" />
-              <span className="absolute top-1.5 right-1.5 h-4 w-4 bg-indigo-600 text-[8px] font-black text-white rounded-full flex items-center justify-center border border-white dark:border-zinc-900 select-none shadow-sm animate-pulse">
-                8
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 h-4 w-4 bg-indigo-600 text-[8px] font-black text-white rounded-full flex items-center justify-center border border-white dark:border-zinc-900 select-none shadow-sm animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
             </button>
 
             {/* User profile trigger */}

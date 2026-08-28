@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import redis from '@/lib/redis';
-import { Bus, Trip, Route } from '@/models';
+import { Bus, Trip, Route, User, Notification } from '@/models';
 import { busSchema } from '@/lib/validations';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { verifyAuth } from '@/lib/auth-proxy';
@@ -83,7 +83,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Grid boundary validation: rows * cols must accommodate the capacity
     if (validatedRows * validatedCols < validatedCapacity) {
       return NextResponse.json(
         {
@@ -152,6 +151,39 @@ export async function POST(req: Request) {
       console.log(`[Create Bus] Cache invalidated for operator key: ${cacheKey}`);
     } catch (redisErr) {
       console.warn('[Create Bus] Redis cache invalidation error:', redisErr);
+    }
+
+    // Create Notification for Admins and Broadcast via Socket.io
+    try {
+      const admins = await User.find({ role: 'admin' }, '_id');
+      if (admins.length > 0) {
+        const operatorName = user.name;
+        const notificationTitle = 'New Bus Registered';
+        const notificationMessage = `${operatorName} has registered a new bus: ${validatedBusNumber} (${validatedType}).`;
+        
+        const notificationPromises = admins.map(async (admin) => {
+          return Notification.create({
+            userId: admin._id,
+            type: 'BUS_ADDED',
+            title: notificationTitle,
+            message: notificationMessage,
+          });
+        });
+        await Promise.all(notificationPromises);
+        
+        const io = (global as any).io;
+        if (io) {
+          io.to('admin').emit('admin:notification', {
+            type: 'BUS_ADDED',
+            title: notificationTitle,
+            message: notificationMessage,
+            createdAt: new Date(),
+          });
+          console.log(`[Socket] Broadcasted new bus registration alert to admin room: ${validatedBusNumber}`);
+        }
+      }
+    } catch (notifErr) {
+      console.error('[Create Bus] Failed to create or broadcast notification:', notifErr);
     }
 
     return NextResponse.json(
