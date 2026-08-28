@@ -43,7 +43,7 @@ export default function MyTripsPage() {
 
   /* ── helpers ──────────────────────────────────────────────────────── */
   const handleShare = async (tripId: string) => {
-    const url = `${window.location.origin}/customer/dashboard/tracking?tripId=${tripId}`;
+    const url = `${window.location.origin}/customer/tracking?tripId=${tripId}`;
     if (navigator.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(url);
@@ -264,7 +264,7 @@ export default function MyTripsPage() {
                     </button>
                   ) : (
                     <Link
-                      href={canTrack ? `/customer/dashboard/tracking?tripId=${trip.id}` : '#'}
+                      href={canTrack ? `/customer/tracking?tripId=${trip.id}` : '#'}
                       onClick={(e) => {
                         if (!canTrack) {
                           e.preventDefault();

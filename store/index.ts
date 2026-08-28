@@ -14,13 +14,7 @@ interface UserState {
 }
 
 const initialUserState: UserState = {
-  profile: {
-    id: 'u1',
-    name: 'Ravi Tiwari',
-    email: 'ravi@example.com',
-    role: 'passenger',
-    avatar: '/images/rohit-avatar.jpg'
-  },
+  profile: null,
   loading: false,
   error: null,
 };
@@ -31,9 +25,19 @@ const userSlice = createSlice({
   reducers: {
     setUser(state, action: PayloadAction<UserState['profile']>) {
       state.profile = action.payload;
+      if (typeof window !== 'undefined') {
+        if (action.payload) {
+          localStorage.setItem('user_profile', JSON.stringify(action.payload));
+        } else {
+          localStorage.removeItem('user_profile');
+        }
+      }
     },
     clearUser(state) {
       state.profile = null;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user_profile');
+      }
     },
     setLoading(state, action: PayloadAction<boolean>) {
       state.loading = action.payload;
@@ -88,89 +92,7 @@ interface BookingsState {
 }
 
 const initialBookingsState: BookingsState = {
-  list: [
-    {
-      id: 'b1',
-      source: 'Raipur',
-      destination: 'Pune',
-      date: '18 Apr 2025',
-      time: '09:00 PM',
-      seat: 'A12',
-      busType: 'AC Sleeper (2+1)',
-      fare: 1150,
-      pnr: 'TG98765432',
-      status: 'CONFIRMED',
-      seatNumbers: ['A12'],
-      amount: 1150,
-      createdAt: new Date('2025-04-18T21:00:00').toISOString(),
-      fromStop: 'Raipur',
-      toStop: 'Pune',
-      tripDetails: {
-        id: 't1',
-        source: 'Raipur',
-        destination: 'Pune',
-        departureTime: new Date('2025-04-18T21:00:00').toISOString(),
-        arrivalTime: new Date('2025-04-19T09:00:00').toISOString(),
-        fare: 1150,
-        busNumber: 'MH12QW1234',
-        busType: 'AC Sleeper (2+1)'
-      }
-    },
-    {
-      id: 'b2',
-      source: 'Nagpur',
-      destination: 'Hyderabad',
-      date: '10 Apr 2025',
-      time: '07:30 PM',
-      seat: 'B5',
-      busType: 'AC Sleeper (2+1)',
-      fare: 950,
-      pnr: 'TG98765433',
-      status: 'CONFIRMED',
-      seatNumbers: ['B5'],
-      amount: 950,
-      createdAt: new Date('2025-04-10T19:30:00').toISOString(),
-      fromStop: 'Nagpur',
-      toStop: 'Hyderabad',
-      tripDetails: {
-        id: 't2',
-        source: 'Nagpur',
-        destination: 'Hyderabad',
-        departureTime: new Date('2025-04-10T19:30:00').toISOString(),
-        arrivalTime: new Date('2025-04-11T06:30:00').toISOString(),
-        fare: 950,
-        busNumber: 'AP09TY8877',
-        busType: 'AC Sleeper (2+1)'
-      }
-    },
-    {
-      id: 'b3',
-      source: 'Bhilai',
-      destination: 'Goa',
-      date: '02 Apr 2025',
-      time: '06:00 PM',
-      seat: 'C1',
-      busType: 'Non-AC Sleeper',
-      fare: 1850,
-      pnr: 'TG98765434',
-      status: 'CONFIRMED',
-      seatNumbers: ['C1'],
-      amount: 1850,
-      createdAt: new Date('2025-04-02T18:00:00').toISOString(),
-      fromStop: 'Bhilai',
-      toStop: 'Goa',
-      tripDetails: {
-        id: 't3',
-        source: 'Bhilai',
-        destination: 'Goa',
-        departureTime: new Date('2025-04-02T18:00:00').toISOString(),
-        arrivalTime: new Date('2025-04-03T10:00:00').toISOString(),
-        fare: 1850,
-        busNumber: 'GA03ZZ4321',
-        busType: 'Non-AC Sleeper'
-      }
-    },
-  ],
+  list: [],
   loading: false,
   error: null,
   page: 1,

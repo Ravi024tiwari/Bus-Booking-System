@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, clearUser, toggleSidebar, setSidebarOpen } from '@/store';
+import { RootState, setUser, clearUser, toggleSidebar, setSidebarOpen } from '@/store';
 import { 
   Bus, 
   LayoutDashboard, 
@@ -21,7 +22,6 @@ import {
   LogOut, 
   Menu, 
   X, 
-  Search, 
   Bell,
   CheckCircle,
   Crown
@@ -47,17 +47,62 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const userProfile = useSelector((state: RootState) => state.user.profile);
   const sidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
 
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
+  // Sync customer profile on mount from localStorage or API
+  useEffect(() => {
+    const syncProfile = async () => {
+      // 1. Try loading from localStorage first
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('user_profile');
+        if (saved) {
+          try {
+            const profile = JSON.parse(saved);
+            dispatch(setUser(profile));
+            return;
+          } catch (e) {
+            console.error('Failed to parse user profile from localStorage:', e);
+          }
+        }
+      }
+
+      // 2. Fallback to API if not in localStorage
+      try {
+        const response = await axios.get('/api/auth/me');
+        if (response.data?.success && response.data?.data) {
+          const u = response.data.data;
+          // Check role validation
+          if (u.role !== 'passenger') {
+            toast.error('Unauthorized access. Redirecting...');
+            router.push('/login');
+            return;
+          }
+          dispatch(setUser({
+            id: u._id || u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            avatar: u.profileImage || u.avatar || '/images/rohit-avatar.jpg'
+          }));
+        }
+      } catch (err: any) {
+        console.error('Failed to load customer profile:', err);
+        toast.error('Failed to load session. Please log in.');
+        router.push('/login');
+      }
+    };
+
+    if (!userProfile) {
+      syncProfile();
+    }
+  }, [dispatch, userProfile, router]);
 
   const menuItems = [
     { name: 'Dashboard', path: '/customer/dashboard', icon: LayoutDashboard },
     { name: 'Booking Trips', path: '/customer/book', icon: Ticket },
     { name: 'My Bookings', path: '/customer/bookings', icon: Calendar },
-    { name: 'Live Tracking', path: '/customer/dashboard/tracking', icon: MapPin },
+    { name: 'Live Tracking', path: '/customer/tracking', icon: MapPin },
     { name: 'My Trips', path: '/customer/trips', icon: Compass },
     { name: 'Profile', path: '/customer/profile', icon: UserIcon },
-    { name: 'Offers & Rewards', path: '/customer/dashboard/offers', icon: Gift },
+    { name: 'Offers & Rewards', path: '/customer/offers', icon: Gift },
     { name: 'Help & Support', path: '/customer/help', icon: HelpCircle },
   ];
 
@@ -125,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   onClick={() => dispatch(setSidebarOpen(false))}
                   className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-200 group ${
                     isActive 
-                      ? 'bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white shadow-lg shadow-[#ff2d88]/20' 
+                      ? 'bg-linear-to-r from-[#ff7c52] to-[#ff2d88] text-white shadow-lg shadow-[#ff2d88]/20' 
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
                   }`}
                 >
@@ -148,7 +193,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Sidebar Upgrade Card */}
         <div className="mt-8 relative bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-5 overflow-hidden flex flex-col gap-4 shadow-xl select-none">
-          <div className="absolute top-[-10%] right-[-10%] w-[100px] h-[100px] bg-gradient-to-tr from-pink-500 to-indigo-500 rounded-full blur-[40px] opacity-20 pointer-events-none" />
+          <div className="absolute top-[-10%] right-[-10%] w-[100px] h-[100px] bg-linear-to-tr from-pink-500 to-indigo-500 rounded-full blur-[40px] opacity-20 pointer-events-none" />
           
           <div className="z-10">
             <span className="text-[10px] text-[#ff7c52] font-extrabold uppercase tracking-widest block">Upgrade to</span>
@@ -172,7 +217,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </li>
           </ul>
 
-          <button className="w-full py-2.5 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs rounded-xl shadow-md hover:opacity-90 active:scale-95 transition-all duration-200 z-10">
+          <button className="w-full py-2.5 bg-linear-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs rounded-xl shadow-md hover:opacity-90 active:scale-95 transition-all duration-200 z-10">
             Upgrade Now
           </button>
           
@@ -186,7 +231,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="object-cover opacity-60"
               loading='eager'
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0e0a30] via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-[#0e0a30] via-transparent to-transparent" />
           </div>
         </div>
 
@@ -212,20 +257,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          {/* Search Field (Desktop & Mobile-ish) */}
-          <div className="hidden sm:flex items-center gap-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/20 dark:border-zinc-700/20 px-4 py-2.5 rounded-2xl w-full max-w-[400px] focus-within:ring-2 focus-within:ring-[#ff7c52]/30 transition-all duration-300">
-            <Search className="h-4.5 w-4.5 text-zinc-400 shrink-0" />
-            <input 
-              type="text" 
-              placeholder="Search buses, routes, or cities..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none w-full text-xs font-medium text-zinc-700 dark:text-zinc-200 placeholder-zinc-400"
-            />
-          </div>
-
           {/* Right Header items (Notifications, User avatar) */}
-          <div className="flex items-center gap-5 ml-auto sm:ml-0">
+          <div className="flex items-center gap-5 ml-auto">
             
             {/* Notification Bell */}
             <button className="relative p-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 rounded-2xl transition-colors duration-200 text-zinc-500 hover:text-zinc-800 dark:hover:text-white">
@@ -239,7 +272,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="flex items-center gap-3 border-l border-zinc-200 dark:border-zinc-800 pl-5">
               <div className="hidden md:flex flex-col text-right">
                 <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100 leading-none">
-                  {userProfile?.name || 'Ravi Tiwari'}
+                  {userProfile?.name}
                 </span>
                 <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold mt-1 flex items-center justify-end gap-1 leading-none">
                   Premium Member <Crown className="h-3 w-3 text-amber-500 fill-amber-500" />
@@ -249,8 +282,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <DropdownMenuTrigger className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-[#ff2d88]/40 shrink-0 cursor-pointer shadow-md hover:scale-105 transition-transform duration-200 block outline-none">
                   <Avatar className="w-full h-full">
                     <AvatarImage 
-                      src={userProfile?.avatar || '/images/rohit-avatar.jpg'} 
-                      alt={userProfile?.name || 'Ravi Tiwari'} 
+                      src={userProfile?.avatar} 
+                      alt={userProfile?.name} 
                       className="object-cover"
                     />
                     <AvatarFallback className="bg-zinc-200 dark:bg-zinc-800 font-extrabold text-zinc-700 dark:text-zinc-300 flex items-center justify-center h-full w-full">
