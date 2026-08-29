@@ -1,9 +1,35 @@
 version: '3.8'
 
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seatpulse-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/seatpulse
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=movego-super-secret-key-12345
+      # Add other production/test keys as needed
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_YOUR_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-YOUR_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:-YOUR_WEBHOOK_SECRET}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    depends_on:
+      - mongodb
+      - redis
+
   mongodb:
     image: mongo:latest
     container_name: seatpulse-mongodb
+    restart: always
     ports:
       - "27017:27017"
     volumes:
@@ -12,6 +38,7 @@ services:
   redis:
     image: redis:alpine
     container_name: seatpulse-redis
+    restart: always
     ports:
       - "6379:6379"
     volumes:

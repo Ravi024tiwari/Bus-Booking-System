@@ -13,10 +13,6 @@ if (process.env.NODE_ENV === 'development') {
 
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URL;
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI or MONGODB_URL environment variable inside .env');
-}
-
 // Resolves SRV record and builds a non-SRV connection string
 async function resolveMongoSrv(uri: string): Promise<string> {
   if (!uri.startsWith('mongodb+srv://')) {
@@ -96,6 +92,11 @@ if (!cached) {
 }
 
 async function dbConnect() {
+  const currentUri = process.env.MONGODB_URI || process.env.MONGODB_URL || MONGODB_URI;
+  if (!currentUri) {
+    throw new Error('Please define the MONGODB_URI or MONGODB_URL environment variable inside .env');
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
@@ -105,7 +106,7 @@ async function dbConnect() {
       bufferCommands: false,
     };
 
-    cached.promise = resolveMongoSrv(MONGODB_URI!).then((resolvedUri) => {
+    cached.promise = resolveMongoSrv(currentUri).then((resolvedUri) => {
       console.log('[Mongoose] Resolving DNS SRV for connection...');
       return mongoose.connect(resolvedUri, opts).then((mongooseInstance) => {
         console.log('[Mongoose] New connection established.');
