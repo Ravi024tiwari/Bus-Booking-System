@@ -36,24 +36,24 @@
 flowchart TD
     Client["🌐 Client (Web / Mobile Browser)"]
     
-    subgraph AppServer ["🚀 Express & Next.js Custom Server (:3000)"]
+    subgraph AppServer["🚀 Express & Next.js Custom Server"]
         NextCore["Next.js 16 (App Router + Server Components)"]
         SocketServer["Socket.io Engine (Real-Time Events)"]
         BullWorker["BullMQ Worker (Queue Processing)"]
     end
     
-    subgraph DataStore ["💾 Persistence & Cache Layer"]
+    subgraph DataStore["💾 Persistence & Cache Layer"]
         Mongo[("🍃 MongoDB (Mongoose Models)")]
         Redis[("⚡ Redis (BullMQ Queues & Temporary Seat Locks)")]
     end
 
-    subgraph Integrations ["🔌 External Services"]
+    subgraph Integrations["🔌 External Services"]
         Razorpay["💳 Razorpay Payment Gateway"]
         Cloudinary["☁️ Cloudinary Asset Storage"]
     end
 
-    Client <-->|HTTP / SSR / REST API| NextCore
-    Client <-->|WebSocket Events (Live Tracking / Seat Sync)| SocketServer
+    Client <-->|"HTTP / SSR / REST API"| NextCore
+    Client <-->|"WebSocket Events (Live Tracking / Seat Sync)"| SocketServer
     NextCore <--> Mongo
     NextCore <--> Redis
     SocketServer <--> Redis
