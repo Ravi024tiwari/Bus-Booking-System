@@ -178,6 +178,11 @@ nextApp.prepare().then(async () => {
     console.error(`[BullMQ] Job ${job?.id} failed with error:`, err);
   });
 
+  // Fast health-check endpoint for Render keep-alive / uptime pings
+  app.all('/health', (req, res) => {
+    res.status(200).send('OK');
+  });
+
   // Handle all other routing via Next.js
   app.all(/.*/, (req, res) => {
     return nextHandler(req, res);
