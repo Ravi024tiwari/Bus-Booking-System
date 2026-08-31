@@ -105,10 +105,10 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
       {/* HEADER SECTION */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 select-none">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
             Payment Ledger <CreditCard className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-semibold mt-1">
             Audit system transactions, payouts, and customer booking payments.
           </p>
         </div>

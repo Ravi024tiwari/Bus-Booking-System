@@ -330,6 +330,8 @@ export interface AdminTrip {
     email: string;
     phoneNumber: string;
   } | null;
+  viaStops?: string[];
+  offerPercentage?: number;
   busImages?: string[];
   formattedDate?: string;
   formattedTime?: string;

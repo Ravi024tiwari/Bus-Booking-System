@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth-proxy';
 import dbConnect from '@/lib/db';
-import { Trip, Order } from '@/models';
+import { Trip, Order, Bus } from '@/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,9 +71,27 @@ export async function GET(req: Request) {
       const bus = trip.busId;
       const operator = bus?.operatorId;
 
+      // Extract Cloudinary bus images safely
+      let busImages: string[] = [];
+      if (bus && Array.isArray(bus.images) && bus.images.length > 0) {
+        busImages = bus.images.filter(Boolean);
+      } else if (bus && typeof bus.images === 'string' && bus.images) {
+        busImages = [bus.images];
+      } else if (trip.busId) {
+        try {
+          const directBus = await Bus.findById(trip.busId).lean() as any;
+          if (directBus && Array.isArray(directBus.images) && directBus.images.length > 0) {
+            busImages = directBus.images.filter(Boolean);
+          }
+        } catch (_) {}
+      }
+
       // Calculate seats booked for this trip (only confirmed bookings count)
       const confirmedOrders = await Order.find({ tripId: trip._id, status: 'CONFIRMED' });
       const seatsBooked = confirmedOrders.reduce((sum: number, order: any) => sum + (order.seatNumbers?.length || 0), 0);
+
+      const route = trip.routeId as any;
+      const viaStops = trip.viaStops || (route?.stops ? route.stops.map((s: any) => s.stationName) : []);
 
       return {
         id: trip._id,
@@ -81,16 +99,18 @@ export async function GET(req: Request) {
         busType: trip.busType,
         source: trip.source,
         destination: trip.destination,
+        viaStops,
         date: trip.date,
         departureTime: trip.departureTime,
         arrivalTime: trip.arrivalTime,
         fare: trip.fare,
+        offerPercentage: trip.offerPercentage || 0,
         status: trip.status,
         capacity: bus?.capacity || 40,
         seatsBooked,
         averageRating: trip.averageRating || 0,
         totalReviews: trip.totalReviews || 0,
-        busImages: bus?.images || [],
+        busImages,
         operatorDetails: operator ? {
           id: operator._id,
           name: operator.name,

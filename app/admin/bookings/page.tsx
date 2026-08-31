@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
-import Image from 'next/image';
 import { 
   RootState, 
   AppDispatch, 
   fetchAdminBookings, 
   setActiveTab,
+  clearAdminCache,
   AdminTrip 
 } from '@/store';
 import { 
@@ -29,8 +29,11 @@ import {
   MapPin,
   TrendingUp,
   ChevronRight,
-  Star
+  Star,
+  Layers,
+  ShieldCheck
 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 export default function AdminBookingsPage() {
@@ -52,7 +55,7 @@ export default function AdminBookingsPage() {
   // Trigger data fetch on mount or activeTab changes
   useEffect(() => {
     if (trips.length === 0) {
-      dispatch(fetchAdminBookings({ page: 1, limit: 9, filter: activeTab }));
+      dispatch(fetchAdminBookings({ page: 1, limit: 12, filter: activeTab }));
     }
   }, [dispatch, activeTab, trips.length]);
 
@@ -62,12 +65,13 @@ export default function AdminBookingsPage() {
 
   const handleLoadMore = () => {
     if (!loading && hasMore) {
-      dispatch(fetchAdminBookings({ page: page + 1, limit: 9, filter: activeTab }));
+      dispatch(fetchAdminBookings({ page: page + 1, limit: 12, filter: activeTab }));
     }
   };
 
   const handleRefresh = () => {
-    dispatch(fetchAdminBookings({ page: 1, limit: 9, filter: activeTab }));
+    dispatch(clearAdminCache());
+    dispatch(fetchAdminBookings({ page: 1, limit: 12, filter: activeTab }));
     toast.success(`Refreshed ${activeTab} trips cache!`);
   };
 
@@ -102,34 +106,34 @@ export default function AdminBookingsPage() {
       case 'ARRIVED':
         return {
           label: 'Completed',
-          icon: <CheckCircle className="h-3 w-3" />,
-          cls: 'text-emerald-700 bg-emerald-50/90 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50'
+          icon: <CheckCircle className="h-2.5 w-2.5" />,
+          cls: 'text-emerald-300 bg-emerald-500/20 border-emerald-400/40'
         };
       case 'CANCELLED':
         return {
           label: 'Cancelled',
-          icon: <XCircle className="h-3 w-3" />,
-          cls: 'text-rose-700 bg-rose-50/90 border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50'
+          icon: <XCircle className="h-2.5 w-2.5" />,
+          cls: 'text-rose-300 bg-rose-500/20 border-rose-400/40'
         };
       case 'SCHEDULED':
         return {
           label: 'Scheduled',
-          icon: <Clock className="h-3 w-3" />,
-          cls: 'text-indigo-700 bg-indigo-50/90 border-indigo-200/60 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50'
+          icon: <Clock className="h-2.5 w-2.5" />,
+          cls: 'text-indigo-300 bg-indigo-500/20 border-indigo-400/40'
         };
       case 'BOARDING':
       case 'DEPARTED':
       case 'IN_TRANSIT':
         return {
           label: 'In Transit',
-          icon: <Clock className="h-3 w-3 animate-pulse" />,
-          cls: 'text-amber-700 bg-amber-50/90 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-400 dark:border-indigo-900/50'
+          icon: <Clock className="h-2.5 w-2.5 animate-pulse" />,
+          cls: 'text-amber-300 bg-amber-500/20 border-amber-400/40'
         };
       default:
         return {
           label: 'Scheduled',
-          icon: <Clock className="h-3 w-3" />,
-          cls: 'text-zinc-500 bg-zinc-50/90 border-zinc-200/60 dark:bg-zinc-800/40 dark:text-zinc-450 dark:border-zinc-850'
+          icon: <Clock className="h-2.5 w-2.5" />,
+          cls: 'text-zinc-300 bg-zinc-500/20 border-zinc-400/40'
         };
     }
   };
@@ -153,7 +157,7 @@ export default function AdminBookingsPage() {
           <button 
             onClick={handleRefresh}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 text-xs font-bold text-zinc-700 dark:text-zinc-300 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-850 select-none cursor-pointer active:scale-95 transition-all duration-200 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-300 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-850 select-none cursor-pointer active:scale-95 transition-all duration-200 disabled:opacity-50 shadow-xs"
           >
             <RefreshCw className={`h-4 w-4 text-zinc-500 ${loading ? 'animate-spin' : ''}`} />
             Refresh List
@@ -164,40 +168,40 @@ export default function AdminBookingsPage() {
       {/* KPI METRIC CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 select-none">
         {/* Total Loaded */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.01)] relative overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] p-5 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)] relative overflow-hidden">
           <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider block">Total Trips</span>
-          <span className="text-2xl font-extrabold text-zinc-900 dark:text-white mt-1.5 block">
-            {stats.totalCount} <span className="text-[11px] font-semibold text-zinc-450 font-sans">runs</span>
+          <span className="text-2xl font-black text-zinc-900 dark:text-white mt-1.5 block">
+            {stats.totalCount} <span className="text-[11px] font-semibold text-zinc-400 font-sans">runs</span>
           </span>
         </div>
 
         {/* Active/Scheduled Trips */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.01)] relative overflow-hidden">
-          <span className="text-[10px] text-indigo-505 font-bold uppercase tracking-wider block font-sans">Active Runs</span>
-          <span className="text-2xl font-extrabold text-zinc-900 dark:text-white mt-1.5 block">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] p-5 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)] relative overflow-hidden">
+          <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider block">Active Runs</span>
+          <span className="text-2xl font-black text-zinc-900 dark:text-white mt-1.5 block">
             {stats.activeCount} <span className="text-[11px] font-semibold text-zinc-400 font-sans">scheduled</span>
           </span>
         </div>
 
         {/* Completed Trips */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.01)] relative overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] p-5 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)] relative overflow-hidden">
           <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider block">Completed</span>
-          <span className="text-2xl font-extrabold text-zinc-900 dark:text-white mt-1.5 block">
-            {stats.completedCount} <span className="text-[11px] font-semibold text-zinc-450">arrived</span>
+          <span className="text-2xl font-black text-zinc-900 dark:text-white mt-1.5 block">
+            {stats.completedCount} <span className="text-[11px] font-semibold text-zinc-400">arrived</span>
           </span>
         </div>
 
         {/* Revenue */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.01)] relative overflow-hidden">
-          <span className="text-[10px] text-amber-550 font-bold uppercase tracking-wider block">Total Estimated Revenue</span>
-          <span className="text-2xl font-extrabold text-zinc-950 dark:text-indigo-400 mt-1.5 block">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] p-5 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)] relative overflow-hidden">
+          <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider block">Estimated Revenue</span>
+          <span className="text-2xl font-black text-zinc-900 dark:text-indigo-400 mt-1.5 block">
             ₹{stats.totalRevenue.toLocaleString('en-IN')}
           </span>
         </div>
       </div>
 
       {/* FILTER TABS & SEARCH INPUT BAR */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-[0_10px_30px_rgba(0,0,0,0.01)]">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
         
         {/* Tabs */}
         <div className="flex border-b border-zinc-100 dark:border-zinc-800 md:border-none overflow-x-auto gap-1 select-none scrollbar-none shrink-0">
@@ -207,10 +211,10 @@ export default function AdminBookingsPage() {
               <button
                 key={tab}
                 onClick={() => handleTabChange(tab)}
-                className={`py-2.5 px-4 text-xs font-extrabold rounded-xl capitalize transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                className={`py-2 px-3.5 text-xs font-black rounded-xl capitalize transition-all duration-200 whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-100/40 dark:border-indigo-900/30'
-                    : 'text-zinc-450 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 border border-transparent'
+                    ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs'
+                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                 }`}
               >
                 {tab === 'all' ? 'All Trips' : `${tab} Trips`}
@@ -220,11 +224,11 @@ export default function AdminBookingsPage() {
         </div>
 
         {/* Live Search Input */}
-        <div className="flex items-center gap-3 bg-zinc-100/50 dark:bg-zinc-950 border border-zinc-200/20 dark:border-zinc-800/40 px-4 py-2.5 rounded-2xl w-full max-w-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all duration-300">
+        <div className="flex items-center gap-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800 px-3.5 py-2 rounded-xl w-full max-w-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all duration-200">
           <Search className="h-4 w-4 text-zinc-400 shrink-0" />
           <input 
             type="text" 
-            placeholder="Search operator, route, or bus number..."
+            placeholder="Search operator, route, or bus..."
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
             className="bg-transparent border-none outline-none w-full text-xs font-semibold text-zinc-700 dark:text-zinc-200 placeholder-zinc-400"
@@ -240,126 +244,164 @@ export default function AdminBookingsPage() {
         </div>
       </div>
 
-      {/* GRID LAYOUT - TRIP CARDS */}
+      {/* 4. TRIP CARDS CATALOG GRID */}
       {filteredTrips.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTrips.map((t) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+          {filteredTrips.map((t, idx) => {
             const badge = getStatusBadge(t.status);
             const occupancyRatio = t.capacity > 0 ? (t.seatsBooked / t.capacity) * 100 : 0;
+            
+            const busCoverImage = (t.busImages && t.busImages.length > 0 && t.busImages[0])
+              ? t.busImages[0]
+              : (idx % 2 === 0 ? '/images/bus1.jpg' : '/images/bus2.jpg');
             
             return (
               <Link 
                 key={t.id}
                 href={`/admin/bookings/${t.id}`}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2.2rem] overflow-hidden flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.015)] hover:shadow-md transition-shadow duration-300 relative group cursor-pointer"
+                className="block group"
               >
-                {/* 1. TOP BUS IMAGE HEADER */}
-                <div className="relative h-44 w-full bg-zinc-150 dark:bg-zinc-800 overflow-hidden shrink-0 select-none border-b border-zinc-100 dark:border-zinc-800/40">
-                  <Image
-                    src={(t.busImages && t.busImages.length > 0) ? t.busImages[0] : "/images/bus-hero.jpg"}
-                    alt="Reserved Trip Bus Image"
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-103"
-                    loading="lazy"
-                  />
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                <Card className="border border-zinc-200/80 dark:border-zinc-800 rounded-[1.75rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)] hover:shadow-[0_12px_36px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-3 sm:p-3.5 gap-3 relative overflow-visible bg-white dark:bg-zinc-900 cursor-pointer select-none">
                   
-                  {/* Status Badge overlay */}
-                  <div className="absolute top-4 left-4">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.2 backdrop-blur-md rounded-full text-[9px] font-black tracking-wider uppercase border border-white/20 shadow-sm ${badge.cls}`}>
-                      {badge.icon}
-                      {badge.label}
-                    </span>
-                  </div>
+                  {/* 1. TOP COVER PHOTO WITH INSET ROUNDED CORNERS & OVERLAYS */}
+                  <div className="relative h-38 sm:h-42 w-full rounded-2xl overflow-hidden select-none bg-zinc-100 dark:bg-zinc-800 border border-zinc-150 dark:border-zinc-800/80 shadow-xs">
+                    <img 
+                      src={busCoverImage}
+                      alt={`Bus ${t.busNumber}`}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = idx % 2 === 0 ? '/images/bus1.jpg' : '/images/bus2.jpg';
+                      }}
+                      className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-500 rounded-2xl"
+                    />
+                    {/* Gradient overlay for readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/35 rounded-2xl" />
 
-                  {/* Fare overlay */}
-                  <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 text-white font-extrabold text-xs">
-                    ₹{t.fare}
-                  </div>
-
-                  {/* Bus details overlay */}
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <span className="text-[10px] text-zinc-350 font-black block uppercase tracking-widest leading-none">Vehicle Number</span>
-                    <span className="text-sm font-black tracking-wider mt-1 block leading-none">{t.busNumber}</span>
-                  </div>
-                </div>
-
-                {/* 2. CARD CONTENT BODY */}
-                <div className="p-6 flex flex-col gap-4 font-semibold">
-                  
-                  {/* Route stop header & Rating badge */}
-                  <div className="flex items-center justify-between gap-2 border-b border-zinc-50 dark:border-zinc-850 pb-3 select-none">
-                    <div className="flex items-center gap-2 text-zinc-900 dark:text-white min-w-0">
-                      <MapPin className="h-4.5 w-4.5 text-indigo-500 shrink-0" />
-                      <span className="text-sm font-extrabold tracking-tight truncate max-w-[90px]">{t.source}</span>
-                      <ArrowRight className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                      <span className="text-sm font-extrabold tracking-tight truncate max-w-[90px]">{t.destination}</span>
+                    {/* Status Badge overlay (top-left) */}
+                    <div className="absolute top-2.5 left-2.5">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase backdrop-blur-md border shadow-xs ${badge.cls}`}>
+                        {badge.icon}
+                        {badge.label}
+                      </span>
                     </div>
 
-                    {/* Verified Rating Badge */}
-                    {t.averageRating && t.averageRating > 0 ? (
-                      <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-400/10 border border-amber-400/30 rounded-xl text-amber-500 dark:text-amber-400 text-xs font-black shrink-0">
-                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                        <span>{t.averageRating.toFixed(1)}</span>
-                        <span className="text-[10px] text-zinc-400 font-bold">({t.totalReviews || 1})</span>
+                    {/* Verified Rating Badge overlay (top-right) */}
+                    <div className="absolute top-2.5 right-2.5">
+                      {t.averageRating && t.averageRating > 0 ? (
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md border border-amber-400/40 text-amber-400 font-black text-[10px] shadow-xs">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400 drop-shadow-xs" />
+                          <span>{t.averageRating.toFixed(1)}</span>
+                          <span className="text-[9px] text-zinc-300 font-medium">({t.totalReviews || 1})</span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md border border-white/20 text-zinc-300 font-medium text-[9px]">
+                          <Star className="h-2.5 w-2.5 text-zinc-400" />
+                          <span>New</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Departure Timing & Date (bottom-left) */}
+                    <div className="absolute bottom-2.5 left-2.5 flex flex-col text-white">
+                      <span className="text-xs sm:text-sm font-black tracking-tight drop-shadow-sm flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-[#ff2d88]" />
+                        {t.formattedTime || '10:00 AM'}
+                      </span>
+                      <span className="text-[10px] text-zinc-200 font-semibold drop-shadow-sm">
+                        {t.formattedDate || t.date}
+                      </span>
+                    </div>
+
+                    {/* Discount offer tag if applicable (bottom-right) */}
+                    {t.offerPercentage && t.offerPercentage > 0 ? (
+                      <div className="absolute bottom-2.5 right-2.5">
+                        <span className="px-2 py-0.5 bg-rose-500 text-white rounded-lg text-[9px] font-black tracking-wider uppercase shadow-xs">
+                          {t.offerPercentage}% Off
+                        </span>
                       </div>
                     ) : (
-                      <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-zinc-400 text-[10px] font-bold shrink-0">
-                        <Star className="h-3 w-3 text-zinc-400" />
-                        <span>New</span>
+                      <div className="absolute bottom-2.5 right-2.5">
+                        <span className="px-2 py-0.5 bg-black/60 backdrop-blur-md border border-white/15 text-zinc-200 rounded-lg text-[9px] font-bold truncate max-w-[100px] block">
+                          {t.operatorDetails?.name || 'Operator'}
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Timing & Operator */}
-                  <div className="grid grid-cols-2 gap-3 text-[11px] text-zinc-600 dark:text-zinc-400 select-none">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-zinc-400 uppercase tracking-wider block">Departure Schedule</span>
-                      <span className="font-extrabold text-zinc-850 dark:text-zinc-200 mt-1 truncate">{t.formattedDate || t.date}</span>
-                      <span className="text-[10px] text-zinc-450 mt-0.5 leading-none">{t.formattedTime}</span>
+                  {/* 2. CARD CONTENT BODY */}
+                  <div className="flex flex-col gap-2.5 px-0.5">
+                    
+                    {/* Route Header */}
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1.5 text-zinc-900 dark:text-white">
+                        <span className="font-extrabold text-xs sm:text-sm truncate max-w-[120px]" title={t.source}>
+                          {t.source}
+                        </span>
+                        <ArrowRight className="h-3 w-3 text-zinc-400 shrink-0" />
+                        <span className="font-extrabold text-xs sm:text-sm truncate max-w-[120px]" title={t.destination}>
+                          {t.destination}
+                        </span>
+                      </div>
+                      {t.viaStops && t.viaStops.length > 0 && (
+                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium truncate">
+                          Via: {t.viaStops.join(', ')}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-zinc-400 uppercase tracking-wider block">Operator name</span>
-                      <span className="font-extrabold text-zinc-850 dark:text-zinc-200 mt-1 truncate" title={t.operatorDetails?.name}>
-                        {t.operatorDetails?.name || 'Unknown Operator'}
-                      </span>
-                      <span className="text-[10px] text-zinc-450 mt-0.5 leading-none truncate">{t.operatorDetails?.email || 'N/A'}</span>
+
+                    {/* Bus info & Occupancy Meta Grid */}
+                    <div className="grid grid-cols-2 gap-2 bg-zinc-50 dark:bg-zinc-850/60 border border-zinc-100 dark:border-zinc-800/80 rounded-xl p-2 text-xs select-none">
+                      {/* Vehicle & Operator details */}
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="h-6 w-6 rounded-lg bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200/50 dark:border-zinc-700/50 text-zinc-500">
+                          <Bus className="h-3 w-3" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 truncate leading-none">{t.busNumber}</span>
+                          <span className="text-[8px] text-zinc-400 truncate mt-0.5 leading-none">{t.busType || 'Standard'}</span>
+                        </div>
+                      </div>
+
+                      {/* Occupancy */}
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="h-6 w-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center shrink-0 border border-indigo-100/50 dark:border-indigo-900/30 text-indigo-500">
+                          <Layers className="h-3 w-3" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate leading-none">{t.seatsBooked}/{t.capacity}</span>
+                          <span className="text-[8px] text-zinc-400 truncate mt-0.5 leading-none">Seats ({Math.round(occupancyRatio)}%)</span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* 3. CARD BOTTOM ROW: FARE & ACTION BUTTON */}
+                    <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-800/60">
+                      {/* Price Display */}
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider leading-none">Fare</span>
+                        <span className="text-sm sm:text-base font-black text-zinc-900 dark:text-white mt-0.5 leading-none">
+                          ₹{t.fare}
+                        </span>
+                      </div>
+
+                      {/* Action Button */}
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold text-[11px] rounded-xl shadow-xs transition-all cursor-pointer group-hover:bg-[#ff2d88] group-hover:text-white dark:group-hover:bg-[#ff2d88] dark:group-hover:text-white active:scale-95"
+                      >
+                        <span>Manifest</span>
+                        <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                    </div>
+
                   </div>
 
-                  {/* Seat Occupancy progress bar */}
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <div className="flex justify-between items-center text-[10px] font-bold select-none">
-                      <span className="text-zinc-450">Passenger Occupancy</span>
-                      <span className="text-indigo-600 dark:text-indigo-400">{t.seatsBooked} / {t.capacity} seats ({Math.round(occupancyRatio)}%)</span>
-                    </div>
-                    <div className="w-full h-2 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200/5 dark:border-zinc-800/40 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          occupancyRatio > 80 ? 'bg-emerald-500' : occupancyRatio > 40 ? 'bg-indigo-500' : 'bg-amber-500'
-                        }`} 
-                        style={{ width: `${Math.min(occupancyRatio, 100)}%` }} 
-                      />
-                    </div>
-                  </div>
-
-                  {/* 3. CARD ACTION BUTTON FOOTER */}
-                  <div 
-                    className="mt-2 w-full py-3 bg-zinc-100 dark:bg-zinc-950 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-zinc-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-zinc-200/50 dark:border-zinc-800/40 hover:border-indigo-200/50 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all select-none"
-                  >
-                    View Passenger Manifest
-                    <ChevronRight className="h-4 w-4 text-zinc-400 group-hover:text-indigo-500" />
-                  </div>
-
-                </div>
+                </Card>
               </Link>
             );
           })}
         </div>
       ) : (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] py-16 text-center text-zinc-450 dark:text-zinc-505 font-medium shadow-[0_10px_30px_rgba(0,0,0,0.01)]">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[2rem] py-16 text-center text-zinc-400 dark:text-zinc-500 font-medium shadow-xs">
           {loading ? (
             <span className="inline-flex items-center gap-2">
               <RefreshCw className="h-5 w-5 animate-spin text-indigo-500" />
@@ -377,11 +419,11 @@ export default function AdminBookingsPage() {
           <button
             onClick={handleLoadMore}
             disabled={loading}
-            className="flex items-center gap-2 py-3.5 px-7 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-2xl shadow-md hover:shadow-indigo-500/10 active:scale-95 transition-all duration-200 cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-2 py-3 px-6 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold text-xs rounded-xl shadow-xs active:scale-95 transition-all duration-200 cursor-pointer disabled:opacity-50"
           >
             {loading ? (
               <>
-                <RefreshCw className="h-4 w-4 animate-spin text-white" />
+                <RefreshCw className="h-4 w-4 animate-spin" />
                 Loading More Runs...
               </>
             ) : (
@@ -393,7 +435,7 @@ export default function AdminBookingsPage() {
 
       {/* ERROR BANNER */}
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-center gap-3 text-xs font-semibold text-rose-600 dark:text-rose-455 animate-pulse">
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 text-xs font-semibold text-rose-600 dark:text-rose-400 animate-pulse">
           <Info className="h-4 w-4 shrink-0" />
           Error Syncing Store: {error}
         </div>
