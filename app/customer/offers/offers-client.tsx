@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch, fetchMyRewards } from '@/store';
 import { 
@@ -11,17 +12,97 @@ import {
   Calendar, 
   MapPin, 
   Sparkles, 
-  ArrowRight,
-  TrendingUp,
-  ShieldCheck,
-  Zap
+  ArrowRight, 
+  TrendingUp, 
+  ShieldCheck, 
+  Zap, 
+  Copy, 
+  Check, 
+  Tag, 
+  Percent, 
+  Clock, 
+  CheckCircle2, 
+  Info,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
+interface PromoOffer {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  discount: string;
+  discountType: 'percentage' | 'flat';
+  minBooking: string;
+  validTill: string;
+  category: string;
+  color: string;
+  badge: string;
+}
+
+const AVAILABLE_OFFERS: PromoOffer[] = [
+  {
+    id: 'promo-1',
+    code: 'FIRSTTRIP',
+    title: 'First Journey Special',
+    description: 'Get 20% instant discount on your first bus reservation across all operator routes.',
+    discount: '20% OFF',
+    discountType: 'percentage',
+    minBooking: 'Min. booking ₹500',
+    validTill: 'Valid until 31 Dec',
+    category: 'Welcome Offer',
+    color: 'from-orange-500 to-rose-500',
+    badge: 'Popular'
+  },
+  {
+    id: 'promo-2',
+    code: 'SEATPLUS50',
+    title: 'Flat ₹50 Savings',
+    description: 'Enjoy a flat ₹50 instant deduction on any AC Sleeper or Multi-Axle luxury coach.',
+    discount: '₹50 FLAT',
+    discountType: 'flat',
+    minBooking: 'Min. booking ₹400',
+    validTill: 'Valid all weekdays',
+    category: 'Standard Deal',
+    color: 'from-blue-600 to-indigo-600',
+    badge: 'Daily'
+  },
+  {
+    id: 'promo-3',
+    code: 'WEEKEND15',
+    title: 'Weekend Getaway',
+    description: 'Save 15% on Friday through Sunday departures for intercity routes.',
+    discount: '15% OFF',
+    discountType: 'percentage',
+    minBooking: 'Min. 2 seats',
+    validTill: 'Fri - Sun journeys',
+    category: 'Weekend Saver',
+    color: 'from-emerald-500 to-teal-600',
+    badge: 'Weekend'
+  },
+  {
+    id: 'promo-4',
+    code: 'VIPROYALTY',
+    title: 'Frequent Traveler Privilege',
+    description: 'Exclusive 25% discount for Gold and Platinum loyalty members on premium Volvo buses.',
+    discount: '25% OFF',
+    discountType: 'percentage',
+    minBooking: 'Min. booking ₹800',
+    validTill: 'Limited slots',
+    category: 'Loyalty Exclusive',
+    color: 'from-purple-600 to-pink-600',
+    badge: 'Exclusive'
+  }
+];
+
 export default function OffersClient() {
   const dispatch = useDispatch<AppDispatch>();
   
+  const [activeTab, setActiveTab] = useState<'available' | 'claimed'>('available');
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
   // Redux rewards state
   const { list: rewardsList, totalSavings, claimedCount, loading, error } = useSelector(
     (state: RootState) => state.rewards
@@ -32,54 +113,67 @@ export default function OffersClient() {
     dispatch(fetchMyRewards());
   }, [dispatch]);
 
-  // 1. Dynamic Tier Logic
-  // Tiers based on totalSavings (money saved)
+  // Handle promo code copy
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    toast.success(`Coupon code "${code}" copied to clipboard!`);
+    setTimeout(() => {
+      setCopiedCode(null);
+    }, 3000);
+  };
+
+  // Dynamic Tier Logic based on totalSavings
   const getTierInfo = (savings: number) => {
     if (savings >= 1000) {
       return {
         name: 'Platinum Elite',
         icon: Crown,
-        color: 'text-purple-400 bg-purple-950/20 border-purple-500/30',
-        gradient: 'from-purple-500 via-indigo-600 to-pink-600',
+        color: 'text-purple-500 bg-purple-500/10 border-purple-500/30 dark:text-purple-400 dark:bg-purple-950/30',
+        badgeColor: 'bg-purple-500 text-white',
+        gradient: 'from-purple-600 via-indigo-600 to-pink-600',
         nextTier: 'Max Tier Reached',
         needed: 0,
         progress: 100,
-        benefits: ['Double Reward points', 'VIP Priority booking support', 'Zero cancellation charges']
+        benefits: ['Double Reward points on bookings', 'VIP Priority customer support', 'Zero cancellation fee allowance']
       };
     }
     if (savings >= 500) {
       return {
         name: 'Gold Member',
         icon: Crown,
-        color: 'text-amber-400 bg-amber-950/20 border-amber-500/30',
-        gradient: 'from-amber-400 via-[#ff7c52] to-[#ff2d88]',
+        color: 'text-amber-600 bg-amber-500/10 border-amber-500/30 dark:text-amber-400 dark:bg-amber-950/30',
+        badgeColor: 'bg-amber-500 text-white',
+        gradient: 'from-amber-500 via-[#ff7c52] to-[#ff2d88]',
         nextTier: 'Platinum Elite',
         needed: 1000 - savings,
         progress: ((savings - 500) / 500) * 100,
-        benefits: ['10% extra discount coupons', 'Free water bottle onboard', 'Priority boarding']
+        benefits: ['10% bonus coupon discounts', 'Free complimentary water bottle onboard', 'Priority boarding assistance']
       };
     }
     if (savings >= 200) {
       return {
         name: 'Silver Club',
         icon: Award,
-        color: 'text-slate-350 bg-slate-800/20 border-slate-700/30',
-        gradient: 'from-slate-400 to-indigo-500',
+        color: 'text-sky-600 bg-sky-500/10 border-sky-500/30 dark:text-sky-400 dark:bg-sky-950/30',
+        badgeColor: 'bg-sky-500 text-white',
+        gradient: 'from-sky-500 to-indigo-600',
         nextTier: 'Gold Member',
         needed: 500 - savings,
         progress: ((savings - 200) / 300) * 100,
-        benefits: ['Access to exclusive flash sales', '5% Priority coupon locks']
+        benefits: ['Access to exclusive flash sales', 'Early seat lock reservation rights']
       };
     }
     return {
       name: 'Bronze Standard',
       icon: Award,
-      color: 'text-orange-400 bg-orange-950/20 border-orange-500/30',
+      color: 'text-orange-600 bg-orange-500/10 border-orange-500/30 dark:text-orange-400 dark:bg-orange-950/30',
+      badgeColor: 'bg-orange-500 text-white',
       gradient: 'from-orange-500 to-[#ff7c52]',
       nextTier: 'Silver Club',
       needed: 200 - savings,
       progress: (savings / 200) * 100,
-      benefits: ['Standard ticket discount offers']
+      benefits: ['Standard ticket promotional discounts', 'Seasonal holiday discount offers']
     };
   };
 
@@ -87,227 +181,371 @@ export default function OffersClient() {
   const TierIcon = tier.icon;
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto p-1 sm:p-4 min-h-screen flex flex-col gap-8 text-zinc-800 dark:text-zinc-200">
+    <div className="flex flex-col gap-8 pb-12 select-none">
       
-      {/* 1. HEADER HERO PANEL */}
-      <div className="w-full rounded-[32px] relative overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between p-6 sm:p-10 shadow-md border border-rose-200/50 dark:border-rose-950/60 bg-gradient-to-br from-rose-50 via-pink-50/70 to-rose-100/50 dark:from-[#221422] dark:via-[#180e1c] dark:to-[#1a0e1a] select-none">
-        <div className="absolute top-[-30%] right-[-10%] w-[350px] h-[350px] bg-gradient-to-tr from-rose-400/10 to-pink-500/10 dark:from-rose-500/5 dark:to-pink-600/5 rounded-full blur-[90px] pointer-events-none" />
-        <div className="absolute bottom-[-20%] left-[-5%] w-[250px] h-[250px] bg-pink-400/5 dark:bg-pink-500/5 rounded-full blur-[70px] pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col gap-3">
-          <div className="flex items-center gap-2 bg-rose-500/10 dark:bg-white/5 border border-rose-200 dark:border-white/10 rounded-full px-3.5 py-1.5 w-fit">
-            <span className="text-[10px] text-rose-700 dark:text-zinc-300 font-semibold uppercase tracking-wider">Offers & Loyalty Rewards</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-rose-950 dark:text-white leading-none">
-            Your Savings Dashboard
+      {/* 1. HEADER SECTION (Consistent with other customer dashboard pages) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2.5">
+            <Tag className="h-7 w-7 text-sky-500 shrink-0" />
+            Offers & Loyalty Rewards
           </h1>
-          <p className="text-xs sm:text-sm text-rose-900/80 dark:text-zinc-300 font-medium max-w-lg mt-1 leading-relaxed opacity-90">
-            Hey {userProfile?.name || 'Ravi'}, track your promotional claims, monitor your rewards level, and copy active coupons to save on your next commute.
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium mt-1">
+            Discover active promotional discount codes and monitor your traveler loyalty status.
           </p>
-          
-          {totalSavings > 0 ? (
-            <div className="mt-4 flex items-center gap-2.5 bg-rose-500/10 border border-rose-200/50 dark:border-rose-950/40 rounded-2xl px-4 py-3 text-rose-950 dark:text-rose-200 text-xs font-medium max-w-lg">
-              <Sparkles className="h-4 w-4 text-rose-500 dark:text-rose-400 shrink-0 animate-pulse" />
-              <span>
-                🎉 <strong>Wonderful choices!</strong> You have saved a total of <strong>₹{totalSavings}</strong> on your bookings. Every discount brings you closer to your next loyalty tier benefits!
-              </span>
-            </div>
-          ) : (
-            <div className="mt-4 flex items-center gap-2.5 bg-rose-500/5 border border-rose-200/40 dark:border-rose-950/30 rounded-2xl px-4 py-3 text-rose-900 dark:text-rose-300 text-xs font-medium max-w-lg">
-              <Sparkles className="h-4 w-4 text-rose-500 dark:text-rose-400 shrink-0 animate-pulse" />
-              <span>
-                👋 <strong>Welcome onboard!</strong> Start booking trips to earn royalty status and unlock exclusive discount rewards.
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Royalty Tier Badge Card */}
-        <div className="mt-6 lg:mt-0 relative border border-rose-200/50 dark:border-rose-950/50 rounded-3xl p-5 shrink-0 flex flex-col gap-3.5 min-w-[260px] bg-white/60 dark:bg-white/5 backdrop-blur-md shadow-lg overflow-hidden">
-          <div className="flex items-center gap-3">
-            <div className={`h-11 w-11 rounded-2xl border flex items-center justify-center ${tier.color}`}>
-              <TierIcon className="h-6 w-6" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-rose-800/60 dark:text-zinc-400 font-semibold uppercase tracking-wider">Current Royalty Level</span>
-              <span className="text-sm font-bold text-rose-950 dark:text-white mt-0.5">{tier.name}</span>
-            </div>
-          </div>
-
-          {/* Progress to next tier */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-[10px] font-medium text-rose-800/60 dark:text-zinc-400">
-              <span>Tier Progress</span>
-              <span>{tier.needed > 0 ? `₹${tier.needed} to ${tier.nextTier}` : 'Max level achieved'}</span>
-            </div>
-            <div className="w-full h-2 bg-rose-200/50 dark:bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className={`h-full bg-gradient-to-r ${tier.gradient} transition-all duration-[1s] ease-out`}
-                style={{ width: `${tier.progress}%` }}
-              />
-            </div>
-          </div>
-        </div>
+        <Link
+          href="/customer/book"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-95 shadow-md shadow-sky-500/20 transition-all shrink-0 cursor-pointer"
+        >
+          <span>Book a Trip Now</span>
+          <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
-      {/* 2. STATS ROW (KPI CARDS) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        
-        {/* Stat 1: Total Savings */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/60 rounded-[28px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.02)] flex items-center gap-5 relative overflow-hidden group">
-          <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-            <TrendingUp className="h-6 w-6" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Total Savings</span>
-            <span className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white mt-1 font-mono">
-              ₹{totalSavings}
-            </span>
-          </div>
-          <div className="absolute right-[-10px] bottom-[-20px] opacity-[0.03] group-hover:scale-110 transition-transform duration-300 pointer-events-none">
-            <TrendingUp className="h-28 w-28 text-zinc-900 dark:text-white" />
-          </div>
-        </div>
 
-        {/* Stat 2: Claimed Offers Count */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/60 rounded-[28px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.02)] flex items-center gap-5 relative overflow-hidden group">
-          <div className="h-12 w-12 rounded-2xl bg-[#ff2d88]/10 text-[#ff2d88] flex items-center justify-center shrink-0">
-            <Gift className="h-6 w-6" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Redeemed Promo Offers</span>
-            <span className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white mt-1 font-mono">
-              {claimedCount} {claimedCount === 1 ? 'ticket' : 'tickets'}
-            </span>
-          </div>
-          <div className="absolute right-[-10px] bottom-[-20px] opacity-[0.03] group-hover:scale-110 transition-transform duration-300 pointer-events-none">
-            <Gift className="h-28 w-28 text-zinc-900 dark:text-white" />
-          </div>
-        </div>
+      {/* 2. LOYALTY TIER STATUS HERO CARD (Crisp Light Sky-Blue Aesthetic) */}
+      <div className="bg-gradient-to-br from-sky-400 via-sky-500 to-blue-600 text-white rounded-3xl p-6 sm:p-8 border border-sky-300/40 shadow-xl shadow-sky-500/15 relative overflow-hidden">
+        {/* Soft decorative glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-sky-200/30 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Stat 3: Royalty Benefits */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/60 rounded-[28px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.02)] flex items-center gap-5 relative overflow-hidden group col-span-1 sm:col-span-2 lg:col-span-1">
-          <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
-            <ShieldCheck className="h-6 w-6" />
-          </div>
-          <div className="flex flex-col gap-1 w-full">
-            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">Active Tier Benefits</span>
-            <div className="flex flex-col gap-0.5 mt-1 select-none">
-              {tier.benefits.slice(0, 2).map((b, i) => (
-                <span key={i} className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 truncate">
-                  <Zap className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />
-                  {b}
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          {/* Left Summary */}
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-[11px] font-semibold uppercase tracking-wider text-white backdrop-blur-md">
+                <Sparkles className="h-3.5 w-3.5 text-amber-200" />
+                Loyalty Tier Status
+              </div>
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md ${tier.badgeColor}`}>
+                {tier.name}
+              </span>
+            </div>
+
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                Welcome back, {userProfile?.name?.split(' ')[0] || 'Traveler'}
+              </h2>
+              <p className="text-xs sm:text-sm text-sky-50 mt-1 leading-relaxed max-w-xl font-normal">
+                You have accumulated <strong className="text-amber-200 font-bold">₹{totalSavings}</strong> in total booking savings. Every trip discount brings you closer to higher tier rewards and exclusive perks.
+              </p>
+            </div>
+
+            {/* Tier Progress Bar */}
+            <div className="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-4 flex flex-col gap-2.5 max-w-xl">
+              <div className="flex items-center justify-between text-xs font-medium text-white">
+                <span className="flex items-center gap-1.5">
+                  <TierIcon className="h-4 w-4 text-amber-200" />
+                  <span>Tier Progression</span>
                 </span>
+                <span className="text-sky-100">
+                  {tier.needed > 0 ? `₹${tier.needed} needed for ${tier.nextTier}` : 'Highest tier achieved'}
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-black/15 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full bg-gradient-to-r from-amber-200 via-orange-300 to-pink-400 transition-all duration-1000 ease-out`}
+                  style={{ width: `${Math.min(tier.progress, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Benefits Column */}
+          <div className="lg:col-span-5 bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-5 flex flex-col gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-sky-100 flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-emerald-200" />
+              Active Member Privileges
+            </span>
+            <div className="flex flex-col gap-2">
+              {tier.benefits.map((benefit, idx) => (
+                <div key={idx} className="flex items-start gap-2.5 text-xs text-white">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-200 shrink-0 mt-0.5" />
+                  <span className="leading-snug">{benefit}</span>
+                </div>
               ))}
             </div>
           </div>
+
         </div>
       </div>
 
-      {/* 3. CORE CONTENT (Redeemed Offers) */}
-      <div className="flex flex-col gap-5">
-        <div>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white uppercase tracking-wider font-sans">Your Redeemed Offers</h2>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-550 font-medium mt-1">
-            Active and past tickets where operator discounts were claimed.
-          </p>
-        </div>      </div>
+      {/* 3. KPI STATS CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        
+        {/* Stat 1: Total Savings */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden">
+          <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+            <TrendingUp className="h-6 w-6" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Total Lifetime Savings</span>
+            <span className="text-2xl font-bold text-zinc-900 dark:text-white mt-0.5 font-sans">
+              ₹{totalSavings}
+            </span>
+          </div>
+        </div>
 
-        <div className="flex flex-col gap-5">
+        {/* Stat 2: Claimed Offers */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden">
+          <div className="h-12 w-12 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-500/20">
+            <Gift className="h-6 w-6" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Claimed Trip Deals</span>
+            <span className="text-2xl font-bold text-zinc-900 dark:text-white mt-0.5 font-sans">
+              {claimedCount} {claimedCount === 1 ? 'Trip' : 'Trips'}
+            </span>
+          </div>
+        </div>
+
+        {/* Stat 3: Current Status */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden">
+          <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 border ${tier.color}`}>
+            <TierIcon className="h-6 w-6" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Membership Tier</span>
+            <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white mt-0.5">
+              {tier.name}
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 4. TABS NAVIGATION */}
+      <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3">
+        <button
+          onClick={() => setActiveTab('available')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === 'available'
+              ? 'bg-sky-500 text-white shadow-md shadow-sky-400/25'
+              : 'text-zinc-600 dark:text-zinc-400 hover:bg-sky-50 dark:hover:bg-zinc-800'
+          }`}
+        >
+          <Percent className="h-3.5 w-3.5" />
+          <span>Available Promo Codes</span>
+          <span className={`px-1.5 py-0.2 rounded-md text-[10px] ${
+            activeTab === 'available'
+              ? 'bg-white/20 text-white'
+              : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+          }`}>
+            {AVAILABLE_OFFERS.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('claimed')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === 'claimed'
+              ? 'bg-sky-500 text-white shadow-md shadow-sky-400/25'
+              : 'text-zinc-600 dark:text-zinc-400 hover:bg-sky-50 dark:hover:bg-zinc-800'
+          }`}
+        >
+          <Ticket className="h-3.5 w-3.5" />
+          <span>Redeemed Trip History</span>
+          {rewardsList?.length > 0 && (
+            <span className={`px-1.5 py-0.2 rounded-md text-[10px] ${
+              activeTab === 'claimed'
+                ? 'bg-white/20 text-white'
+                : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+            }`}>
+              {rewardsList.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* 5. TAB CONTENT */}
+      {activeTab === 'available' ? (
+        /* AVAILABLE PROMO CODES GRID */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {AVAILABLE_OFFERS.map((offer) => {
+            const isCopied = copiedCode === offer.code;
+
+            return (
+              <motion.div
+                key={offer.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden group"
+              >
+                {/* Top Row: Category and Badge */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    {offer.category}
+                  </span>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                    {offer.badge}
+                  </span>
+                </div>
+
+                {/* Middle: Title, Discount & Description */}
+                <div className="my-4 flex flex-col gap-2">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+                      {offer.title}
+                    </h3>
+                    <span className="text-lg font-black text-sky-600 dark:text-sky-400 shrink-0 font-sans">
+                      {offer.discount}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    {offer.description}
+                  </p>
+                </div>
+
+                {/* Validity Rules */}
+                <div className="flex items-center gap-4 text-[11px] text-zinc-400 font-medium border-t border-zinc-100 dark:border-zinc-800/80 pt-3 mb-4">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    {offer.validTill}
+                  </span>
+                  <span>•</span>
+                  <span>{offer.minBooking}</span>
+                </div>
+
+                {/* Bottom Row: Copy Code & Apply CTA */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 flex items-center justify-between bg-sky-50/50 dark:bg-sky-950/20 border border-dashed border-sky-200 dark:border-sky-800/50 rounded-xl px-3.5 py-2">
+                    <span className="font-mono font-bold text-xs text-sky-900 dark:text-sky-200 tracking-widest">
+                      {offer.code}
+                    </span>
+                    <button
+                      onClick={() => handleCopyCode(offer.code)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 transition-colors cursor-pointer"
+                      title="Copy promo code"
+                    >
+                      {isCopied ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-emerald-500" />
+                          <span className="text-emerald-500">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <Link
+                    href={`/customer/book?promo=${offer.code}`}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 hover:bg-sky-100 dark:hover:bg-sky-900/60 border border-sky-200/60 dark:border-sky-800/50 transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                  >
+                    <span>Use Code</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      ) : (
+        /* REDEEMED TRIP HISTORY TAB */
+        <div className="flex flex-col gap-4">
           <AnimatePresence mode="popLayout">
             {loading ? (
-              // Shimmer Skeleton Loader
-              <div className="flex flex-col gap-4">
-                {[1, 2].map((i) => (
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3].map((i) => (
                   <div 
                     key={i} 
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-850 rounded-3xl h-44 animate-pulse"
+                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl h-36 animate-pulse"
                   />
                 ))}
               </div>
             ) : error ? (
-              <div className="bg-red-500/10 border border-red-500/10 dark:bg-red-950/20 text-red-500 p-6 rounded-3xl text-center text-xs font-semibold">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-6 rounded-2xl text-center text-xs font-semibold">
                 {error}
               </div>
             ) : !rewardsList || rewardsList.length === 0 ? (
-              // Empty state
-              <div 
-                className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-850 rounded-[32px] p-12 text-center flex flex-col items-center justify-center select-none"
-              >
-                <Ticket className="h-10 w-10 text-zinc-300 dark:text-zinc-700 animate-pulse" />
-                <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 mt-4 uppercase tracking-wider">No Claimed Offers Yet</span>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium max-w-[260px] mt-1.5 leading-relaxed">
-                  You haven't booked any trips using operator discounts yet. Book a new trip with a discount badge to claim rewards!
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center">
+                <Ticket className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3" />
+                <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                  No Redeemed Offers Recorded
+                </span>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mt-1 leading-relaxed">
+                  You haven't used any discount promo codes on your past trips yet. Apply an active code from the available list when booking your next journey!
                 </p>
+                <button
+                  onClick={() => setActiveTab('available')}
+                  className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-sky-500 hover:bg-sky-600 text-white shadow-md shadow-sky-400/20 transition-colors cursor-pointer"
+                >
+                  Browse Available Codes
+                </button>
               </div>
             ) : (
               rewardsList.map((reward) => (
                 <motion.div
                   key={reward.id}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-250/40 dark:border-zinc-805/80 rounded-[30px] shadow-sm relative overflow-hidden flex flex-col sm:flex-row justify-between"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-sm overflow-hidden flex flex-col sm:flex-row justify-between"
                 >
-                  {/* Left: Journey details and discount summary */}
-                  <div className="p-6 flex flex-col gap-4 flex-1">
+                  {/* Left: Journey info */}
+                  <div className="p-5 flex flex-col gap-3 flex-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] uppercase tracking-widest font-semibold text-zinc-400 font-mono">PNR: {reward.pnr}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-lg font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/10">
-                        {reward.status}
+                      <span className="text-[11px] font-mono font-semibold text-zinc-400">
+                        PNR: {reward.pnr}
+                      </span>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        {reward.status || 'Confirmed'}
                       </span>
                     </div>
 
-                    {/* Travel Route Stops */}
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-sm text-zinc-900 dark:text-white leading-none">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-sm text-zinc-900 dark:text-white">
                           {reward.source}
                         </span>
-                        <ArrowRight className="h-3 w-3 text-zinc-450 shrink-0" />
-                        <span className="font-bold text-sm text-zinc-900 dark:text-white leading-none">
+                        <ArrowRight className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                        <span className="font-bold text-sm text-zinc-900 dark:text-white">
                           {reward.destination}
                         </span>
                       </div>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium mt-1">
-                        {reward.busType} | Seat: {reward.seat}
+                      <span className="text-xs text-zinc-500 font-medium">
+                        {reward.busType} • Seat: {reward.seat}
                       </span>
                     </div>
 
-                    <div className="h-px bg-zinc-150/40 dark:bg-zinc-800/40 w-full" />
-
-                    {/* Travel Date / Time Info */}
-                    <div className="flex items-center gap-5 text-[10px] font-medium text-zinc-400">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+                    <div className="flex items-center gap-5 text-xs text-zinc-400 font-medium pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
                         <span>{reward.date}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 text-zinc-400" />
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5" />
                         <span>{reward.time}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Dotted coupon divider */}
-                  <div className="hidden sm:block relative w-px h-full shrink-0 select-none">
-                    <div className="absolute top-0 -left-1.5 h-3 w-3 rounded-full bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200/50 dark:border-zinc-800" />
-                    <div className="absolute bottom-0 -left-1.5 h-3 w-3 rounded-full bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200/50 dark:border-zinc-805" />
-                    <div className="border-l border-dashed border-zinc-250 dark:border-zinc-800 h-full w-0" />
-                  </div>
-
-                  {/* Right: Savings amount section */}
-                  <div className="p-6 sm:w-[170px] bg-rose-500/5 dark:bg-rose-950/10 border-t sm:border-t-0 sm:border-l border-zinc-150 dark:border-zinc-800/80 flex flex-col items-center justify-center text-center shrink-0">
-                    <span className="text-[10px] font-semibold text-rose-500 uppercase tracking-wider leading-none">Discount Saved</span>
-                    <span className="text-2xl font-bold text-rose-500 tracking-tight leading-none mt-2 font-mono">
+                  {/* Right: Saved Amount */}
+                  <div className="p-5 sm:w-48 bg-zinc-50 dark:bg-zinc-800/40 border-t sm:border-t-0 sm:border-l border-zinc-100 dark:border-zinc-800 flex flex-col items-center justify-center text-center shrink-0">
+                    <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                      Discount Saved
+                    </span>
+                    <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-sans">
                       ₹{reward.discountAmount}
                     </span>
-                    <span className="text-[9px] text-zinc-450 dark:text-zinc-500 font-medium mt-1 font-mono">
-                      for {reward.discountedSeatsCount || 1} seat{(reward.discountedSeatsCount || 1) > 1 ? 's' : ''}
+                    <span className="text-[10px] text-zinc-400 mt-0.5">
+                      {reward.discountedSeatsCount || 1} Seat{(reward.discountedSeatsCount || 1) > 1 ? 's' : ''} discounted
                     </span>
 
                     <button
-                      onClick={() => reward.pnr && navigator.clipboard.writeText(reward.pnr).then(() => toast.success('PNR copied!'))}
-                      className="mt-3.5 py-1.5 px-3 bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800/80 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-[9px] font-black uppercase rounded-lg transition-all cursor-pointer outline-none"
+                      onClick={() => {
+                        if (reward.pnr) {
+                          navigator.clipboard.writeText(reward.pnr);
+                          toast.success('PNR copied to clipboard!');
+                        }
+                      }}
+                      className="mt-3 px-3 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-[10px] font-bold text-zinc-700 dark:text-zinc-200 rounded-lg transition-colors cursor-pointer"
                     >
                       Copy PNR
                     </button>
@@ -317,6 +555,8 @@ export default function OffersClient() {
             )}
           </AnimatePresence>
         </div>
-      </div>
+      )}
+
+    </div>
   );
 }

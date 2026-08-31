@@ -56,6 +56,7 @@ COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/server.ts ./server.ts
 COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/models ./models
+COPY --from=builder /app/proxy.ts* ./
 
 USER nextjs
 
