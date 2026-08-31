@@ -35,9 +35,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trigger Render Redeploy
-        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
-          curl -sS -f -X POST "$RENDER_DEPLOY_HOOK_URL"
-
+          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "Triggering Render redeploy..."
+            curl -sS -f -X POST "$RENDER_DEPLOY_HOOK_URL"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL secret not provided. Skipping Render deployment."
+          fi
