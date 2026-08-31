@@ -112,7 +112,7 @@ export default async function AdminBusDetailPage({ params }: AdminBusDetailPageP
       <div className="flex flex-col gap-1.5">
         <Link 
           href="/admin/buses"
-          className="flex items-center gap-1 text-[11px] font-black text-indigo-650 hover:text-indigo-700 outline-none uppercase tracking-widest self-start transition-all"
+          className="flex items-center gap-1 text-[11px] font-black text-indigo-600 hover:text-indigo-700 outline-none uppercase tracking-widest self-start transition-all"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to fleet
@@ -150,17 +150,17 @@ export default async function AdminBusDetailPage({ params }: AdminBusDetailPageP
 
           {/* Grid Seating Layout pattern */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2.5rem] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.01)] flex flex-col gap-5">
-            <div className="pb-3 border-b border-zinc-150 dark:border-zinc-800">
+            <div className="pb-3 border-b border-zinc-200 dark:border-zinc-800">
               <h3 className="font-extrabold text-xs uppercase tracking-wider text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
                 Seating Layout Grid
               </h3>
             </div>
 
-            <div className="flex flex-col items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-850/30 rounded-[2rem] border border-dashed border-zinc-200/30 dark:border-zinc-850">
+            <div className="flex flex-col items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-800/30 rounded-[2rem] border border-dashed border-zinc-200/30 dark:border-zinc-800">
               {/* Driver cabin block */}
               <div className="w-full max-w-[280px] border-b border-zinc-200/50 dark:border-zinc-800/50 pb-4 mb-6 flex justify-between items-center text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
                 <span>Driver Cabin</span>
-                <div className="h-6 w-6 rounded-md bg-zinc-250 dark:bg-zinc-800 border flex items-center justify-center">
+                <div className="h-6 w-6 rounded-md bg-zinc-200 dark:bg-zinc-800 border flex items-center justify-center">
                   <Activity className="h-3.5 w-3.5" />
                 </div>
               </div>
@@ -184,8 +184,8 @@ export default async function AdminBusDetailPage({ params }: AdminBusDetailPageP
                           title={`Seat ${seatNo} (${isSleeper ? 'Sleeper' : 'Seater'})`}
                           className={`h-9 w-9 border rounded-xl flex items-center justify-center text-[10px] font-extrabold select-none transition-all cursor-default ${
                             isSleeper 
-                              ? 'bg-indigo-50/40 border-indigo-250 dark:bg-indigo-950/20 dark:border-indigo-900 text-indigo-650 dark:text-indigo-400' 
-                              : 'bg-zinc-50 border-zinc-200/60 dark:bg-zinc-800 dark:border-zinc-700 text-zinc-600 dark:text-zinc-350'
+                              ? 'bg-indigo-50/40 border-indigo-200 dark:bg-indigo-950/20 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400' 
+                              : 'bg-zinc-50 border-zinc-200/60 dark:bg-zinc-800 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
                           }`}
                         >
                           <Armchair className="h-3.5 w-3.5 opacity-80" />
@@ -271,7 +271,7 @@ export default async function AdminBusDetailPage({ params }: AdminBusDetailPageP
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12 border-2 border-indigo-100/50">
                     <AvatarImage src={bus.operator.profileImage || ''} alt={bus.operator.name} />
-                    <AvatarFallback className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-black text-sm flex items-center justify-center">
+                    <AvatarFallback className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-black text-sm flex items-center justify-center">
                       {bus.operator.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>

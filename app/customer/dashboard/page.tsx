@@ -4,26 +4,25 @@ import Link from 'next/link';
 import Image from 'next/image';
 import jwt from 'jsonwebtoken';
 import KpiCards from './kpi-cards';
+import UpcomingTripCard from './upcoming-trip-card';
 import RecentBookingsList from './recent-bookings';
+import PopularRoutes from './popular-routes';
 
 export const dynamic = 'force-dynamic';
+
 import {
-  Bus,
-  MapPin,
   Ticket,
   ChevronRight,
-  ShieldCheck,
   Share2,
   MessageSquare,
   PhoneCall,
   ArrowRight,
-  TrendingUp,
   Percent
 } from 'lucide-react';
 
 export default async function DashboardPage() {
   // Retrieve user name from JWT cookie server-side
-  let firstName = 'Ravi';
+  let firstName = 'Traveler';
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
@@ -39,12 +38,9 @@ export default async function DashboardPage() {
     console.error('[Dashboard Page Server] Failed to resolve name:', err);
   }
 
-  const popularRoutes = [
-    { source: 'Raipur', destination: 'Mumbai', fare: '1,099', gradient: 'from-[#ff7c52] to-[#ff2d88]', image: '/images/bus-hero.jpg' },
-    { source: 'Raipur', destination: 'Delhi', fare: '1,299', gradient: 'from-blue-600 to-indigo-600', image: '/images/bus-hero.jpg' },
-    { source: 'Nagpur', destination: 'Pune', fare: '799', gradient: 'from-violet-600 to-fuchsia-600', image: '/images/bus-hero.jpg' },
-    { source: 'Bhopal', destination: 'Indore', fare: '699', gradient: 'from-emerald-600 to-teal-600', image: '/images/bus-hero.jpg' }
-  ];
+  // Dynamic greeting based on current hour
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,14 +48,14 @@ export default async function DashboardPage() {
       {/* GREETING SECTION */}
       <div className="flex flex-col select-none">
         <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
-          Good Morning, {firstName} 
+          {greeting}, {firstName} 
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 font-semibold mt-1">
-          Where would you like to go today?
+          Where would you like to travel today?
         </p>
       </div>
 
-      {/* SERVER-RENDERED KPI CARDS */}
+      {/* REACTIVE / DB-CONNECTED KPI CARDS */}
       <KpiCards />
 
       {/* MAIN SPLIT GRID LAYOUT */}
@@ -68,152 +64,14 @@ export default async function DashboardPage() {
         {/* LEFT COLUMN: 8 spans */}
         <div className="lg:col-span-8 flex flex-col gap-6">
 
-          {/* UPCOMING TRIP SECTION */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)]">
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-base text-zinc-900 dark:text-white">Upcoming Trips</h3>
-              <Link
-                href="/customer/trips"
-                className="text-xs font-bold text-violet-600 hover:text-violet-700"
-              >
-                View All
-              </Link>
-            </div>
-
-            {/* Trip Detail Card */}
-            <div className="flex flex-col md:flex-row gap-6 p-4 border border-zinc-100 dark:border-zinc-800/50 rounded-[2.2rem] hover:shadow-md transition-shadow duration-300 relative overflow-hidden">
-
-              {/* Bus image illustration */}
-              <div className="relative w-full md:w-[180px] h-[120px] rounded-2xl overflow-hidden shrink-0 border border-zinc-100 dark:border-zinc-800 select-none">
-                <Image
-                  src="/images/bus-hero.jpg"
-                  alt="Upcoming Trip Bus"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 180px"
-                  className="object-cover"
-                  loading='lazy'
-                />
-              </div>
-
-              {/* Central Information */}
-              <div className="flex-1 flex flex-col justify-between py-1">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 uppercase tracking-wide">
-                      ON TIME
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-lg font-black text-zinc-900 dark:text-white mt-1.5 leading-none">
-                    <span>Raipur</span>
-                    <span className="text-zinc-400 font-bold">→</span>
-                    <span>Mumbai</span>
-                  </div>
-
-                  <div className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-2.5 block leading-none">
-                    24 May 2025 • 08:30 PM
-                  </div>
-
-                  {/* Route points info */}
-                  <div className="flex flex-col gap-1.5 mt-3 text-xs text-zinc-600 dark:text-zinc-400 font-semibold">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                      <span>Swami Vivekanand Bus Stand, Raipur</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#ff2d88] shrink-0" />
-                      <span>Bandra Kurla Complex, Mumbai</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* PNR Block & View Ticket button */}
-              <div className="flex flex-col md:text-right justify-between py-1 shrink-0 md:border-l border-zinc-100 dark:border-zinc-800 md:pl-6 md:w-[150px]">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider leading-none">
-                    PNR Number
-                  </span>
-                  <span className="text-sm font-black text-zinc-800 dark:text-zinc-200 mt-2 block leading-none select-all">
-                    TG12345678
-                  </span>
-                </div>
-
-                <button className="mt-4 md:mt-0 py-2.5 w-full bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs rounded-xl shadow-md hover:opacity-90 active:scale-95 transition-all duration-200">
-                  View Ticket
-                </button>
-              </div>
-
-            </div>
-
-            {/* Bottom mini details bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/30 rounded-2xl border border-zinc-100 dark:border-zinc-800/40 text-xs font-semibold text-zinc-500 dark:text-zinc-400 select-none">
-              <div>
-                <span className="text-[9px] text-zinc-400 uppercase tracking-wider block">Bus Operator</span>
-                <span className="font-bold text-zinc-800 dark:text-zinc-200 mt-1 block">TripGo Travels</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-zinc-400 uppercase tracking-wider block">Seat</span>
-                <span className="font-bold text-zinc-800 dark:text-zinc-200 mt-1 block">A12 (Sleeper)</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-zinc-400 uppercase tracking-wider block">Bus Type</span>
-                <span className="font-bold text-zinc-800 dark:text-zinc-200 mt-1 block">AC Sleeper (2+1)</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-zinc-400 uppercase tracking-wider block">Fare</span>
-                <span className="font-bold text-zinc-900 dark:text-white mt-1 block">₹1,250</span>
-              </div>
-            </div>
-
-          </div>
+          {/* DYNAMIC UPCOMING TRIP CARD */}
+          <UpcomingTripCard />
 
           {/* CLIENT-CONNECTED RECENT BOOKINGS SECTION */}
           <RecentBookingsList />
 
-          {/* POPULAR ROUTES GRID */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)]">
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-base text-zinc-900 dark:text-white">Popular Routes</h3>
-              <div className="flex gap-2">
-                {/* Arrow buttons for carousel layout indicators */}
-                <button className="p-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-400 dark:text-zinc-300">
-                  <ChevronRight className="h-4.5 w-4.5 rotate-180" />
-                </button>
-                <button className="p-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-400 dark:text-zinc-300">
-                  <ChevronRight className="h-4.5 w-4.5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {popularRoutes.map((route, i) => (
-                <div
-                  key={i}
-                  className="group relative rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800 flex flex-col aspect-[4/5] hover:shadow-md transition-shadow duration-300 cursor-pointer"
-                >
-                  <Image
-                    src={route.image}
-                    alt={`${route.source} to ${route.destination}`}
-                    fill
-                    sizes="(max-width: 768px) 50vw, 20vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading='lazy'
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                  <div className="absolute bottom-4 left-4 right-4 text-white z-10 flex flex-col select-none">
-                    <span className="text-xs font-black block leading-none">
-                      {route.source} → {route.destination}
-                    </span>
-                    <span className="text-[10px] text-zinc-300 mt-1 block">
-                      From <span className="font-bold text-[#ff5666]">₹{route.fare}</span>
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* DYNAMIC POPULAR ROUTES GRID */}
+          <PopularRoutes />
 
           {/* REFER & EARN BANNER */}
           <div className="bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] rounded-[2rem] p-6 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl shadow-[#ff2d88]/10 select-none">
@@ -231,9 +89,12 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <button className="py-3 px-6 bg-white text-zinc-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition-all duration-200 shrink-0 z-10">
+            <Link
+              href="/customer/offers"
+              className="py-3 px-6 bg-white text-zinc-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition-all duration-200 shrink-0 z-10 inline-block text-center"
+            >
               Refer Now
-            </button>
+            </Link>
           </div>
 
         </div>
@@ -304,7 +165,7 @@ export default async function DashboardPage() {
                     fill
                     sizes="(max-width: 768px) 50vw, 20vw"
                     className="object-cover rounded-tl-[2rem]"
-                    loading='lazy'
+                    loading="lazy"
                   />
                 </div>
 
@@ -321,13 +182,16 @@ export default async function DashboardPage() {
                     <span className="px-3.5 py-1.5 bg-white/15 border border-white/20 rounded-xl text-[10px] font-black tracking-widest uppercase block leading-none">
                       FIRST20
                     </span>
-                    <span className="text-[10px] text-zinc-300 font-bold">Copy Code</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">Coupon</span>
                   </div>
 
-                  <button className="py-2.5 px-5 bg-white text-zinc-950 font-black text-xs rounded-xl shadow-md active:scale-95 transition-all duration-200 self-start leading-none flex items-center gap-1 group/btn">
+                  <Link 
+                    href="/customer/book"
+                    className="py-2.5 px-5 bg-white text-zinc-950 font-black text-xs rounded-xl shadow-md active:scale-95 transition-all duration-200 self-start leading-none flex items-center gap-1 group/btn"
+                  >
                     Book Now
                     <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
-                  </button>
+                  </Link>
                 </div>
               </div>
 

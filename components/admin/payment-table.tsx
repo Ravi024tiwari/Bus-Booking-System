@@ -108,7 +108,7 @@ export default function PaymentTable({ orders }: PaymentTableProps) {
                         {o.seatNumbers.map((seat: string, idx: number) => (
                           <span 
                             key={idx}
-                            className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg font-bold text-[10px]"
+                            className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg font-bold text-[10px]"
                           >
                             {seat}
                           </span>

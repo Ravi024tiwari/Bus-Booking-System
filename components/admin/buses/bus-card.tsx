@@ -76,7 +76,7 @@ export default function BusCard({ bus, onClick }: BusCardProps) {
           <h4 className="text-base font-black text-zinc-900 dark:text-white uppercase leading-none">
             {bus.busNumber}
           </h4>
-          <span className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 text-[10px] font-extrabold px-2.5 py-1 rounded-md leading-none select-none uppercase">
+          <span className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-extrabold px-2.5 py-1 rounded-md leading-none select-none uppercase">
             {bus.model}
           </span>
         </div>

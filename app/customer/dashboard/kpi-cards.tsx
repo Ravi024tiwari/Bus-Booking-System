@@ -2,22 +2,28 @@ import React from 'react';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
-import { Order } from '@/models/Order';
+import { Order, Trip } from '@/models';
+import Link from 'next/link';
 import { 
   Compass, 
   Calendar, 
   CreditCard, 
   Star,
   TrendingUp,
-  ArrowRight
+  TrendingDown,
+  ArrowRight,
+  Clock
 } from 'lucide-react';
 
 export default async function KpiCards() {
-  // 1. Load defaults
-  let completedTrips = 12;
-  let upcomingTrips = 2;
-  let spentThisMonth = 3450;
-  let rewardPoints = 850;
+  let completedTrips = 0;
+  let completedThisMonth = 0;
+  let upcomingTrips = 0;
+  let nextTripDate: string | null = null;
+  let spentThisMonth = 0;
+  let spentLastMonth = 0;
+  let totalSpent = 0;
+  let totalSavings = 0;
 
   try {
     const cookieStore = await cookies();
@@ -26,28 +32,86 @@ export default async function KpiCards() {
     if (token) {
       const jwtSecret = process.env.JWT_SECRET || 'movego-super-secret-key-12345';
       const decoded: any = jwt.verify(token, jwtSecret);
-      
+
       if (decoded && decoded.id) {
         await dbConnect();
-        
-        // Fetch confirmed orders for this passenger
-        const orders = await Order.find({ 
-          passengerId: decoded.id, 
-          status: 'CONFIRMED' 
+
+        const userId = decoded.id;
+        const now = new Date();
+        const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+        // Fetch all user bookings with populated trip information
+        const orders = await Order.find({ passengerId: userId })
+          .sort({ createdAt: -1 })
+          .populate({
+            path: 'tripId',
+            select: 'departureTime arrivalTime status source destination'
+          });
+
+        const upcomingDates: Date[] = [];
+
+        orders.forEach((order: any) => {
+          const isConfirmed = order.status === 'CONFIRMED';
+          const trip = order.tripId;
+          const orderCreatedAt = new Date(order.createdAt);
+          const departureTime = trip?.departureTime ? new Date(trip.departureTime) : null;
+
+          if (isConfirmed) {
+            totalSpent += order.amount || 0;
+            totalSavings += order.discountAmount || 0;
+
+            // Monthly spending calculation
+            if (orderCreatedAt >= startOfCurrentMonth) {
+              spentThisMonth += order.amount || 0;
+            } else if (orderCreatedAt >= startOfLastMonth && orderCreatedAt <= endOfLastMonth) {
+              spentLastMonth += order.amount || 0;
+            }
+
+            // Trip classification
+            if (departureTime) {
+              if (departureTime >= now && trip.status !== 'CANCELLED') {
+                upcomingTrips++;
+                upcomingDates.push(departureTime);
+              } else {
+                completedTrips++;
+                if (departureTime >= startOfCurrentMonth) {
+                  completedThisMonth++;
+                }
+              }
+            } else {
+              completedTrips++;
+            }
+          }
         });
 
-        if (orders && orders.length > 0) {
-          completedTrips = orders.length;
-          upcomingTrips = 2; // Default mock for upcoming
-          spentThisMonth = orders.reduce((sum, order) => sum + order.amount, 0);
-          rewardPoints = Math.round(spentThisMonth * 0.25);
+        // Determine closest next trip date
+        if (upcomingDates.length > 0) {
+          upcomingDates.sort((a, b) => a.getTime() - b.getTime());
+          const nearest = upcomingDates[0];
+          nextTripDate = nearest.toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          });
         }
       }
     }
   } catch (err) {
-    console.error('[KPI Cards Server Side] Error querying database:', err);
-    // Silent fail, fallback to design defaults
+    console.error('[KPI Cards Server Component] Error computing database metrics:', err);
   }
+
+  // Calculate percentage change vs last month
+  let spentChangePercent: number | null = null;
+  if (spentLastMonth > 0) {
+    spentChangePercent = Math.round(((spentThisMonth - spentLastMonth) / spentLastMonth) * 100);
+  } else if (spentThisMonth > 0 && spentLastMonth === 0) {
+    spentChangePercent = 100;
+  }
+
+  // Reward points calculation
+  const rewardPoints = Math.round(totalSavings + totalSpent * 0.1);
 
   const cards = [
     {
@@ -55,10 +119,14 @@ export default async function KpiCards() {
       value: completedTrips.toString(),
       icon: Compass,
       iconBg: 'bg-indigo-500/10 text-indigo-500',
-      description: (
+      description: completedThisMonth > 0 ? (
         <span className="text-[11px] font-bold text-emerald-500 flex items-center gap-0.5">
           <TrendingUp className="h-3 w-3" />
-          +2 this month
+          +{completedThisMonth} this month
+        </span>
+      ) : (
+        <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
+          {completedTrips > 0 ? 'All time completed' : 'No trips yet'}
         </span>
       ),
     },
@@ -67,9 +135,14 @@ export default async function KpiCards() {
       value: upcomingTrips.toString(),
       icon: Calendar,
       iconBg: 'bg-pink-500/10 text-pink-500',
-      description: (
-        <span className="text-[11px] font-bold text-pink-500">
-          Next: 24 May 2025
+      description: nextTripDate ? (
+        <span className="text-[11px] font-bold text-pink-500 flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Next: {nextTripDate}
+        </span>
+      ) : (
+        <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
+          No trips scheduled
         </span>
       ),
     },
@@ -78,23 +151,36 @@ export default async function KpiCards() {
       value: `₹${spentThisMonth.toLocaleString('en-IN')}`,
       icon: CreditCard,
       iconBg: 'bg-orange-500/10 text-orange-500',
-      description: (
-        <span className="text-[11px] font-bold text-emerald-500 flex items-center gap-0.5">
-          <TrendingUp className="h-3 w-3" />
-          +12% vs last month
+      description: spentChangePercent !== null ? (
+        <span className={`text-[11px] font-bold flex items-center gap-0.5 ${
+          spentChangePercent >= 0 ? 'text-emerald-500' : 'text-amber-500'
+        }`}>
+          {spentChangePercent >= 0 ? (
+            <TrendingUp className="h-3 w-3" />
+          ) : (
+            <TrendingDown className="h-3 w-3" />
+          )}
+          {spentChangePercent >= 0 ? `+${spentChangePercent}%` : `${spentChangePercent}%`} vs last mo.
+        </span>
+      ) : (
+        <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
+          Total ₹{totalSpent.toLocaleString('en-IN')}
         </span>
       ),
     },
     {
       title: 'Reward Points',
-      value: rewardPoints.toString(),
+      value: rewardPoints.toLocaleString('en-IN'),
       icon: Star,
       iconBg: 'bg-violet-500/10 text-violet-500',
       description: (
-        <button className="text-[11px] font-extrabold text-violet-600 hover:text-violet-700 flex items-center gap-0.5">
+        <Link 
+          href="/customer/offers"
+          className="text-[11px] font-extrabold text-violet-600 hover:text-violet-700 flex items-center gap-0.5 group"
+        >
           Redeem Now
-          <ArrowRight className="h-3 w-3 transition-transform duration-200 hover:translate-x-0.5" />
-        </button>
+          <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+        </Link>
       ),
     },
   ];

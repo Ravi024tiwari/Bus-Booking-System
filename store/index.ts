@@ -71,7 +71,7 @@ export interface Booking {
     busNumber: string;
     busType: string;
   } | null;
-  
+
   // Backward compatibility fields for dashboard page
   source: string;
   destination: string;
@@ -141,7 +141,7 @@ const bookingsSlice = createSlice({
       .addCase(fetchMyBookings.fulfilled, (state, action) => {
         state.loading = false;
         const { data, pagination } = action.payload;
-        
+
         // Map fields to verify backward compatibility
         const mapped = data.map((b: any) => {
           const trip = b.tripDetails;
@@ -398,7 +398,7 @@ const adminBookingsSlice = createSlice({
       .addCase(fetchAdminBookings.fulfilled, (state, action) => {
         state.loading = false;
         const { filter, page, data, pagination } = action.payload;
-        
+
         // Format dates and time for client presentation
         const mapped = data.map((t: any) => {
           const formattedDate = new Date(t.departureTime).toLocaleDateString('en-IN', {
@@ -424,7 +424,7 @@ const adminBookingsSlice = createSlice({
           const newItems = mapped.filter((t: any) => !existingIds.has(t.id));
           state[tab].list = [...state[tab].list, ...newItems];
         }
-        
+
         state[tab].page = pagination.page;
         state[tab].hasMore = pagination.hasMore;
       })
@@ -498,6 +498,145 @@ const rewardsSlice = createSlice({
   }
 });
 
+// 7. Customer Dashboard Slice
+export interface CustomerKPIs {
+  completedTrips: number;
+  completedThisMonth: number;
+  upcomingTrips: number;
+  nextTripDate: string | null;
+  spentThisMonth: number;
+  spentLastMonth: number;
+  spentChangePercent: number | null;
+  rewardPoints: number;
+  totalSpent: number;
+  totalSavings: number;
+}
+
+export interface CustomerNextTrip {
+  id: string;
+  orderId: string;
+  source: string;
+  destination: string;
+  fromStop: string;
+  toStop: string;
+  departureTime: string;
+  arrivalTime: string;
+  formattedDate: string;
+  formattedTime: string;
+  date: string;
+  time: string;
+  seatNumbers: string[];
+  seatsFormatted: string;
+  amount: number;
+  fare: number;
+  pnr: string;
+  busNumber: string;
+  busType: string;
+  busImage: string;
+  operatorName: string;
+  status: string;
+}
+
+export interface PopularRouteItem {
+  source: string;
+  destination: string;
+  fare: string;
+  image: string;
+}
+
+interface CustomerDashboardState {
+  kpis: CustomerKPIs;
+  nextTrip: CustomerNextTrip | null;
+  popularRoutes: PopularRouteItem[];
+  loading: boolean;
+  error: string | null;
+  lastFetched: number | null;
+}
+
+const initialCustomerDashboardState: CustomerDashboardState = {
+  kpis: {
+    completedTrips: 0,
+    completedThisMonth: 0,
+    upcomingTrips: 0,
+    nextTripDate: null,
+    spentThisMonth: 0,
+    spentLastMonth: 0,
+    spentChangePercent: null,
+    rewardPoints: 0,
+    totalSpent: 0,
+    totalSavings: 0,
+  },
+  nextTrip: null,
+  popularRoutes: [],
+  loading: false,
+  error: null,
+  lastFetched: null,
+};
+
+export const fetchCustomerDashboard = createAsyncThunk(
+  'customerDashboard/fetchCustomerDashboard',
+  async (forceRefresh: boolean | undefined, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as RootState;
+      if (!forceRefresh && state.customerDashboard?.lastFetched && Date.now() - state.customerDashboard.lastFetched < 30000) {
+        return null;
+      }
+
+      const response = await fetch('/api/customer/dashboard');
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch customer dashboard data.');
+      }
+      return data.data;
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+const customerDashboardSlice = createSlice({
+  name: 'customerDashboard',
+  initialState: initialCustomerDashboardState,
+  reducers: {
+    setCustomerDashboardData(state, action: PayloadAction<{ kpis: CustomerKPIs; nextTrip: CustomerNextTrip | null; popularRoutes: PopularRouteItem[] }>) {
+      state.kpis = action.payload.kpis;
+      state.nextTrip = action.payload.nextTrip;
+      state.popularRoutes = action.payload.popularRoutes;
+      state.lastFetched = Date.now();
+      state.loading = false;
+      state.error = null;
+    },
+    clearCustomerDashboard(state) {
+      state.kpis = initialCustomerDashboardState.kpis;
+      state.nextTrip = null;
+      state.popularRoutes = [];
+      state.lastFetched = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchCustomerDashboard.pending, (state) => {
+        if (!state.lastFetched) {
+          state.loading = true;
+        }
+        state.error = null;
+      })
+      .addCase(fetchCustomerDashboard.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload) {
+          state.kpis = action.payload.kpis;
+          state.nextTrip = action.payload.nextTrip;
+          state.popularRoutes = action.payload.popularRoutes;
+          state.lastFetched = Date.now();
+        }
+      })
+      .addCase(fetchCustomerDashboard.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || 'Failed to fetch customer dashboard';
+      });
+  },
+});
+
 // Export actions
 export const { setUser, clearUser, setLoading, setError } = userSlice.actions;
 export const { setBookings, addBooking, setBookingsLoading, setBookingsError } = bookingsSlice.actions;
@@ -505,6 +644,7 @@ export const { clearTrips } = tripsSlice.actions;
 export const { toggleSidebar, setSidebarOpen, toggleTheme, setTheme } = uiSlice.actions;
 export const { setActiveTab, clearAdminCache } = adminBookingsSlice.actions;
 export const { clearRewards } = rewardsSlice.actions;
+export const { setCustomerDashboardData, clearCustomerDashboard } = customerDashboardSlice.actions;
 
 // Configure Store
 export const store = configureStore({
@@ -515,9 +655,11 @@ export const store = configureStore({
     ui: uiSlice.reducer,
     adminBookings: adminBookingsSlice.reducer,
     rewards: rewardsSlice.reducer,
+    customerDashboard: customerDashboardSlice.reducer,
   },
 });
 
 // Redux Types
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+

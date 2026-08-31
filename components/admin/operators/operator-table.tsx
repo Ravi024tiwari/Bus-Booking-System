@@ -102,7 +102,7 @@ export default function OperatorTable({ operators, pagination, onPageChange, onR
         <div className="flex items-center gap-3">
           <button 
             onClick={handleExport}
-            className="px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200/10 rounded-xl text-xs font-bold text-zinc-650 dark:text-zinc-300 transition-colors"
+            className="px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200/10 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 transition-colors"
           >
             Export CSV
           </button>
@@ -158,7 +158,7 @@ export default function OperatorTable({ operators, pagination, onPageChange, onR
                     </td>
 
                     {/* Contact info */}
-                    <td className="py-3.5 text-zinc-655 dark:text-zinc-400">
+                    <td className="py-3.5 text-zinc-600 dark:text-zinc-400">
                       {op.phoneNumber}
                     </td>
 
@@ -173,7 +173,7 @@ export default function OperatorTable({ operators, pagination, onPageChange, onR
                     </td>
 
                     {/* Bookings count */}
-                    <td className="py-3.5 text-center font-bold text-zinc-505 dark:text-zinc-450">
+                    <td className="py-3.5 text-center font-bold text-zinc-500 dark:text-zinc-400">
                       {op.bookingsCount.toLocaleString()}
                     </td>
 
@@ -190,7 +190,7 @@ export default function OperatorTable({ operators, pagination, onPageChange, onR
                     </td>
 
                     {/* Registration date */}
-                    <td className="py-3.5 text-zinc-450 dark:text-zinc-500 font-medium">
+                    <td className="py-3.5 text-zinc-500 dark:text-zinc-400 font-medium">
                       {joinedDate}
                     </td>
 
@@ -316,7 +316,7 @@ export default function OperatorTable({ operators, pagination, onPageChange, onR
               <div className="flex items-center gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-5">
                 <Avatar className="h-16 w-16 border-2 border-indigo-500/20 shrink-0">
                   <AvatarImage src={selectedOperator.profileImage || ''} alt={selectedOperator.name} className="object-cover" />
-                  <AvatarFallback className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-extrabold text-lg flex items-center justify-center">
+                  <AvatarFallback className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold text-lg flex items-center justify-center">
                     {selectedOperator.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
@@ -333,54 +333,54 @@ export default function OperatorTable({ operators, pagination, onPageChange, onR
               <div className="flex flex-col gap-4 text-xs font-bold text-zinc-700 dark:text-zinc-300">
                 <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block -mb-1">Operator Metadata</span>
                 
-                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-850">
-                  <span className="text-zinc-450 dark:text-zinc-500">Contact Number</span>
+                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-800">
+                  <span className="text-zinc-500 dark:text-zinc-400">Contact Number</span>
                   <span>{selectedOperator.phoneNumber}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-850">
-                  <span className="text-zinc-450 dark:text-zinc-500">Registered Buses</span>
+                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-800">
+                  <span className="text-zinc-500 dark:text-zinc-400">Registered Buses</span>
                   <span>{selectedOperator.busesCount} buses</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-850">
-                  <span className="text-zinc-450 dark:text-zinc-500">Routes Managed</span>
+                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-800">
+                  <span className="text-zinc-500 dark:text-zinc-400">Routes Managed</span>
                   <span>{selectedOperator.routesCount} routes</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-850">
-                  <span className="text-zinc-450 dark:text-zinc-500">Total Bookings</span>
+                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-800">
+                  <span className="text-zinc-500 dark:text-zinc-400">Total Bookings</span>
                   <span>{selectedOperator.bookingsCount.toLocaleString()} bookings</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-850">
-                  <span className="text-zinc-450 dark:text-zinc-500">Earnings Summary</span>
+                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-800">
+                  <span className="text-zinc-500 dark:text-zinc-400">Earnings Summary</span>
                   <span className="text-indigo-600 dark:text-indigo-400 font-black">{formatRevenue(selectedOperator.revenue)}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-850">
-                  <span className="text-zinc-450 dark:text-zinc-500">Approval State</span>
+                <div className="flex justify-between py-2 border-b border-dashed border-zinc-100 dark:border-zinc-800">
+                  <span className="text-zinc-500 dark:text-zinc-400">Approval State</span>
                   <span className={`inline-block px-2.5 py-1 border text-[10px] font-black rounded-full uppercase leading-none ${getStatusStyle(selectedOperator.operatorApprovalStatus)}`}>
                     {getStatusLabel(selectedOperator.operatorApprovalStatus)}
                   </span>
                 </div>
                 <div className="flex justify-between py-2">
-                  <span className="text-zinc-455 dark:text-zinc-500">Joined On</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">Joined On</span>
                   <span>{new Date(selectedOperator.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 </div>
               </div>
             </div>
 
             {/* Quick action buttons inside details panel */}
-            <div className="border-t border-zinc-150 dark:border-zinc-850 pt-4 flex gap-3">
+            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 flex gap-3">
               <button
                 onClick={() => {
                   setNewStatus(selectedOperator.operatorApprovalStatus);
                   setIsStatusModalOpen(true);
                 }}
-                className="flex-1 bg-indigo-650 hover:bg-indigo-700 text-white font-black text-xs py-3 rounded-xl shadow-md cursor-pointer outline-none"
+                className="flex-1 bg-indigo-600 text-black hover:bg-indigo-700 text-white font-black text-xs py-3 rounded-xl shadow-md transition-colors cursor-pointer outline-none"
               >
                 Change status
               </button>
               <button
                 onClick={() => handleUpdateStatus('APPROVED')}
                 disabled={selectedOperator.operatorApprovalStatus === 'APPROVED'}
-                className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-250 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 font-black text-xs py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer outline-none"
+                className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 font-black text-xs py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer outline-none transition-colors"
               >
                 Approve Operator
               </button>
@@ -435,13 +435,13 @@ export default function OperatorTable({ operators, pagination, onPageChange, onR
             <div className="flex gap-3 mt-1">
               <button
                 onClick={() => handleUpdateStatus(newStatus)}
-                className="flex-1 bg-indigo-650 hover:bg-indigo-700 text-white font-black text-xs py-2.5 rounded-xl shadow-md cursor-pointer outline-none"
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-2.5 rounded-xl shadow-md transition-colors cursor-pointer outline-none"
               >
                 Save status
               </button>
               <button
                 onClick={() => setIsStatusModalOpen(false)}
-                className="flex-1 bg-zinc-50 dark:bg-zinc-850 hover:bg-zinc-150 dark:hover:bg-zinc-800 border border-zinc-200/20 dark:border-zinc-700/20 text-zinc-600 dark:text-zinc-300 font-bold text-xs py-2.5 rounded-xl transition-colors cursor-pointer outline-none"
+                className="flex-1 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-xs py-2.5 rounded-xl transition-colors cursor-pointer outline-none"
               >
                 Cancel
               </button>

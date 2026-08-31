@@ -346,7 +346,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
                           
                           {/* Seat No */}
                           <td className="py-4 px-5 whitespace-nowrap">
-                            <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-xl font-extrabold">
+                            <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl font-extrabold">
                               {b.seatNumbers.join(', ')}
                             </span>
                           </td>

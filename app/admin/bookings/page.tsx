@@ -140,7 +140,7 @@ export default function AdminBookingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 select-none">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
-            Operator Trips <Calendar className="h-7 w-7 text-indigo-650 dark:text-indigo-400" />
+            Operator Trips <Calendar className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
           </h1>
           <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-semibold mt-1">
             Track operational routes, schedules, operator details, and seat occupancies.
@@ -332,7 +332,7 @@ export default function AdminBookingsPage() {
 
                   {/* 3. CARD ACTION BUTTON FOOTER */}
                   <div 
-                    className="mt-2 w-full py-3 bg-zinc-100 dark:bg-zinc-950 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-zinc-700 dark:text-zinc-300 hover:text-indigo-650 dark:hover:text-indigo-455 border border-zinc-150/20 dark:border-zinc-850/40 hover:border-indigo-200/50 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all select-none"
+                    className="mt-2 w-full py-3 bg-zinc-100 dark:bg-zinc-950 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-zinc-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-zinc-200/50 dark:border-zinc-800/40 hover:border-indigo-200/50 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all select-none"
                   >
                     View Passenger Manifest
                     <ChevronRight className="h-4 w-4 text-zinc-400 group-hover:text-indigo-500" />
