@@ -25,6 +25,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import BusHeroBanner from '../buses/bus-hero-banner';
 
 // Types
 interface BusItem {
@@ -397,39 +398,26 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
   };
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 bg-zinc-50 dark:bg-zinc-950 min-h-screen text-zinc-850 dark:text-zinc-200">
+    <div className="flex flex-col gap-6 select-none">
       
       {/* 1. SCENIC HEADER BANNER */}
-      <div className="w-full h-[20vh] min-h-[160px] md:h-[26vh] md:min-h-[220px] rounded-[32px] relative overflow-hidden flex items-center px-6 sm:px-12 shadow-md border border-zinc-200/20 mb-8 group select-none">
-        {/* Responsive, parallax-like background scaling and shifted upward position (center 30%) */}
-        <div 
-          className="absolute inset-0 bg-cover bg-[position:center_30%] transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-          style={{ backgroundImage: "url('/images/trip_bg.jpeg')" }}
-        />
-        
-        {/* Soft fading overlays with reddish-pink tones to align with layout */}
-        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/60 to-transparent z-10" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#ff7c52]/10 via-transparent to-zinc-950/40 z-10" />
-        
-        <div className="relative z-20 flex items-center justify-between w-full">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-none">
-              Trips
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-300 font-semibold mt-3 max-w-sm sm:max-w-md leading-normal opacity-90">
-              Manage all your bus trips and schedules
-            </p>
-          </div>
-
+      <BusHeroBanner 
+        title="Manage Your Trips"
+        description="Schedule routes, manage intermediate boarding points, set dynamic pricing discounts, and monitor real-time passenger capacity."
+        subBadgeText="Trip Management Console"
+        backgroundImage="/images/trip_bg.jpeg"
+        bgPosition="center 30%"
+        icon={<CalendarIcon className="h-3 w-3 text-[#ff5666] animate-pulse" />}
+        actions={
           <button
             onClick={() => setIsAdding(true)}
-            className="px-4.5 py-3 sm:px-6 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] hover:opacity-95 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-lg shadow-[#ff2d88]/20 hover:shadow-[#ff2d88]/35 transform hover:-translate-y-0.5 transition-all flex items-center gap-2 cursor-pointer outline-none shrink-0"
+            className="px-5 py-3 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] hover:from-[#ff8e6b] hover:to-[#ff459b] hover:shadow-lg hover:shadow-[#ff2d88]/20 transition-all duration-200 text-white font-bold text-xs rounded-2xl flex items-center gap-2 shadow-sm shrink-0 uppercase tracking-wider"
           >
-            <Plus className="h-4.5 w-4.5" />
+            <Plus className="h-4 w-4 shrink-0" />
             Add New Trip
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* 2. FILTERING CARD CONTROL BAR */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-850 rounded-3xl p-5 shadow-[0_4px_25px_rgba(0,0,0,0.02)] mb-8 flex flex-col gap-5">

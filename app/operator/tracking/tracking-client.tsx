@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
+import BusHeroBanner from '../buses/bus-hero-banner';
 
 interface TripItem {
   id: string;
@@ -132,29 +133,17 @@ export default function OperatorTrackingClient({ initialActiveTrips }: OperatorT
   };
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 bg-zinc-50 dark:bg-zinc-950 min-h-screen text-zinc-850 dark:text-zinc-200">
+    <div className="flex flex-col gap-6 select-none">
       
       {/* SCENIC OPERATIONAL HEADER BANNER */}
-      <div className="w-full h-[18vh] min-h-[140px] md:h-[22vh] md:min-h-[180px] rounded-[32px] relative overflow-hidden flex items-center px-6 sm:px-12 shadow-md border border-zinc-200/20 mb-8 group select-none">
-        <div 
-          className="absolute inset-0 bg-cover bg-[position:center_40%] transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-          style={{ backgroundImage: "url('/images/trip_bg.jpeg')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/60 to-transparent z-10" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#ff7c52]/10 via-transparent to-zinc-950/40 z-10" />
-        
-        <div className="relative z-20 flex items-center justify-between w-full">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-none flex items-center gap-3">
-              Live Operations tracking
-              <Activity className="h-6 w-6 text-[#ff2d88] animate-pulse" />
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-300 font-semibold mt-3 max-w-sm sm:max-w-md leading-normal opacity-90">
-              Monitor active bus journeys and manually dispatch stops updates.
-            </p>
-          </div>
-        </div>
-      </div>
+      <BusHeroBanner 
+        title="Live Operations Tracking"
+        description="Monitor active bus journeys in real-time, dispatch stop updates, and manage en-route status across your active network."
+        subBadgeText="Live Operations Console"
+        backgroundImage="/images/trip_bg.jpeg"
+        bgPosition="center 40%"
+        icon={<Activity className="h-3 w-3 text-[#ff2d88] animate-pulse" />}
+      />
 
       {/* TRIP CARDS CONTAINER */}
       <div className="flex flex-col gap-5">
