@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IReview extends Document {
   passengerId: mongoose.Types.ObjectId;
+  tripId: mongoose.Types.ObjectId;
   busId: mongoose.Types.ObjectId;
   bookingId: mongoose.Types.ObjectId;
   rating: number; // 1 to 5 stars
@@ -13,6 +14,12 @@ const ReviewSchema = new Schema<IReview>({
   passengerId: { 
     type: Schema.Types.ObjectId, 
     ref: 'User', 
+    required: true,
+    index: true 
+  },
+  tripId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'Trip', 
     required: true,
     index: true 
   },
@@ -45,7 +52,9 @@ const ReviewSchema = new Schema<IReview>({
 // UNIQUE CONSTRAINT: Enforces that a user can only review once per ticket purchase
 ReviewSchema.index({ passengerId: 1, bookingId: 1 }, { unique: true });
 
-// UI OPTIMIZATION INDEX: Speeds up querying reviews for a bus, sorting highest ratings first
+// UI OPTIMIZATION INDEX: Speeds up querying reviews for a bus or trip
 ReviewSchema.index({ busId: 1, rating: -1 });
+ReviewSchema.index({ tripId: 1, rating: -1 });
 
 export const Review: Model<IReview> = mongoose.models.Review || mongoose.model<IReview>('Review', ReviewSchema);
+

@@ -87,17 +87,43 @@ export async function POST(req: Request) {
     const busId = bus._id;
     const operatorId = bus.operatorId;
 
-    // 5. Create Review (handling unique constraint per bookingId)
+    // 5. Create or Update Review (guaranteed unique per passengerId + bookingId)
     try {
-      const review = await Review.create({
-        passengerId: userId,
-        busId,
-        bookingId,
-        rating,
-        comment
+      const review = await Review.findOneAndUpdate(
+        { passengerId: userId, bookingId: order._id },
+        {
+          passengerId: userId,
+          tripId: trip._id,
+          busId,
+          bookingId: order._id,
+          rating,
+          comment: comment || ''
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+
+      // 6. Atomically recalculate average rating & total reviews for the Trip
+      const stats = await Review.aggregate([
+        { $match: { tripId: trip._id } },
+        {
+          $group: {
+            _id: '$tripId',
+            avgRating: { $avg: '$rating' },
+            totalReviews: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const avgRating = stats.length > 0 ? Math.round(stats[0].avgRating * 10) / 10 : rating;
+      const totalReviews = stats.length > 0 ? stats[0].totalReviews : 1;
+
+      // Update Trip record with computed verified aggregate
+      await Trip.findByIdAndUpdate(trip._id, {
+        averageRating: avgRating,
+        totalReviews: totalReviews
       });
 
-      // 6. Invalidate operator dashboard & bus details Redis caches
+      // 7. Invalidate operator dashboard, bus details, and trips Redis caches
       const busDetailsCacheKey = `bus:details:${busId}`;
       try {
         await redis.del(busDetailsCacheKey);
@@ -112,7 +138,6 @@ export async function POST(req: Request) {
             const pipeline = redis.pipeline();
             keys.forEach((key: string) => pipeline.del(key));
             await pipeline.exec();
-            console.log(`[Review API] Invalidated operator dashboard cache keys:`, keys);
           }
         });
       } catch (redisErr) {
@@ -121,22 +146,19 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: 'Thank you for your feedback! Review submitted successfully.',
+        message: 'Thank you for your rating! Feedback submitted successfully.',
         data: {
           id: review._id,
           rating: review.rating,
           comment: review.comment,
+          tripAverageRating: avgRating,
+          tripTotalReviews: totalReviews,
           createdAt: review.createdAt
         }
       });
 
     } catch (dbErr: any) {
-      if (dbErr.code === 11000) {
-        return NextResponse.json(
-          { success: false, message: 'You have already submitted a review for this booking.' },
-          { status: 409 }
-        );
-      }
+      console.error('[Review API DB Error]:', dbErr);
       throw dbErr;
     }
 

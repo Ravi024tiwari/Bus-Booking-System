@@ -88,6 +88,8 @@ export async function GET(req: Request) {
         status: trip.status,
         capacity: bus?.capacity || 40,
         seatsBooked,
+        averageRating: trip.averageRating || 0,
+        totalReviews: trip.totalReviews || 0,
         busImages: bus?.images || [],
         operatorDetails: operator ? {
           id: operator._id,

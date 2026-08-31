@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { 
+  Bus,
   Wifi, 
   Wind, 
   Zap, 
@@ -11,7 +12,10 @@ import {
   Layers,
   Sparkles,
   ArrowRight,
-  Info
+  ChevronRight,
+  ShieldCheck,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,136 +44,172 @@ export interface BusData {
 
 interface BusCardProps {
   bus: BusData;
+  idx?: number;
   onClick?: () => void;
   selected?: boolean;
 }
 
-export default function BusCard({ bus, onClick, selected = false }: BusCardProps) {
+export default function BusCard({ bus, idx = 0, onClick, selected = false }: BusCardProps) {
   const isTravelling = !!bus.activeTrip;
 
   // Resolve amenities icons
   const renderAmenityIcon = (amenity: string) => {
     const clean = amenity.toLowerCase();
-    if (clean.includes('wifi')) return <span key={amenity} title="WiFi Available"><Wifi className="h-4 w-4 text-sky-500" /></span>;
-    if (clean.includes('ac') || clean.includes('condition')) return <span key={amenity} title="Air Conditioned"><Wind className="h-4 w-4 text-teal-500" /></span>;
-    if (clean.includes('charg') || clean.includes('usb') || clean.includes('plug')) return <span key={amenity} title="USB Charger"><Zap className="h-4 w-4 text-amber-500" /></span>;
-    if (clean.includes('water')) return <span key={amenity} title="Water Provided"><Droplet className="h-4 w-4 text-blue-500" /></span>;
+    if (clean.includes('wifi')) return <span key={amenity} title="WiFi Available"><Wifi className="h-3 w-3 text-sky-400" /></span>;
+    if (clean.includes('ac') || clean.includes('condition')) return <span key={amenity} title="Air Conditioned"><Wind className="h-3 w-3 text-teal-400" /></span>;
+    if (clean.includes('charg') || clean.includes('usb') || clean.includes('plug')) return <span key={amenity} title="USB Charger"><Zap className="h-3 w-3 text-amber-400" /></span>;
+    if (clean.includes('water')) return <span key={amenity} title="Water Provided"><Droplet className="h-3 w-3 text-blue-400" /></span>;
     return null;
   };
+
+  const busCoverImage = bus.images && bus.images.length > 0 && bus.images[0] 
+    ? bus.images[0] 
+    : (idx % 2 === 0 ? '/images/bus1.jpg' : '/images/bus2.jpg');
 
   return (
     <Card 
       onClick={onClick}
-      className={`relative cursor-pointer overflow-hidden rounded-[2rem] border transition-all duration-300 select-none group bg-white dark:bg-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.01)] ${
-        selected 
-          ? 'border-[#ff2d88] dark:border-[#ff5666] ring-2 ring-[#ff2d88]/10 dark:ring-[#ff5666]/10 shadow-[0_20px_40px_rgba(255,45,136,0.08)] -translate-y-1.5' 
-          : 'border-zinc-200/50 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-[0_20px_40px_rgba(0,0,0,0.03)] hover:-translate-y-1.5'
+      className={`border border-zinc-200/80 dark:border-zinc-800 rounded-[1.75rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)] hover:shadow-[0_12px_36px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-3 sm:p-3.5 gap-3 group relative overflow-visible bg-white dark:bg-zinc-900 cursor-pointer select-none ${
+        selected ? 'ring-2 ring-[#ff2d88] border-[#ff2d88]' : ''
       }`}
     >
-      {/* Visual Accent Bar */}
-      <div className={`absolute top-0 inset-x-0 h-1.5 transition-all duration-300 ${
-        selected 
-          ? 'bg-gradient-to-r from-[#ff7c52] to-[#ff2d88]' 
-          : 'bg-zinc-200 dark:bg-zinc-800 group-hover:bg-gradient-to-r group-hover:from-zinc-300 group-hover:to-zinc-400 dark:group-hover:from-zinc-700 dark:group-hover:to-zinc-650'
-      }`} />
+      {/* 1. TOP BUS PHOTO WITH ROUNDED CORNERS & OVERLAYS */}
+      <div className="relative h-38 sm:h-42 w-full rounded-2xl overflow-hidden select-none bg-zinc-100 dark:bg-zinc-800 border border-zinc-150 dark:border-zinc-800/80 shadow-xs">
+        <img 
+          src={busCoverImage} 
+          alt={`Bus ${bus.busNumber}`} 
+          className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-500 rounded-2xl"
+        />
+        {/* Gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/35 rounded-2xl" />
 
-      {/* Decorative Blur Background Accent */}
-      {selected && (
-        <div className="absolute top-[-10%] right-[-10%] w-[120px] h-[120px] bg-gradient-to-tr from-[#ff7c52] to-[#ff2d88] rounded-full blur-[35px] opacity-10 pointer-events-none" />
-      )}
-
-      <CardContent className="p-6 pt-7 flex flex-col gap-4.5">
-        
-        {/* LICENSE PLATE & STATUS ROW */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-black text-lg tracking-tight text-zinc-900 dark:text-white uppercase leading-none">
-              {bus.busNumber}
-            </span>
-            <Badge className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] font-bold py-0.5 px-2.5 rounded-full border-none shadow-none uppercase select-none">
-              {bus.type}
-            </Badge>
-          </div>
-          
-          <div className="flex items-center shrink-0">
-            <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
-              isTravelling 
-                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/10' 
-                : 'bg-amber-500/10 text-amber-500 border border-amber-500/10'
-            }`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${isTravelling ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-              {isTravelling ? 'On Road' : 'Idle'}
-            </span>
-          </div>
+        {/* Status Badge Overlay (top-left) */}
+        <div className="absolute top-2.5 left-2.5">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase backdrop-blur-md border border-white/20 shadow-xs ${
+            isTravelling 
+              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' 
+              : 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+          }`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${isTravelling ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            {isTravelling ? 'On Road' : 'Idle / Ready'}
+          </span>
         </div>
 
-        {/* DETAILS/SPECIFICATIONS ROW */}
-        <div className="grid grid-cols-3 gap-3 border-y border-dashed border-zinc-100 dark:border-zinc-800/60 py-3.5 select-none">
-          <div className="flex flex-col">
-            <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Capacity</span>
-            <span className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 mt-0.5 leading-none">
-              {bus.capacity} <span className="text-[10px] text-zinc-400 font-medium">seats</span>
-            </span>
-          </div>
-
-          <div className="flex flex-col border-x border-zinc-100 dark:border-zinc-800/40 px-3">
-            <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Grid Layout</span>
-            <span className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 mt-0.5 leading-none flex items-center gap-1">
-              <Layers className="h-3.5 w-3.5 text-zinc-400" />
-              {bus.rows}x{bus.cols}
-            </span>
-          </div>
-
-          <div className="flex flex-col pl-3">
-            <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Amenities</span>
-            <div className="flex items-center gap-1.5 mt-1 leading-none">
-              {bus.amenities && bus.amenities.length > 0 ? (
-                bus.amenities.slice(0, 3).map((amenity) => renderAmenityIcon(amenity))
-              ) : (
-                <span className="text-[10px] text-zinc-400">None</span>
-              )}
-              {bus.amenities && bus.amenities.length > 3 && (
-                <span className="text-[9px] text-zinc-400 font-bold">+{bus.amenities.length - 3}</span>
-              )}
-            </div>
-          </div>
+        {/* Bus Type Badge Overlay (top-right) */}
+        <div className="absolute top-2.5 right-2.5">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white font-bold text-[9px] uppercase tracking-wider shadow-xs">
+            {bus.type}
+          </span>
         </div>
 
-        {/* ACTIVE TRIP DETAILS OR FALLBACK */}
-        {isTravelling && bus.activeTrip ? (
-          <div className="p-3 bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/10 rounded-2xl flex flex-col gap-2 relative">
-            <div className="flex items-center justify-between text-[9px] text-indigo-500 dark:text-indigo-400 font-extrabold uppercase tracking-wider">
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5 animate-bounce-slow" />
-                Active Traveling Route
-              </span>
-              <span className="bg-indigo-500/10 px-1.5 py-0.5 rounded">
-                {bus.activeTrip.status.replace('_', ' ')}
-              </span>
-            </div>
-            
-            <div className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-              <span>{bus.activeTrip.source}</span>
-              <ArrowRight className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-              <span>{bus.activeTrip.destination}</span>
-            </div>
+        {/* Capacity & Grid Spec Overlay (bottom-left) */}
+        <div className="absolute bottom-2.5 left-2.5 flex flex-col text-white">
+          <span className="text-xs sm:text-sm font-black tracking-tight drop-shadow-sm flex items-center gap-1">
+            <Bus className="h-3 w-3 text-[#ff2d88]" />
+            {bus.capacity} Seats
+          </span>
+          <span className="text-[10px] text-zinc-200 font-semibold drop-shadow-sm flex items-center gap-1">
+            <Layers className="h-2.5 w-2.5" />
+            {bus.rows}x{bus.cols} Grid Layout
+          </span>
+        </div>
 
-            <div className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold flex items-center gap-1">
-              <Calendar className="h-3 w-3 shrink-0" />
-              <span>Dep: {new Date(bus.activeTrip.departureTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+        {/* Amenities Preview (bottom-right) */}
+        {bus.amenities && bus.amenities.length > 0 && (
+          <div className="absolute bottom-2.5 right-2.5">
+            <div className="flex items-center gap-1 px-2 py-0.5 bg-black/60 backdrop-blur-md border border-white/15 rounded-lg shadow-xs">
+              {bus.amenities.slice(0, 3).map((amenity) => renderAmenityIcon(amenity))}
+              {bus.amenities.length > 3 && (
+                <span className="text-[8px] text-white font-bold">+{bus.amenities.length - 3}</span>
+              )}
             </div>
-          </div>
-        ) : (
-          <div className="p-3 bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-100 dark:border-zinc-800/30 rounded-2xl flex items-center justify-between text-xs text-zinc-500 select-none">
-            <span className="flex items-center gap-1.5 font-semibold">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              Fleet is currently idle
-            </span>
-            <span className="text-[10px] text-zinc-400 font-bold uppercase">Ready for trip</span>
           </div>
         )}
+      </div>
 
-      </CardContent>
+      {/* 2. CARD CONTENT BODY */}
+      <div className="flex flex-col gap-2.5 px-0.5">
+        
+        {/* Vehicle Header & Current Status/Route */}
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="font-black text-sm sm:text-base text-zinc-900 dark:text-white uppercase tracking-tight truncate">
+              {bus.busNumber}
+            </span>
+            <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
+              Fleet #{bus.id ? bus.id.slice(-5).toUpperCase() : '001'}
+            </span>
+          </div>
+
+          {isTravelling && bus.activeTrip ? (
+            <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 truncate">
+              <MapPin className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">{bus.activeTrip.source}</span>
+              <ArrowRight className="h-2.5 w-2.5 shrink-0 text-zinc-400" />
+              <span className="truncate">{bus.activeTrip.destination}</span>
+            </div>
+          ) : (
+            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium truncate flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3 text-emerald-500 shrink-0" />
+              Registered Fleet Vehicle · Ready for Dispatch
+            </span>
+          )}
+        </div>
+
+        {/* 2-Column Meta Grid */}
+        <div className="grid grid-cols-2 gap-2 bg-zinc-50 dark:bg-zinc-850/60 border border-zinc-100 dark:border-zinc-800/80 rounded-xl p-2 text-xs select-none">
+          {/* Box 1: Seater vs Sleeper breakdown */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="h-6 w-6 rounded-lg bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200/50 dark:border-zinc-700/50 text-zinc-500">
+              <Layers className="h-3 w-3" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 truncate leading-none">
+                {bus.sleeperSeats && bus.sleeperSeats.length > 0 ? `${bus.sleeperSeats.length} Sleepers` : 'All Seater'}
+              </span>
+              <span className="text-[8px] text-zinc-400 truncate mt-0.5 leading-none">
+                {bus.capacity - (bus.sleeperSeats?.length || 0)} Standard Seats
+              </span>
+            </div>
+          </div>
+
+          {/* Box 2: Current Status / Schedule */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="h-6 w-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center shrink-0 border border-indigo-100/50 dark:border-indigo-900/30 text-indigo-500">
+              <Clock className="h-3 w-3" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate leading-none">
+                {isTravelling ? 'In Transit' : 'Available'}
+              </span>
+              <span className="text-[8px] text-zinc-400 truncate mt-0.5 leading-none">
+                {isTravelling && bus.activeTrip?.departureTime 
+                  ? `Dep: ${new Date(bus.activeTrip.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                  : 'Ready to Assign'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. CARD BOTTOM ROW: ACTION BUTTON */}
+        <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-800/60">
+          <div className="flex flex-col">
+            <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider leading-none">Status</span>
+            <span className="text-xs font-bold text-zinc-900 dark:text-white mt-0.5 leading-none">
+              {isTravelling ? 'Active on Road' : 'Ready for Trip'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="flex items-center gap-1 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold text-[11px] rounded-xl shadow-xs transition-all cursor-pointer group-hover:bg-[#ff2d88] group-hover:text-white dark:group-hover:bg-[#ff2d88] dark:group-hover:text-white active:scale-95"
+          >
+            <span>Manage Bus</span>
+            <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        </div>
+
+      </div>
     </Card>
   );
 }

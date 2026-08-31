@@ -15,6 +15,8 @@ export interface ITrip extends Document {
   offerLimit?: number;
   offerBookedCount?: number;
   status: 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_TRANSIT' | 'ARRIVED' | 'CANCELLED';
+  averageRating?: number; // Verified passenger average rating (0 to 5)
+  totalReviews?: number; // Total count of verified passenger ratings
   createdAt: Date;
 }
 
@@ -76,6 +78,16 @@ const TripSchema = new Schema<ITrip>({
     default: 0
   },
   offerBookedCount: {
+    type: Number,
+    default: 0
+  },
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  totalReviews: {
     type: Number,
     default: 0
   },

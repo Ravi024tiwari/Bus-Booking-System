@@ -28,7 +28,8 @@ import {
   X,
   MapPin,
   TrendingUp,
-  ChevronRight
+  ChevronRight,
+  Star
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -288,14 +289,28 @@ export default function AdminBookingsPage() {
                 {/* 2. CARD CONTENT BODY */}
                 <div className="p-6 flex flex-col gap-4 font-semibold">
                   
-                  {/* Route stop header */}
+                  {/* Route stop header & Rating badge */}
                   <div className="flex items-center justify-between gap-2 border-b border-zinc-50 dark:border-zinc-850 pb-3 select-none">
-                    <div className="flex items-center gap-2 text-zinc-900 dark:text-white">
+                    <div className="flex items-center gap-2 text-zinc-900 dark:text-white min-w-0">
                       <MapPin className="h-4.5 w-4.5 text-indigo-500 shrink-0" />
                       <span className="text-sm font-extrabold tracking-tight truncate max-w-[90px]">{t.source}</span>
                       <ArrowRight className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
                       <span className="text-sm font-extrabold tracking-tight truncate max-w-[90px]">{t.destination}</span>
                     </div>
+
+                    {/* Verified Rating Badge */}
+                    {t.averageRating && t.averageRating > 0 ? (
+                      <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-400/10 border border-amber-400/30 rounded-xl text-amber-500 dark:text-amber-400 text-xs font-black shrink-0">
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        <span>{t.averageRating.toFixed(1)}</span>
+                        <span className="text-[10px] text-zinc-400 font-bold">({t.totalReviews || 1})</span>
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-zinc-400 text-[10px] font-bold shrink-0">
+                        <Star className="h-3 w-3 text-zinc-400" />
+                        <span>New</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Timing & Operator */}

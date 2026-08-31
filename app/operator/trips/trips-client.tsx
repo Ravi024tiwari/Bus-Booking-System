@@ -22,10 +22,16 @@ import {
   ArrowRight,
   ChevronRight,
   Info,
-  DollarSign
+  DollarSign,
+  Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BusHeroBanner from '../buses/bus-hero-banner';
+import {
+  Card,
+  CardContent,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface BusItem {
@@ -67,6 +73,8 @@ interface TripItem {
   status: 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_TRANSIT' | 'ARRIVED' | 'CANCELLED';
   busCapacity: number;
   bookedSeatsCount: number;
+  averageRating?: number;
+  totalReviews?: number;
   viaStops: string[];
   createdAt: string;
 }
@@ -589,180 +597,190 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
 
       </div>
 
-      {/* 4. TRIP CARDS LIST */}
-      <div className="flex flex-col gap-4">
+      {/* 4. TRIP CARDS GRID (Inspired by Travel Package Cards) */}
+      <div>
         <AnimatePresence mode="popLayout">
           {filteredTrips.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-zinc-900 rounded-[32px] p-16 flex flex-col items-center justify-center text-center border border-zinc-200/50 dark:border-zinc-850 shadow-sm"
+              className="bg-white dark:bg-zinc-900 rounded-3xl p-16 flex flex-col items-center justify-center text-center border border-zinc-200/60 dark:border-zinc-800 shadow-xs"
             >
               <CalendarIcon className="h-12 w-12 text-zinc-300 dark:text-zinc-700 animate-pulse" />
-              <h3 className="font-extrabold text-sm text-zinc-800 dark:text-zinc-200 mt-4">No Scheduled Trips</h3>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 font-semibold mt-1.5 max-w-[280px]">
+              <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mt-4">No Scheduled Trips</h3>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 font-medium mt-1 max-w-[280px]">
                 No trips match your search parameters on this tab. Try scheduling a new trip or clearing filters.
               </p>
             </motion.div>
           ) : (
-            filteredTrips.map((trip, idx) => (
-              <motion.div
-                layout
-                key={trip.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.2 }}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-850 rounded-[28px] p-4 sm:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_25px_rgba(0,0,0,0.02)] transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative group"
-              >
-                
-                {/* Visual Core: Bus Photo & Timing */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4.5">
-                  {/* Bus photo preview */}
-                  <div className="h-16 w-28 sm:h-20 sm:w-32 rounded-2xl overflow-hidden shrink-0 border border-zinc-150 dark:border-zinc-800 shadow-sm relative">
-                    <img 
-                      src={idx % 2 === 0 ? '/images/bus1.jpg' : '/images/bus2.jpg'} 
-                      alt="Bus preview" 
-                      className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-350"
-                    />
-                  </div>
-
-                  {/* Timing blocks */}
-                  <div className="flex flex-col select-none">
-                    <span className="text-base sm:text-lg font-black text-[#ff2d88] tracking-tight">
-                      {formatTimeString(trip.departureTime)}
-                    </span>
-                    <span className="text-[10px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-black mt-1">
-                      {formatDateString(trip.date)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Route Information */}
-                <div className="flex flex-col gap-1.5 min-w-[150px] lg:max-w-[220px]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-extrabold text-sm sm:text-base text-zinc-900 dark:text-white">
-                      {trip.source}
-                    </span>
-                    <ArrowRight className="h-3.5 w-3.5 text-zinc-400" />
-                    <span className="font-extrabold text-sm sm:text-base text-zinc-900 dark:text-white">
-                      {trip.destination}
-                    </span>
-                  </div>
-                  {trip.viaStops.length > 0 && (
-                    <span className="text-[10px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-bold">
-                      Via: {trip.viaStops.join(', ')}
-                    </span>
-                  )}
-                </div>
-
-                {/* Bus License details */}
-                <div className="flex items-center gap-3">
-                  <div className="h-8.5 w-8.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 flex items-center justify-center shrink-0">
-                    <Bus className="h-4.5 w-4.5 text-zinc-400" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-zinc-900 dark:text-white">
-                      {trip.busNumber}
-                    </span>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-0.5">
-                      {trip.busType}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Seat state count */}
-                <div className="flex items-center gap-3">
-                  <div className="h-8.5 w-8.5 rounded-xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100/30 dark:border-indigo-950/15 flex items-center justify-center shrink-0">
-                    <Layers className="h-4.5 w-4.5 text-indigo-500" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-zinc-900 dark:text-white">
-                      {trip.bookedSeatsCount} / {trip.busCapacity}
-                    </span>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-0.5">
-                      Seats Booked
-                    </span>
-                  </div>
-                </div>
-
-                {/* Offer Details */}
-                <div className="flex items-center gap-3 min-w-[120px]">
-                  <div className="h-8.5 w-8.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100/30 dark:border-rose-950/15 flex items-center justify-center shrink-0">
-                    <span className="text-[#ff2d88] font-bold text-xs">%</span>
-                  </div>
-                  <div className="flex flex-col">
-                    {trip.offerPercentage && trip.offerPercentage > 0 ? (
-                      <>
-                        <span className="text-xs font-black text-rose-500">
-                          {trip.offerPercentage}% Off
-                        </span>
-                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-0.5">
-                          {trip.offerBookedCount || 0} / {trip.offerLimit} claimed
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-xs font-bold text-zinc-400">
-                          No Offer
-                        </span>
-                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-0.5">
-                          --
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Fare */}
-                <div className="flex items-center gap-2 min-w-[70px]">
-                  <span className="text-xs font-black text-zinc-400">₹</span>
-                  <span className="text-sm sm:text-base font-black text-zinc-850 dark:text-zinc-100">
-                    {trip.fare}
-                  </span>
-                </div>
-
-                {/* Status dropdown controller */}
-                <div className="flex items-center gap-2 relative">
-                  <span className={`px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider ${getStatusBadgeStyle(trip.status)}`}>
-                    {getStatusLabel(trip.status)}
-                  </span>
-                  
-                  {/* Option controls dropdown trigger */}
-                  <button 
-                    onClick={() => setActiveMenuId(activeMenuId === trip.id ? null : trip.id)}
-                    className="p-1.5 hover:bg-zinc-155 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl cursor-pointer"
-                  >
-                    <MoreVertical className="h-4.5 w-4.5 text-zinc-400" />
-                  </button>
-
-                  {/* Dropdown status update menu popup */}
-                  {activeMenuId === trip.id && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setActiveMenuId(null)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+              {filteredTrips.map((trip, idx) => (
+                <motion.div
+                  layout
+                  key={trip.id}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.2 }}
+                  className="relative"
+                >
+                  <Card className="border border-zinc-200/80 dark:border-zinc-800 rounded-[1.75rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)] hover:shadow-[0_12px_36px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-3 sm:p-3.5 gap-3 group relative overflow-visible bg-white dark:bg-zinc-900">
+                    
+                    {/* 1. TOP COVER PHOTO WITH ROUNDED CORNERS & OVERLAYS */}
+                    <div className="relative h-38 sm:h-42 w-full rounded-2xl overflow-hidden select-none bg-zinc-100 dark:bg-zinc-800 border border-zinc-150 dark:border-zinc-800/80 shadow-xs">
+                      <img 
+                        src={idx % 2 === 0 ? '/images/bus1.jpg' : '/images/bus2.jpg'} 
+                        alt="Bus route preview" 
+                        className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-500 rounded-2xl"
                       />
-                      <div className="absolute right-0 top-10 bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800 shadow-lg rounded-2xl p-2 w-[160px] flex flex-col gap-1 z-50">
-                        <span className="text-[9px] uppercase font-black text-zinc-400 px-2 py-1">Update Status</span>
-                        
-                        {['SCHEDULED', 'BOARDING', 'DEPARTED', 'IN_TRANSIT', 'ARRIVED', 'CANCELLED'].map((st) => (
-                          <button
-                            key={st}
-                            onClick={() => handleUpdateStatus(trip.id, st)}
-                            className="w-full text-left px-2 py-1.5 text-[11px] font-extrabold hover:bg-zinc-50 dark:hover:bg-zinc-800/80 rounded-xl transition-all cursor-pointer"
-                          >
-                            {st === 'CANCELLED' ? 'Delayed' : getStatusLabel(st)}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
+                      {/* Gradient overlay for text contrast */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/35 rounded-2xl" />
 
-              </motion.div>
-            ))
+                      {/* Status Badge overlay (top-left) */}
+                      <div className="absolute top-2.5 left-2.5">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase backdrop-blur-md border border-white/20 shadow-xs ${getStatusBadgeStyle(trip.status)}`}>
+                          {getStatusLabel(trip.status)}
+                        </span>
+                      </div>
+
+                      {/* Verified Rating Badge overlay (top-right) */}
+                      <div className="absolute top-2.5 right-2.5">
+                        {trip.averageRating && trip.averageRating > 0 ? (
+                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md border border-amber-400/40 text-amber-400 font-black text-[10px] shadow-xs">
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-400 drop-shadow-xs" />
+                            <span>{trip.averageRating.toFixed(1)}</span>
+                            <span className="text-[9px] text-zinc-300 font-medium">({trip.totalReviews || 1})</span>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md border border-white/20 text-zinc-300 font-medium text-[9px]">
+                            <Star className="h-2.5 w-2.5 text-zinc-400" />
+                            <span>New</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Departure Timing & Date (bottom-left) */}
+                      <div className="absolute bottom-2.5 left-2.5 flex flex-col text-white">
+                        <span className="text-xs sm:text-sm font-black tracking-tight drop-shadow-sm flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-[#ff2d88]" />
+                          {formatTimeString(trip.departureTime)}
+                        </span>
+                        <span className="text-[10px] text-zinc-200 font-semibold drop-shadow-sm">
+                          {formatDateString(trip.date)}
+                        </span>
+                      </div>
+
+                      {/* Discount offer tag if applicable (bottom-right) */}
+                      {trip.offerPercentage && trip.offerPercentage > 0 ? (
+                        <div className="absolute bottom-2.5 right-2.5">
+                          <span className="px-2 py-0.5 bg-rose-500 text-white rounded-lg text-[9px] font-black tracking-wider uppercase shadow-xs">
+                            {trip.offerPercentage}% Off
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* 2. CARD CONTENT BODY */}
+                    <div className="flex flex-col gap-2.5 px-0.5">
+                      
+                      {/* Route Header */}
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5 text-zinc-900 dark:text-white">
+                          <span className="font-extrabold text-xs sm:text-sm truncate max-w-[120px]" title={trip.source}>
+                            {trip.source}
+                          </span>
+                          <ArrowRight className="h-3 w-3 text-zinc-400 shrink-0" />
+                          <span className="font-extrabold text-xs sm:text-sm truncate max-w-[120px]" title={trip.destination}>
+                            {trip.destination}
+                          </span>
+                        </div>
+                        {trip.viaStops && trip.viaStops.length > 0 && (
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium truncate">
+                            Via: {trip.viaStops.join(', ')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Bus info & Seats meta pills */}
+                      <div className="grid grid-cols-2 gap-2 bg-zinc-50 dark:bg-zinc-850/60 border border-zinc-100 dark:border-zinc-800/80 rounded-xl p-2 text-xs select-none">
+                        {/* Vehicle details */}
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="h-6 w-6 rounded-lg bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200/50 dark:border-zinc-700/50 text-zinc-500">
+                            <Bus className="h-3 w-3" />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 truncate leading-none">{trip.busNumber}</span>
+                            <span className="text-[8px] text-zinc-400 truncate mt-0.5 leading-none">{trip.busType}</span>
+                          </div>
+                        </div>
+
+                        {/* Occupancy */}
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="h-6 w-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center shrink-0 border border-indigo-100/50 dark:border-indigo-900/30 text-indigo-500">
+                            <Layers className="h-3 w-3" />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate leading-none">{trip.bookedSeatsCount}/{trip.busCapacity}</span>
+                            <span className="text-[8px] text-zinc-400 truncate mt-0.5 leading-none">Seats Booked</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 3. CARD BOTTOM ROW: FARE & ACTION BUTTON */}
+                      <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-800/60 relative">
+                        {/* Price Display */}
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider leading-none">Fare</span>
+                          <span className="text-sm sm:text-base font-black text-zinc-900 dark:text-white mt-0.5 leading-none">
+                            ₹{trip.fare}
+                          </span>
+                        </div>
+
+                        {/* Action Dropdown Trigger Button */}
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId(activeMenuId === trip.id ? null : trip.id);
+                            }}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold text-[11px] rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+                          >
+                            <span>Manage</span>
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </button>
+
+                          {/* Dropdown status update popup */}
+                          {activeMenuId === trip.id && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-40" 
+                                onClick={() => setActiveMenuId(null)}
+                              />
+                              <div className="absolute right-0 bottom-full mb-2 bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-2xl rounded-2xl p-2 w-[165px] flex flex-col gap-1 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                <span className="text-[9px] uppercase font-black text-zinc-400 px-2 py-1">Update Status</span>
+                                
+                                {['SCHEDULED', 'BOARDING', 'DEPARTED', 'IN_TRANSIT', 'ARRIVED', 'CANCELLED'].map((st) => (
+                                  <button
+                                    key={st}
+                                    onClick={() => handleUpdateStatus(trip.id, st)}
+                                    className="w-full text-left px-2 py-1.5 text-[11px] font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all cursor-pointer text-zinc-700 dark:text-zinc-300"
+                                  >
+                                    {st === 'CANCELLED' ? 'Delayed / Cancel' : getStatusLabel(st)}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
           )}
         </AnimatePresence>
       </div>

@@ -110,6 +110,8 @@ export default async function OperatorTripsPage() {
           offerLimit: trip.offerLimit || 0,
           offerBookedCount: trip.offerBookedCount || 0,
           status: trip.status || 'SCHEDULED',
+          averageRating: trip.averageRating || 0,
+          totalReviews: trip.totalReviews || 0,
           createdAt: trip.createdAt.toISOString(),
           busCapacity: busObj ? busObj.capacity : 40,
           bookedSeatsCount,

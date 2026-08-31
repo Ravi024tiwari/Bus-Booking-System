@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
-import { Order, Trip } from '@/models';
+import { Order, Trip, Review } from '@/models';
 
 export async function GET(req: Request) {
   try {
@@ -36,15 +36,25 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const tab = searchParams.get('tab') || 'upcoming'; // 'today' | 'upcoming' | 'history'
 
-    // We fetch all orders for the user and filter in JS to avoid timezone mapping issues in DB
-    const orders = await Order.find({ passengerId: userId })
-      .populate({
-        path: 'tripId',
-        populate: {
-          path: 'busId',
-          select: 'busNumber type operatorId name'
-        }
-      });
+    // We fetch all orders and reviews for the user
+    const [orders, reviews] = await Promise.all([
+      Order.find({ passengerId: userId })
+        .populate({
+          path: 'tripId',
+          populate: {
+            path: 'busId',
+            select: 'busNumber type operatorId name'
+          }
+        }),
+      Review.find({ passengerId: userId }).select('bookingId rating comment')
+    ]);
+
+    const reviewMap = new Map<string, number>();
+    reviews.forEach((r: any) => {
+      if (r.bookingId) {
+        reviewMap.set(r.bookingId.toString(), r.rating);
+      }
+    });
 
     const now = new Date();
     const startOfToday = new Date();
@@ -56,6 +66,7 @@ export async function GET(req: Request) {
     const allBookings = orders.map((order: any) => {
       const trip = order.tripId;
       const bus = trip?.busId;
+      const orderIdStr = order._id.toString();
 
       return {
         id: order._id,
@@ -67,6 +78,7 @@ export async function GET(req: Request) {
         toStop: order.toStop,
         fromSequence: order.fromSequence,
         toSequence: order.toSequence,
+        myRating: reviewMap.get(orderIdStr) || null,
         tripDetails: trip ? {
           id: trip._id,
           source: trip.source,
@@ -75,6 +87,8 @@ export async function GET(req: Request) {
           arrivalTime: trip.arrivalTime,
           fare: trip.fare,
           status: trip.status,
+          averageRating: trip.averageRating || 0,
+          totalReviews: trip.totalReviews || 0,
           busNumber: bus?.busNumber || trip.busNumber,
           busType: bus?.type || trip.busType,
         } : null

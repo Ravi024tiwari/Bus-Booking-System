@@ -193,6 +193,7 @@ export interface TripBooking {
   toStop: string;
   fromSequence: number;
   toSequence: number;
+  myRating?: number | null;
   tripDetails: {
     id: string;
     source: string;
@@ -203,6 +204,8 @@ export interface TripBooking {
     status: 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_TRANSIT' | 'ARRIVED' | 'CANCELLED';
     busNumber: string;
     busType: string;
+    averageRating?: number;
+    totalReviews?: number;
   } | null;
 }
 
@@ -319,6 +322,8 @@ export interface AdminTrip {
   status: 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_TRANSIT' | 'ARRIVED' | 'CANCELLED';
   capacity: number;
   seatsBooked: number;
+  averageRating?: number;
+  totalReviews?: number;
   operatorDetails: {
     id: string;
     name: string;

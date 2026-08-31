@@ -139,11 +139,12 @@ export default function OperatorBusesClient({ operatorName }: BusesClientProps) 
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
-          {buses.map((bus) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 mt-2">
+          {buses.map((bus, idx) => (
             <BusCard 
               key={bus.id} 
               bus={bus} 
+              idx={idx}
               onClick={() => router.push(`/operator/buses/${bus.id}`)}
             />
           ))}
