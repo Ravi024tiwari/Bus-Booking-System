@@ -55,7 +55,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
           // Check role validation just in case
           if (u.role !== 'operator') {
             toast.error('Unauthorized access. Redirecting...');
-            router.push('/login');
+            router.replace('/login');
             return;
           }
           dispatch(setUser({
@@ -69,7 +69,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
       } catch (err: any) {
         console.error('Failed to load operator profile:', err);
         toast.error('Failed to load session. Please log in.');
-        router.push('/login');
+        router.replace('/login');
       }
     };
 

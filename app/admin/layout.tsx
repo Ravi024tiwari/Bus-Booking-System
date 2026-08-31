@@ -56,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           const u = response.data.data;
           if (u.role !== 'admin') {
             toast.error('Access denied. Redirecting to login...');
-            router.push('/login');
+            router.replace('/login');
             return;
           }
           dispatch(setUser({
@@ -70,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       } catch (err: any) {
         console.error('Failed to load admin profile:', err);
         toast.error('Session expired. Please log in.');
-        router.push('/login');
+        router.replace('/login');
       }
     };
 

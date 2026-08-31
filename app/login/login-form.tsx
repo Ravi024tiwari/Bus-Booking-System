@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -21,6 +21,7 @@ type LoginInput = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // State variables
   const [formData, setFormData] = useState({
@@ -89,15 +90,27 @@ export default function LoginForm() {
         
         // Redirect user based on role
         const role = data.data?.role;
-        setTimeout(() => {
-          if (role === 'operator') {
-            router.push('/operator/dashboard');
-          } else if (role === 'admin') {
-            router.push('/admin/dashboard');
-          } else {
-            router.push('/customer/dashboard');
+        let destination = '/customer/dashboard';
+        if (role === 'operator') {
+          destination = '/operator/dashboard';
+        } else if (role === 'admin') {
+          destination = '/admin/dashboard';
+        }
+
+        const redirectParam = searchParams.get('redirect');
+        if (redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')) {
+          if (role === 'admin' && redirectParam.startsWith('/admin')) {
+            destination = redirectParam;
+          } else if (role === 'operator' && redirectParam.startsWith('/operator')) {
+            destination = redirectParam;
+          } else if (role === 'passenger' && redirectParam.startsWith('/customer')) {
+            destination = redirectParam;
           }
-        }, 1500);
+        }
+
+        setTimeout(() => {
+          router.replace(destination);
+        }, 1200);
       } else {
         toast.error(data.message || 'Login failed. Please try again.');
       }

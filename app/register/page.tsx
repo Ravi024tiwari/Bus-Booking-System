@@ -172,7 +172,7 @@ export default function RegisterPage() {
         toast.success(data.message || 'Account created successfully!');
         
         setTimeout(() => {
-          router.push('/login');
+          router.replace('/login');
         }, 1500);
       } else {
         toast.error(data.message || 'Registration failed. Please try again.');

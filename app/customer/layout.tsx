@@ -72,7 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           // Check role validation
           if (u.role !== 'passenger') {
             toast.error('Unauthorized access. Redirecting...');
-            router.push('/login');
+            router.replace('/login');
             return;
           }
           dispatch(setUser({
@@ -86,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       } catch (err: any) {
         console.error('Failed to load customer profile:', err);
         toast.error('Failed to load session. Please log in.');
-        router.push('/login');
+        router.replace('/login');
       }
     };
 

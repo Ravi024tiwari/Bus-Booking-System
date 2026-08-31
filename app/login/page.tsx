@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
@@ -160,7 +160,9 @@ export default function LoginPage() {
         </div>
 
         {/* Embedded Interactive Login Form */}
-        <LoginForm />
+        <Suspense fallback={<div className="text-zinc-400">Loading login...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
 
     </div>
