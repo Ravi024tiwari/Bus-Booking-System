@@ -119,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="min-h-screen flex bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-100">
+    <div className="min-h-screen flex bg-background font-sans text-foreground">
       
       {/* MOBILE SIDEBAR OVERLAY */}
       {sidebarOpen && (

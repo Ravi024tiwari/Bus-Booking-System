@@ -259,38 +259,71 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
       )}
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 select-none">
-        
-        {/* Total Booked Seats */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.015)]">
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-550 font-bold uppercase tracking-wider">Seats Occupied</span>
-          <span className="text-2xl font-extrabold text-zinc-900 dark:text-white mt-1.5 block">
-            {trip.seatsBooked} <span className="text-[11px] font-semibold text-zinc-450">/ {trip.capacity} capacity</span>
+      <div className="w-full">
+        {/* Mobile Scroll Indicator */}
+        <div className="flex items-center justify-between sm:hidden mb-2.5 px-1 select-none">
+          <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            Trip Metrics
+          </span>
+          <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+            Scroll to view all <ArrowRight className="w-3 h-3 animate-bounce-x" />
           </span>
         </div>
 
-        {/* Seats Remaining */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.015)]">
-          <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Vacancies</span>
-          <span className="text-2xl font-extrabold text-zinc-900 dark:text-white mt-1.5 block">
-            {trip.seatsAvailable} <span className="text-[11px] font-semibold text-zinc-450">available</span>
-          </span>
-        </div>
+        {/* KPI Cards Container: auto-fitting, compact, content-aware layout */}
+        <div className="flex overflow-x-auto sm:overflow-x-visible no-scrollbar sm:flex-wrap gap-3 sm:gap-4 pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none select-none">
+          {/* Total Booked Seats */}
+          <div className="min-w-[165px] max-w-[210px] sm:max-w-none sm:flex-1 sm:min-w-[180px] sm:max-w-[240px] w-[48vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 flex items-center justify-center shrink-0 border border-zinc-200/80 dark:border-zinc-700/80">
+              <Users className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider block truncate">Occupied</span>
+              <span className="text-base sm:text-xl font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                {trip.seatsBooked} <span className="text-[10px] sm:text-xs font-normal text-zinc-400">/ {trip.capacity}</span>
+              </span>
+            </div>
+          </div>
 
-        {/* Occupancy percentage */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.015)]">
-          <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">Occupancy Ratio</span>
-          <span className="text-2xl font-extrabold text-zinc-900 dark:text-white mt-1.5 block">
-            {trip.capacity > 0 ? Math.round((trip.seatsBooked / trip.capacity) * 100) : 0}%
-          </span>
-        </div>
+          {/* Seats Remaining */}
+          <div className="min-w-[165px] max-w-[210px] sm:max-w-none sm:flex-1 sm:min-w-[180px] sm:max-w-[240px] w-[48vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+              <Bus className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider block truncate">Vacancies</span>
+              <span className="text-base sm:text-xl font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                {trip.seatsAvailable} <span className="text-[10px] sm:text-xs font-normal text-zinc-400">seats</span>
+              </span>
+            </div>
+          </div>
 
-        {/* Total Earned Revenue */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/55 rounded-[2rem] p-5 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.015)]">
-          <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Total Segment Revenue</span>
-          <span className="text-2xl font-extrabold text-zinc-900 dark:text-white mt-1.5 block">
-            ₹{trip.totalEarnings.toLocaleString('en-IN')}
-          </span>
+          {/* Occupancy percentage */}
+          <div className="min-w-[165px] max-w-[210px] sm:max-w-none sm:flex-1 sm:min-w-[180px] sm:max-w-[240px] w-[48vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider block truncate">Occupancy</span>
+              <span className="text-base sm:text-xl font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                {trip.capacity > 0 ? Math.round((trip.seatsBooked / trip.capacity) * 100) : 0}%
+              </span>
+            </div>
+          </div>
+
+          {/* Total Earned Revenue */}
+          <div className="min-w-[165px] max-w-[210px] sm:max-w-none sm:flex-1 sm:min-w-[180px] sm:max-w-[240px] w-[48vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider block truncate">Total Earnings</span>
+              <span className="text-base sm:text-xl font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                ₹{trip.totalEarnings.toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -9,20 +9,22 @@ export default function DashboardLoading() {
         <div className="h-4 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {[...Array(4)].map((_, i) => (
-          <div 
-            key={i}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-5 flex items-center gap-4.5"
-          >
-            <div className="h-12 w-12 rounded-2xl bg-zinc-200 dark:bg-zinc-800 shrink-0" />
-            <div className="flex flex-col gap-2 w-full">
-              <div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded" />
-              <div className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 rounded" />
-              <div className="h-3.5 w-20 bg-zinc-200 dark:bg-zinc-800 rounded" />
+      <div className="w-full">
+        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 overflow-x-auto sm:overflow-x-visible no-scrollbar pb-3 sm:pb-0 pt-1 px-1 -mx-1 snap-x snap-mandatory sm:snap-none">
+          {[...Array(4)].map((_, i) => (
+            <div 
+              key={i}
+              className="min-w-[185px] max-w-[230px] sm:max-w-none w-[52vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[1.6rem] sm:rounded-[2rem] p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4.5"
+            >
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+              <div className="flex flex-col gap-2 w-full">
+                <div className="h-2.5 sm:h-3 w-14 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                <div className="h-5 sm:h-6 w-20 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                <div className="h-3 sm:h-3.5 w-16 bg-zinc-200 dark:bg-zinc-800 rounded" />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">

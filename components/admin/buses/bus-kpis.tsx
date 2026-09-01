@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bus, CheckCircle2, Wrench, ShieldAlert, TrendingUp, TrendingDown } from 'lucide-react';
+import { Bus, CheckCircle2, Wrench, ShieldAlert, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { BusKPIs } from '@/lib/admin-buses';
 
 export default function BusKPIsWidget({ kpis }: { kpis: BusKPIs }) {
@@ -43,39 +43,50 @@ export default function BusKPIsWidget({ kpis }: { kpis: BusKPIs }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {cards.map((card, idx) => {
-        const Icon = card.icon;
-        const isPositive = card.growth >= 0;
-        return (
-          <div
-            key={idx}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2.2rem] p-6 flex items-center gap-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_15px_35px_rgba(99,102,241,0.04)] hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden group select-none"
-          >
-            <div className={`h-14 w-14 rounded-2xl ${card.iconBg} ${card.iconColor} flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-102`}>
-              <Icon className="h-6 w-6" />
-            </div>
-            
-            <div className="flex flex-col min-w-0">
-              <span className="text-zinc-400 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider block">
-                {card.title}
-              </span>
-              <span className="text-2xl font-black text-zinc-900 dark:text-white mt-1 block leading-none truncate">
-                {card.value}
-              </span>
-              <div className="mt-2 flex items-center leading-none">
-                <span className={`text-xs font-bold flex items-center gap-0.5 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {isPositive ? '+' : ''}{card.growth}%
+    <div className="w-full">
+      {/* Mobile Scroll Indicator */}
+      <div className="flex items-center justify-between sm:hidden mb-2.5 px-1 select-none">
+        <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          Fleet Overview
+        </span>
+        <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+          Scroll to view all <ArrowRight className="w-3 h-3 animate-bounce-x" />
+        </span>
+      </div>
+
+      {/* KPI Cards Container: strictly compact, non-stretching horizontal row */}
+      <div className="flex overflow-x-auto sm:overflow-x-visible no-scrollbar flex-nowrap gap-3 sm:gap-4 pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none w-full sm:w-auto">
+        {cards.map((card, idx) => {
+          const Icon = card.icon;
+          const isPositive = card.growth >= 0;
+          return (
+            <div
+              key={idx}
+              className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden group select-none"
+            >
+              <div className={`h-10 w-10 rounded-xl ${card.iconBg} ${card.iconColor} flex items-center justify-center shrink-0 border border-black/5 dark:border-white/5`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              
+              <div className="flex flex-col min-w-0">
+                <span className="text-zinc-400 dark:text-zinc-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate">
+                  {card.title}
                 </span>
-                <span className="text-zinc-400 dark:text-zinc-500 text-xs font-medium ml-1 truncate">
-                  {card.growthText}
+                <span className="text-base sm:text-lg font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                  {card.value}
                 </span>
+                <div className="mt-1 flex items-center leading-none">
+                  <span className={`text-[10px] font-bold flex items-center gap-0.5 shrink-0 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {isPositive ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                    {isPositive ? '+' : ''}{card.growth}%
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

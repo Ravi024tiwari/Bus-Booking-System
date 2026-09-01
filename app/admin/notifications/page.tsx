@@ -17,7 +17,8 @@ import {
   ChevronUp,
   Inbox,
   Layers,
-  Sparkles
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -209,43 +210,57 @@ export default function AdminNotificationsPage() {
       </div>
 
       {/* Summary Statistics Dashboard Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {/* Total Metric Card */}
-        <div className="bg-gradient-to-br from-indigo-50/50 to-white dark:from-zinc-900/60 dark:to-zinc-900 border border-zinc-200/50 dark:border-zinc-800/80 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex items-center gap-4">
-          <div className="p-3.5 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-2xl shrink-0">
-            <Layers className="h-5 w-5" />
-          </div>
-          <div>
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-extrabold uppercase tracking-wider block">Total Loaded Alerts</span>
-            <span className="text-2xl font-black text-zinc-800 dark:text-white leading-none mt-1 block">
-              {isInitialLoading ? '...' : totalCount}
-            </span>
-          </div>
+      <div className="w-full mb-8">
+        {/* Mobile Scroll Indicator */}
+        <div className="flex items-center justify-between sm:hidden mb-2.5 px-1 select-none">
+          <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            Alerts Summary
+          </span>
+          <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+            Scroll to view all <ArrowRight className="w-3 h-3 animate-bounce-x" />
+          </span>
         </div>
 
-        {/* Bus Metric Card */}
-        <div className="bg-gradient-to-br from-emerald-50/50 to-white dark:from-zinc-900/60 dark:to-zinc-900 border border-zinc-200/50 dark:border-zinc-800/80 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex items-center gap-4">
-          <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-2xl shrink-0">
-            <Bus className="h-5 w-5" />
+        {/* Container: strictly compact, non-stretching horizontal row */}
+        <div className="flex overflow-x-auto sm:overflow-x-visible no-scrollbar flex-nowrap gap-3 sm:gap-4 pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none w-full sm:w-auto">
+          {/* Total Metric Card */}
+          <div className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-3">
+            <div className="p-2 sm:p-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0 border border-indigo-100 dark:border-indigo-900/30">
+              <Layers className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider block truncate">Total Alerts</span>
+              <span className="text-base sm:text-lg font-extrabold text-zinc-800 dark:text-white leading-none mt-0.5 block truncate">
+                {isInitialLoading ? '...' : totalCount}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-extrabold uppercase tracking-wider block">Buses Added</span>
-            <span className="text-2xl font-black text-zinc-800 dark:text-white leading-none mt-1 block">
-              {isInitialLoading ? '...' : busCount}
-            </span>
-          </div>
-        </div>
 
-        {/* Trip Metric Card */}
-        <div className="bg-gradient-to-br from-amber-50/50 to-white dark:from-zinc-900/60 dark:to-zinc-900 border border-zinc-200/50 dark:border-zinc-800/80 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex items-center gap-4">
-          <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0">
-            <Calendar className="h-5 w-5" />
+          {/* Bus Metric Card */}
+          <div className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-3">
+            <div className="p-2 sm:p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-900/30">
+              <Bus className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider block truncate">Buses Added</span>
+              <span className="text-base sm:text-lg font-extrabold text-zinc-800 dark:text-white leading-none mt-0.5 block truncate">
+                {isInitialLoading ? '...' : busCount}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-extrabold uppercase tracking-wider block">Trips Scheduled</span>
-            <span className="text-2xl font-black text-zinc-800 dark:text-white leading-none mt-1 block">
-              {isInitialLoading ? '...' : tripCount}
-            </span>
+
+          {/* Trip Metric Card */}
+          <div className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-3">
+            <div className="p-2 sm:p-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl shrink-0 border border-amber-100 dark:border-amber-900/30">
+              <Calendar className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider block truncate">Trips Scheduled</span>
+              <span className="text-base sm:text-lg font-extrabold text-zinc-800 dark:text-white leading-none mt-0.5 block truncate">
+                {isInitialLoading ? '...' : tripCount}
+              </span>
+            </div>
           </div>
         </div>
       </div>

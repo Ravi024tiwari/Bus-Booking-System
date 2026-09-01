@@ -186,37 +186,51 @@ export default async function KpiCards() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      {cards.map((card) => {
-        const Icon = card.icon;
-        return (
-          <div 
-            key={card.title}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-5 flex items-center gap-4.5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_35px_rgba(0,0,0,0.02)] transition-shadow duration-300 relative overflow-hidden"
-          >
-            {/* Soft backdrop glow */}
-            <div className="absolute top-[-10%] right-[-10%] w-[100px] h-[100px] bg-zinc-200 dark:bg-zinc-800/20 rounded-full blur-[30px] pointer-events-none" />
+    <div className="w-full">
+      {/* Mobile Scroll Indicator */}
+      <div className="flex items-center justify-between sm:hidden mb-2.5 px-1 select-none">
+        <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          My Overview
+        </span>
+        <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+          Scroll to view all <ArrowRight className="w-3 h-3 animate-bounce-x" />
+        </span>
+      </div>
 
-            {/* Icon Block */}
-            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${card.iconBg}`}>
-              <Icon className="h-6 w-6" />
-            </div>
+      {/* KPI Cards Container: Horizontally scrollable on mobile, grid on sm+ */}
+      <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 overflow-x-auto sm:overflow-x-visible no-scrollbar pb-3 sm:pb-0 pt-1 px-1 -mx-1 snap-x snap-mandatory sm:snap-none">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div 
+              key={card.title}
+              className="min-w-[185px] max-w-[230px] sm:max-w-none w-[52vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[1.6rem] sm:rounded-[2rem] p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4.5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_35px_rgba(0,0,0,0.02)] transition-shadow duration-300 relative overflow-hidden"
+            >
+              {/* Soft backdrop glow */}
+              <div className="absolute top-[-10%] right-[-10%] w-[80px] sm:w-[100px] h-[80px] sm:h-[100px] bg-zinc-200 dark:bg-zinc-800/20 rounded-full blur-[25px] sm:blur-[30px] pointer-events-none" />
 
-            {/* Content info */}
-            <div className="flex flex-col select-none">
-              <span className="text-zinc-400 dark:text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">
-                {card.title}
-              </span>
-              <span className="text-xl font-black text-zinc-900 dark:text-white mt-1 block leading-none">
-                {card.value}
-              </span>
-              <div className="mt-1.5 flex items-center leading-none">
-                {card.description}
+              {/* Icon Block */}
+              <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${card.iconBg}`}>
+                <Icon className="h-4.5 w-4.5 sm:h-6 sm:w-6" />
+              </div>
+
+              {/* Content info */}
+              <div className="flex flex-col select-none min-w-0">
+                <span className="text-zinc-400 dark:text-zinc-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate">
+                  {card.title}
+                </span>
+                <span className="text-base sm:text-xl font-black text-zinc-900 dark:text-white mt-0.5 sm:mt-1 block leading-none truncate">
+                  {card.value}
+                </span>
+                <div className="mt-1 sm:mt-1.5 flex items-center leading-none">
+                  {card.description}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

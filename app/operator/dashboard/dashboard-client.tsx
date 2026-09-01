@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   RefreshCw,
   Eye,
-  MessageSquare
+  MessageSquare,
+  ArrowRight
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -196,20 +197,22 @@ export default function OperatorDashboardClient({ operatorName }: { operatorName
 
       {/* KPI METRIC CARDS GRID */}
       {kpisLoading && !kpis ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 animate-pulse">
-          {[...Array(4)].map((_, i) => (
-            <div 
-              key={i}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-5 flex items-center gap-4.5 shadow-sm"
-            >
-              <div className="h-12 w-12 rounded-2xl bg-zinc-200 dark:bg-zinc-800 shrink-0" />
-              <div className="flex flex-col gap-2 w-full">
-                <div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded" />
-                <div className="h-5 w-24 bg-zinc-200 dark:bg-zinc-800 rounded" />
-                <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded" />
+        <div className="w-full">
+          <div className="flex overflow-x-auto sm:overflow-x-visible no-scrollbar flex-nowrap gap-3 sm:gap-4 pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none w-full sm:w-auto animate-pulse">
+            {[...Array(4)].map((_, i) => (
+              <div 
+                key={i}
+                className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-xs"
+              >
+                <div className="h-10 w-10 rounded-xl bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+                <div className="flex flex-col gap-1.5 w-full">
+                  <div className="h-2.5 w-14 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                  <div className="h-4 w-20 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                  <div className="h-2.5 w-16 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : kpisError ? (
         <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold p-4 rounded-2xl flex items-center justify-between shadow-sm">
@@ -217,79 +220,89 @@ export default function OperatorDashboardClient({ operatorName }: { operatorName
           <button onClick={refetchKpis} className="underline hover:text-rose-600 font-bold transition-colors">Retry</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          
-          {/* TOTAL BOOKINGS */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-5 flex items-center gap-4.5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_35px_rgba(0,0,0,0.02)] transition-shadow duration-300 relative overflow-hidden">
-            <div className="absolute top-[-10%] right-[-10%] w-[100px] h-[100px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[30px] pointer-events-none" />
-            <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0 shadow-sm">
-              <Users className="h-6 w-6" />
-            </div>
-            <div className="flex flex-col select-none">
-              <span className="text-zinc-400 dark:text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">Total Bookings</span>
-              <span className="text-xl font-black text-zinc-900 dark:text-white mt-1 block leading-none">{kpis?.totalBookings || 0}</span>
-              <div className="mt-1.5 flex items-center leading-none">
-                <span className={`text-[11px] font-bold flex items-center gap-0.5 ${(kpis?.totalBookingsGrowth || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {(kpis?.totalBookingsGrowth || 0) >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {Math.abs(kpis?.totalBookingsGrowth || 0)}% vs last period
-                </span>
-              </div>
-            </div>
+        <div className="w-full">
+          {/* Mobile Scroll Indicator */}
+          <div className="flex items-center justify-between sm:hidden mb-2.5 px-1 select-none">
+            <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+              Business KPIs
+            </span>
+            <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+              Scroll to view all <ArrowRight className="w-3 h-3 animate-bounce-x" />
+            </span>
           </div>
 
-          {/* TOTAL REVENUE */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-5 flex items-center gap-4.5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_35px_rgba(0,0,0,0.02)] transition-shadow duration-300 relative overflow-hidden">
-            <div className="absolute top-[-10%] right-[-10%] w-[100px] h-[100px] bg-[#ff7c52]/5 dark:bg-[#ff7c52]/10 rounded-full blur-[30px] pointer-events-none" />
-            <div className="h-12 w-12 rounded-2xl bg-[#ff7c52]/10 text-[#ff7c52] flex items-center justify-center shrink-0 shadow-sm">
-              <CreditCard className="h-6 w-6" />
-            </div>
-            <div className="flex flex-col select-none">
-              <span className="text-zinc-400 dark:text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">Total Revenue</span>
-              <span className="text-xl font-black text-zinc-900 dark:text-white mt-1 block leading-none">₹{(kpis?.totalRevenue || 0).toLocaleString('en-IN')}</span>
-              <div className="mt-1.5 flex items-center leading-none">
-                <span className={`text-[11px] font-bold flex items-center gap-0.5 ${(kpis?.totalRevenueGrowth || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {(kpis?.totalRevenueGrowth || 0) >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {Math.abs(kpis?.totalRevenueGrowth || 0)}% vs last period
-                </span>
+          {/* Container: strictly compact, non-stretching horizontal row */}
+          <div className="flex overflow-x-auto sm:overflow-x-visible no-scrollbar flex-nowrap gap-3 sm:gap-4 pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none w-full sm:w-auto">
+            
+            {/* TOTAL BOOKINGS */}
+            <div className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
+              <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0 border border-indigo-500/20">
+                <Users className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col select-none min-w-0">
+                <span className="text-zinc-400 dark:text-zinc-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate">Total Bookings</span>
+                <span className="text-base sm:text-lg font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">{kpis?.totalBookings || 0}</span>
+                <div className="mt-1 flex items-center leading-none">
+                  <span className={`text-[10px] font-bold flex items-center gap-0.5 shrink-0 ${(kpis?.totalBookingsGrowth || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {(kpis?.totalBookingsGrowth || 0) >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                    {Math.abs(kpis?.totalBookingsGrowth || 0)}% vs last mo.
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* OCCUPANCY RATE */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-5 flex items-center gap-4.5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_35px_rgba(0,0,0,0.02)] transition-shadow duration-300 relative overflow-hidden">
-            <div className="absolute top-[-10%] right-[-10%] w-[100px] h-[100px] bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-[30px] pointer-events-none" />
-            <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 shadow-sm">
-              <Compass className="h-6 w-6" />
-            </div>
-            <div className="flex flex-col select-none">
-              <span className="text-zinc-400 dark:text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">Occupancy Rate</span>
-              <span className="text-xl font-black text-zinc-900 dark:text-white mt-1 block leading-none">{kpis?.occupancyRate || 0}%</span>
-              <div className="mt-1.5 flex items-center leading-none">
-                <span className={`text-[11px] font-bold flex items-center gap-0.5 ${(kpis?.occupancyRateGrowth || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {(kpis?.occupancyRateGrowth || 0) >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {kpis?.occupancyRateGrowth !== undefined ? `${kpis.occupancyRateGrowth >= 0 ? '+' : ''}${kpis.occupancyRateGrowth}%` : '0%'} vs last period
-                </span>
+            {/* TOTAL REVENUE */}
+            <div className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
+              <div className="h-10 w-10 rounded-xl bg-[#ff7c52]/10 text-[#ff7c52] flex items-center justify-center shrink-0 border border-[#ff7c52]/20">
+                <CreditCard className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col select-none min-w-0">
+                <span className="text-zinc-400 dark:text-zinc-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate">Total Revenue</span>
+                <span className="text-base sm:text-lg font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">₹{(kpis?.totalRevenue || 0).toLocaleString('en-IN')}</span>
+                <div className="mt-1 flex items-center leading-none">
+                  <span className={`text-[10px] font-bold flex items-center gap-0.5 shrink-0 ${(kpis?.totalRevenueGrowth || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {(kpis?.totalRevenueGrowth || 0) >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                    {Math.abs(kpis?.totalRevenueGrowth || 0)}% vs last mo.
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* CSAT AVERAGE RATING */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-5 flex items-center gap-4.5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_35px_rgba(0,0,0,0.02)] transition-shadow duration-300 relative overflow-hidden">
-            <div className="absolute top-[-10%] right-[-10%] w-[100px] h-[100px] bg-violet-500/5 dark:bg-violet-500/10 rounded-full blur-[30px] pointer-events-none" />
-            <div className="h-12 w-12 rounded-2xl bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0 shadow-sm">
-              <Star className="h-6 w-6 fill-violet-500/20" />
-            </div>
-            <div className="flex flex-col select-none">
-              <span className="text-zinc-400 dark:text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">CSAT Rating</span>
-              <span className="text-xl font-black text-zinc-900 dark:text-white mt-1 block leading-none">{kpis?.avgRating || 0} / 5</span>
-              <div className="mt-1.5 flex items-center leading-none">
-                <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
-                  Based on {kpis?.totalReviews || 0} customer reviews
-                </span>
+            {/* OCCUPANCY RATE */}
+            <div className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                <Compass className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col select-none min-w-0">
+                <span className="text-zinc-400 dark:text-zinc-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate">Occupancy Rate</span>
+                <span className="text-base sm:text-lg font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">{kpis?.occupancyRate || 0}%</span>
+                <div className="mt-1 flex items-center leading-none">
+                  <span className={`text-[10px] font-bold flex items-center gap-0.5 shrink-0 ${(kpis?.occupancyRateGrowth || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {(kpis?.occupancyRateGrowth || 0) >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                    {kpis?.occupancyRateGrowth !== undefined ? `${kpis.occupancyRateGrowth >= 0 ? '+' : ''}${kpis.occupancyRateGrowth}%` : '0%'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
+            {/* CSAT AVERAGE RATING */}
+            <div className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
+              <div className="h-10 w-10 rounded-xl bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0 border border-violet-500/20">
+                <Star className="h-5 w-5 fill-violet-500/20" />
+              </div>
+              <div className="flex flex-col select-none min-w-0">
+                <span className="text-zinc-400 dark:text-zinc-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate">CSAT Rating</span>
+                <span className="text-base sm:text-lg font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">{kpis?.avgRating || 0} / 5</span>
+                <div className="mt-1 flex items-center leading-none">
+                  <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 truncate">
+                    {kpis?.totalReviews || 0} reviews
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       )}
 

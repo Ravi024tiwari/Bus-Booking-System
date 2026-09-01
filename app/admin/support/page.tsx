@@ -24,7 +24,8 @@ import {
   Plus,
   X,
   Info,
-  ExternalLink
+  ExternalLink,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -485,28 +486,42 @@ export default function AdminSupportPage() {
       </div>
 
       {/* Grid Stats Header widgets */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[{
-          label: "Total Tickets", val: stats.total, color: "text-foreground", icon: MessageSquare, bg: "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
-        }, {
-          label: "Open State", val: stats.open, color: "text-purple-500", icon: Inbox, bg: "bg-purple-500/10 text-purple-500"
-        }, {
-          label: "In Progress", val: stats.inProgress, color: "text-amber-500", icon: TrendingUp, bg: "bg-amber-500/10 text-amber-500"
-        }, {
-          label: "Critical Alerts", val: stats.critical, color: "text-red-500", icon: AlertTriangle, bg: "bg-red-500/10 text-red-500 animate-pulse"
-        }].map((s, idx) => (
-          <Card key={idx} className="shadow-xs dark:bg-zinc-900/50 border-border/50">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{s.label}</p>
-                <h3 className={`text-xl md:text-2xl font-black ${s.color} mt-1`}>{s.val}</h3>
-              </div>
-              <div className={`p-2 rounded-lg ${s.bg}`}>
-                <s.icon className="h-4.5 w-4.5" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="w-full">
+        {/* Mobile Scroll Indicator */}
+        <div className="flex items-center justify-between sm:hidden mb-2.5 px-1 select-none">
+          <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+            Support Metrics
+          </span>
+          <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1">
+            Scroll to view all <ArrowRight className="w-3 h-3 animate-bounce-x" />
+          </span>
+        </div>
+
+        {/* Container: content-fitting, compact, no empty void on wide screens */}
+        <div className="flex overflow-x-auto sm:overflow-x-visible no-scrollbar sm:flex-wrap gap-3 sm:gap-4 pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none">
+          {[{
+            label: "Total Tickets", val: stats.total, color: "text-foreground", icon: MessageSquare, bg: "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
+          }, {
+            label: "Open State", val: stats.open, color: "text-purple-500", icon: Inbox, bg: "bg-purple-500/10 text-purple-500"
+          }, {
+            label: "In Progress", val: stats.inProgress, color: "text-amber-500", icon: TrendingUp, bg: "bg-amber-500/10 text-amber-500"
+          }, {
+            label: "Critical Alerts", val: stats.critical, color: "text-red-500", icon: AlertTriangle, bg: "bg-red-500/10 text-red-500 animate-pulse"
+          }].map((s, idx) => (
+            <Card key={idx} className="min-w-[165px] max-w-[210px] sm:max-w-none sm:flex-1 sm:min-w-[180px] sm:max-w-[240px] w-[48vw] sm:w-auto shrink-0 sm:shrink snap-start shadow-xs dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+              <CardContent className="p-3.5 sm:p-4 flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground truncate">{s.label}</p>
+                  <h3 className={`text-base sm:text-xl font-extrabold ${s.color} mt-0.5 leading-none truncate`}>{s.val}</h3>
+                </div>
+                <div className={`p-2 rounded-xl ${s.bg} shrink-0 ml-2 border border-black/5 dark:border-white/5`}>
+                  <s.icon className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Responsive Layout Grid */}

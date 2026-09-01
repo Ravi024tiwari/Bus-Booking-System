@@ -166,37 +166,71 @@ export default function AdminBookingsPage() {
       </div>
 
       {/* KPI METRIC CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 select-none">
-        {/* Total Loaded */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] p-5 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)] relative overflow-hidden">
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider block">Total Trips</span>
-          <span className="text-2xl font-black text-zinc-900 dark:text-white mt-1.5 block">
-            {stats.totalCount} <span className="text-[11px] font-semibold text-zinc-400 font-sans">runs</span>
+      <div className="w-full">
+        {/* Mobile Scroll Indicator */}
+        <div className="flex items-center justify-between sm:hidden mb-2.5 px-1 select-none">
+          <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            Booking Stats
+          </span>
+          <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+            Scroll to view all <ArrowRight className="w-3 h-3 animate-bounce-x" />
           </span>
         </div>
 
-        {/* Active/Scheduled Trips */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] p-5 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)] relative overflow-hidden">
-          <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider block">Active Runs</span>
-          <span className="text-2xl font-black text-zinc-900 dark:text-white mt-1.5 block">
-            {stats.activeCount} <span className="text-[11px] font-semibold text-zinc-400 font-sans">scheduled</span>
-          </span>
-        </div>
+        {/* KPI Cards Container: auto-fitting, compact, content-aware layout */}
+        <div className="flex overflow-x-auto sm:overflow-x-visible no-scrollbar sm:flex-wrap gap-3 sm:gap-4 pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none select-none">
+          {/* Total Loaded */}
+          <div className="min-w-[165px] max-w-[210px] sm:max-w-none sm:flex-1 sm:min-w-[180px] sm:max-w-[240px] w-[48vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden group">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 flex items-center justify-center shrink-0 border border-zinc-200/80 dark:border-zinc-700/80 group-hover:scale-105 transition-transform">
+              <Bus className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider block truncate">Total Trips</span>
+              <span className="text-base sm:text-xl font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                {stats.totalCount} <span className="text-[10px] sm:text-xs font-normal text-zinc-400 font-sans">runs</span>
+              </span>
+            </div>
+          </div>
 
-        {/* Completed Trips */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] p-5 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)] relative overflow-hidden">
-          <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider block">Completed</span>
-          <span className="text-2xl font-black text-zinc-900 dark:text-white mt-1.5 block">
-            {stats.completedCount} <span className="text-[11px] font-semibold text-zinc-400">arrived</span>
-          </span>
-        </div>
+          {/* Active/Scheduled Trips */}
+          <div className="min-w-[165px] max-w-[210px] sm:max-w-none sm:flex-1 sm:min-w-[180px] sm:max-w-[240px] w-[48vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden group">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20 group-hover:scale-105 transition-transform">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider block truncate">Active Runs</span>
+              <span className="text-base sm:text-xl font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                {stats.activeCount} <span className="text-[10px] sm:text-xs font-normal text-zinc-400 font-sans">scheduled</span>
+              </span>
+            </div>
+          </div>
 
-        {/* Revenue */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] p-5 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.02)] relative overflow-hidden">
-          <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider block">Estimated Revenue</span>
-          <span className="text-2xl font-black text-zinc-900 dark:text-indigo-400 mt-1.5 block">
-            ₹{stats.totalRevenue.toLocaleString('en-IN')}
-          </span>
+          {/* Completed Trips */}
+          <div className="min-w-[165px] max-w-[210px] sm:max-w-none sm:flex-1 sm:min-w-[180px] sm:max-w-[240px] w-[48vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden group">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+              <CheckCircle className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider block truncate">Completed</span>
+              <span className="text-base sm:text-xl font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                {stats.completedCount} <span className="text-[10px] sm:text-xs font-normal text-zinc-400">arrived</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Revenue */}
+          <div className="min-w-[165px] max-w-[210px] sm:max-w-none sm:flex-1 sm:min-w-[180px] sm:max-w-[240px] w-[48vw] sm:w-auto shrink-0 sm:shrink snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden group">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20 group-hover:scale-105 transition-transform">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider block truncate">Est. Revenue</span>
+              <span className="text-base sm:text-xl font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                ₹{stats.totalRevenue.toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
