@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
-import { Order, Trip, Bus, User } from '@/models';
+import { Order, Trip, Bus, User, Review } from '@/models';
+import { getTopRatedPopularRoutes } from '@/lib/popular-routes';
 
 export async function GET() {
   try {
@@ -178,59 +179,8 @@ export async function GET() {
       nextTripDate = nextTrip.formattedDate;
     }
 
-    // 6. Fetch Popular Routes from Database or fallback
-    const CITY_IMAGE_MAP: Record<string, string> = {
-      mumbai: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=600&q=80',
-      delhi: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=600&q=80',
-      pune: 'https://images.unsplash.com/photo-1600100397608-f010f421a97d?auto=format&fit=crop&w=600&q=80',
-      indore: 'https://images.unsplash.com/photo-1609766857041-ed402ea8069a?auto=format&fit=crop&w=600&q=80',
-      jaipur: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=600&q=80',
-      hyderabad: 'https://images.unsplash.com/photo-1605649487212-47bdab064df8?auto=format&fit=crop&w=600&q=80',
-      goa: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=600&q=80',
-      bengaluru: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=600&q=80',
-    };
-
-    let popularRoutes: any[] = [];
-    try {
-      const activeTrips = await Trip.find({ status: { $ne: 'CANCELLED' } })
-        .limit(16)
-        .sort({ departureTime: -1 })
-        .lean();
-
-      const uniqueRoutesMap = new Map();
-      activeTrips.forEach((t: any) => {
-        const key = `${t.source}-${t.destination}`;
-        if (!uniqueRoutesMap.has(key)) {
-          const destKey = (t.destination || '').toLowerCase().trim();
-          const srcKey = (t.source || '').toLowerCase().trim();
-          const img = CITY_IMAGE_MAP[destKey] || CITY_IMAGE_MAP[srcKey] || 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=600&q=80';
-          uniqueRoutesMap.set(key, {
-            source: t.source,
-            destination: t.destination,
-            fare: t.fare.toLocaleString('en-IN'),
-            image: img
-          });
-        }
-      });
-
-      popularRoutes = Array.from(uniqueRoutesMap.values()).slice(0, 8);
-    } catch (e) {
-      console.error('[Dashboard API] Error fetching popular routes:', e);
-    }
-
-    if (popularRoutes.length < 8) {
-      const fallbackRoutes = [
-        { source: 'Raipur', destination: 'Mumbai', fare: '1,099', image: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=600&q=80' },
-        { source: 'Raipur', destination: 'Delhi', fare: '1,299', image: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=600&q=80' },
-        { source: 'Nagpur', destination: 'Pune', fare: '799', image: 'https://images.unsplash.com/photo-1600100397608-f010f421a97d?auto=format&fit=crop&w=600&q=80' },
-        { source: 'Bhopal', destination: 'Indore', fare: '699', image: 'https://images.unsplash.com/photo-1609766857041-ed402ea8069a?auto=format&fit=crop&w=600&q=80' },
-        { source: 'Delhi', destination: 'Jaipur', fare: '499', image: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=600&q=80' },
-        { source: 'Bengaluru', destination: 'Hyderabad', fare: '899', image: 'https://images.unsplash.com/photo-1605649487212-47bdab064df8?auto=format&fit=crop&w=600&q=80' },
-        { source: 'Mumbai', destination: 'Goa', fare: '1,199', image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=600&q=80' },
-        { source: 'Chennai', destination: 'Coimbatore', fare: '649', image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=600&q=80' }
-      ];
-      popularRoutes = [...popularRoutes, ...fallbackRoutes].slice(0, 8);
-    }
+    // 6. Fetch Top Rated Trips based on all customer reviews
+    const popularRoutes = await getTopRatedPopularRoutes(6);
 
     return NextResponse.json({
       success: true,

@@ -904,6 +904,51 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
             </div>
           </div>
 
+          {/* B2. PROMOTIONAL OFFER BANNER */}
+          {offerPercentage > 0 && (
+            <div className={`rounded-3xl p-5 border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+              remainingOfferSeats > 0
+                ? 'bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-violet-500/10 border-rose-300 dark:border-rose-800/60 shadow-xs'
+                : 'bg-zinc-100/80 dark:bg-zinc-850/60 border-zinc-200 dark:border-zinc-800 opacity-80'
+            }`}>
+              <div className="flex items-center gap-3.5">
+                <div className={`h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 ${
+                  remainingOfferSeats > 0 
+                    ? 'bg-gradient-to-r from-rose-500 to-[#ff2d88] text-white shadow-md shadow-[#ff2d88]/20' 
+                    : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400'
+                }`}>
+                  <Percent className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">
+                      {remainingOfferSeats > 0 ? `Special ${offerPercentage}% Instant Discount` : 'Promotional Quota Full'}
+                    </span>
+                    {remainingOfferSeats > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black animate-pulse">
+                        LIMITED TIME DEAL
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 mt-0.5">
+                    {remainingOfferSeats > 0 
+                      ? `Enjoy ${offerPercentage}% OFF on your ticket fare! Applicable for the first ${remainingOfferSeats} passenger seats.` 
+                      : `All ${offerLimit} promotional seats for this trip have been claimed. Additional seats are booked at standard fare.`}
+                  </p>
+                </div>
+              </div>
+
+              {remainingOfferSeats > 0 ? (
+                <div className="flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 border-rose-200/50 dark:border-rose-800/30 pt-2 sm:pt-0 shrink-0">
+                  <span className="text-[9.5px] font-bold uppercase text-zinc-400">Remaining Quota</span>
+                  <span className="text-sm font-black text-[#ff2d88] dark:text-rose-400">{remainingOfferSeats} seats left</span>
+                </div>
+              ) : (
+                <span className="text-[10px] font-extrabold text-zinc-400 uppercase">Standard Fare</span>
+              )}
+            </div>
+          )}
+
           {/* C. SEAT MAP SELECTOR */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/60 rounded-[32px] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.2)] flex flex-col gap-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

@@ -23,7 +23,11 @@ import {
   ChevronRight,
   Info,
   DollarSign,
-  Star
+  Star,
+  Tag,
+  Percent,
+  Sparkles,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BusHeroBanner from '../buses/bus-hero-banner';
@@ -112,6 +116,69 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
   const [customFare, setCustomFare] = useState<number | ''>('');
   const [offerPercentage, setOfferPercentage] = useState<number | ''>('');
   const [offerLimit, setOfferLimit] = useState<number | ''>('');
+  const [selectedOfferId, setSelectedOfferId] = useState('');
+  const [operatorOffers, setOperatorOffers] = useState<any[]>([]);
+  const [showCreateOfferModal, setShowCreateOfferModal] = useState(false);
+
+  // New Offer Form State
+  const [newOfferTitle, setNewOfferTitle] = useState('');
+  const [newOfferCode, setNewOfferCode] = useState('');
+  const [newOfferDiscount, setNewOfferDiscount] = useState<number | ''>(20);
+  const [newOfferLimit, setNewOfferLimit] = useState<number | ''>(10);
+  const [newOfferValidTill, setNewOfferValidTill] = useState('');
+  const [creatingOfferLoading, setCreatingOfferLoading] = useState(false);
+
+  // Fetch operator offers
+  const fetchOperatorOffers = async () => {
+    try {
+      const res = await axios.get('/api/operator/offers');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setOperatorOffers(res.data.data);
+      }
+    } catch (err) {
+      console.error('[Fetch Operator Offers Error]:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOperatorOffers();
+  }, []);
+
+  const handleCreateOfferSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newOfferTitle || !newOfferCode || !newOfferDiscount || !newOfferLimit || !newOfferValidTill) {
+      toast.error('Please fill in all offer details.');
+      return;
+    }
+    setCreatingOfferLoading(true);
+    try {
+      const res = await axios.post('/api/operator/offers', {
+        title: newOfferTitle,
+        code: newOfferCode,
+        discountPercentage: Number(newOfferDiscount),
+        offerLimit: Number(newOfferLimit),
+        validTill: newOfferValidTill
+      });
+      if (res.data?.success) {
+        toast.success(`Offer "${newOfferCode.toUpperCase()}" created successfully!`);
+        setShowCreateOfferModal(false);
+        fetchOperatorOffers();
+        setSelectedOfferId(res.data.data._id);
+        setOfferPercentage(res.data.data.discountPercentage);
+        setOfferLimit(res.data.data.offerLimit);
+        // Reset
+        setNewOfferTitle('');
+        setNewOfferCode('');
+        setNewOfferDiscount(20);
+        setNewOfferLimit(10);
+        setNewOfferValidTill('');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create offer.');
+    } finally {
+      setCreatingOfferLoading(false);
+    }
+  };
 
   // Dropdown menu state
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -276,7 +343,7 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
 
     setLoading(true);
     try {
-      const payload = {
+      const payload: any = {
         busId: selectedBusId,
         routeId: selectedRouteId,
         date: tripDate,
@@ -285,6 +352,10 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
         offerPercentage: offerPercentage === '' ? 0 : Number(offerPercentage),
         offerLimit: offerLimit === '' ? 0 : Number(offerLimit)
       };
+
+      if (selectedOfferId && selectedOfferId !== 'custom' && selectedOfferId !== 'none') {
+        payload.offerId = selectedOfferId;
+      }
 
       const response = await axios.post('/api/trips', payload);
 
@@ -328,6 +399,7 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
         setDepartureTime('08:00 AM');
         setOfferPercentage('');
         setOfferLimit('');
+        setSelectedOfferId('');
       }
     } catch (err: any) {
       console.error('[Add Trip Form Error]:', err);
@@ -732,9 +804,17 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                         {/* Price Display */}
                         <div className="flex flex-col">
                           <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider leading-none">Fare</span>
-                          <span className="text-sm sm:text-base font-black text-zinc-900 dark:text-white mt-0.5 leading-none">
-                            ₹{trip.fare}
-                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-sm sm:text-base font-black text-zinc-900 dark:text-white leading-none">
+                              ₹{trip.fare}
+                            </span>
+                            {trip.offerPercentage && trip.offerPercentage > 0 ? (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[9px] font-black">
+                                <Percent className="h-2.5 w-2.5" />
+                                {trip.offerPercentage}% OFF
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
 
                         {/* Action Dropdown Trigger Button */}
@@ -923,45 +1003,92 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                     </div>
                   </div>
 
-                  {/* Offer Fields Group (Two columns) */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Offer Percentage */}
-                    <div className="flex flex-col gap-1.5">
+                  {/* Offer Selection Dropdown */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
                       <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">
-                        Offer Discount (%)
+                        Promotional Offer Template
                       </label>
-                      <div className="relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-2xl px-3 py-2 flex items-center gap-2">
-                        <span className="text-zinc-400 font-extrabold text-xs">%</span>
-                        <input 
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={offerPercentage}
-                          onChange={(e) => setOfferPercentage(e.target.value === '' ? '' : Number(e.target.value))}
-                          placeholder="e.g. 15"
-                          className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none"
-                        />
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateOfferModal(true)}
+                        className="text-[10px] font-black text-[#ff2d88] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus className="h-3 w-3" /> Create New Offer
+                      </button>
                     </div>
-
-                    {/* Offer Limit (First X passengers) */}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">
-                        For First X Persons
-                      </label>
-                      <div className="relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-2xl px-3 py-2 flex items-center gap-2">
-                        <span className="text-zinc-400 font-extrabold text-xs">Pax</span>
-                        <input 
-                          type="number"
-                          min="0"
-                          value={offerLimit}
-                          onChange={(e) => setOfferLimit(e.target.value === '' ? '' : Number(e.target.value))}
-                          placeholder="e.g. 5"
-                          className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none"
-                        />
-                      </div>
+                    <div className="relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-2xl px-3 py-2 flex items-center gap-2">
+                      <Tag className="h-4.5 w-4.5 text-zinc-400 shrink-0" />
+                      <select
+                        value={selectedOfferId}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedOfferId(val);
+                          if (val && val !== 'custom' && val !== 'none') {
+                            const found = operatorOffers.find(o => o._id === val);
+                            if (found) {
+                              setOfferPercentage(found.discountPercentage);
+                              setOfferLimit(found.offerLimit);
+                            }
+                          } else if (val === 'none') {
+                            setOfferPercentage(0);
+                            setOfferLimit(0);
+                          }
+                        }}
+                        className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none cursor-pointer"
+                      >
+                        <option value="none">No Promotional Offer (Standard Fare)</option>
+                        {operatorOffers.filter(o => o.isActive).map(o => (
+                          <option key={o._id} value={o._id}>
+                            {o.title} ({o.code}) — {o.discountPercentage}% OFF (Limit: {o.offerLimit} seats)
+                          </option>
+                        ))}
+                        <option value="custom">Custom Offer (Enter Discount Manually)</option>
+                      </select>
                     </div>
                   </div>
+
+                  {/* Offer Fields Group (Two columns) */}
+                  {(selectedOfferId === 'custom' || (selectedOfferId && selectedOfferId !== 'none')) && (
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Offer Percentage */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">
+                          Offer Discount (%)
+                        </label>
+                        <div className="relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-2xl px-3 py-2 flex items-center gap-2">
+                          <span className="text-zinc-400 font-extrabold text-xs">%</span>
+                          <input 
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={offerPercentage}
+                            onChange={(e) => setOfferPercentage(e.target.value === '' ? '' : Number(e.target.value))}
+                            placeholder="e.g. 15"
+                            className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Offer Limit (First X passengers) */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">
+                          For First X Persons
+                        </label>
+                        <div className="relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-2xl px-3 py-2 flex items-center gap-2">
+                          <span className="text-zinc-400 font-extrabold text-xs">Pax</span>
+                          <input 
+                            type="number"
+                            min="0"
+                            value={offerLimit}
+                            onChange={(e) => setOfferLimit(e.target.value === '' ? '' : Number(e.target.value))}
+                            placeholder="e.g. 5"
+                            className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Live calculated arrival block */}
                   <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-850/60 rounded-2xl p-4 flex items-center justify-between select-none">
@@ -1018,6 +1145,127 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                 </button>
               </div>
 
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Create Standalone Offer Template */}
+      <AnimatePresence>
+        {showCreateOfferModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCreateOfferModal(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 transition-opacity"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl z-50 select-none max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-xl bg-[#ff2d88]/10 flex items-center justify-center text-[#ff2d88]">
+                    <Sparkles className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-zinc-900 dark:text-white">Create Offer Campaign</h3>
+                    <p className="text-[10.5px] text-zinc-400 font-bold">Reusable promotional discount template</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCreateOfferModal(false)}
+                  className="h-8 w-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateOfferSubmit} className="flex flex-col gap-4 pt-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10.5px] font-black uppercase text-zinc-400">Offer Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Early Bird Special"
+                    value={newOfferTitle}
+                    onChange={(e) => setNewOfferTitle(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#ff2d88]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10.5px] font-black uppercase text-zinc-400">Promo Code *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. EARLY20"
+                    value={newOfferCode}
+                    onChange={(e) => setNewOfferCode(e.target.value.toUpperCase())}
+                    className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-black uppercase focus:outline-none focus:border-[#ff2d88]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10.5px] font-black uppercase text-zinc-400">Discount % *</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      max="100"
+                      value={newOfferDiscount}
+                      onChange={(e) => setNewOfferDiscount(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#ff2d88]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10.5px] font-black uppercase text-zinc-400">Seat Quota *</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      placeholder="e.g. 10"
+                      value={newOfferLimit}
+                      onChange={(e) => setNewOfferLimit(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#ff2d88]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10.5px] font-black uppercase text-zinc-400">Valid Till Date *</label>
+                  <input
+                    type="date"
+                    required
+                    min={todayStr}
+                    value={newOfferValidTill}
+                    onChange={(e) => setNewOfferValidTill(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold focus:outline-none focus:border-[#ff2d88]"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateOfferModal(false)}
+                    className="w-1/2 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creatingOfferLoading}
+                    className="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white text-xs font-black shadow-md cursor-pointer hover:opacity-95 disabled:opacity-50"
+                  >
+                    {creatingOfferLoading ? 'Saving...' : 'Save & Select'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </>
         )}

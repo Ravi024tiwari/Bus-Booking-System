@@ -93,6 +93,10 @@ export async function GET(
           departureTime: trip.departureTime,
           arrivalTime: trip.arrivalTime,
           fare: trip.fare,
+          offerId: trip.offerId || null,
+          offerPercentage: trip.offerPercentage || 0,
+          offerLimit: trip.offerLimit || 0,
+          offerBookedCount: trip.offerBookedCount || 0,
           status: trip.status || 'SCHEDULED'
         },
         bus: {

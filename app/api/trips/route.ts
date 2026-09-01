@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { Trip, Bus, Route, User, Notification } from '@/models';
+import { Trip, Bus, Route, User, Notification, Offer } from '@/models';
 import { verifyAuth } from '@/lib/auth-proxy';
 import mongoose from 'mongoose';
 
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { busId, routeId, date, departureTime, fare, offerPercentage, offerLimit } = body;
+    const { busId, routeId, date, departureTime, fare, offerId, offerPercentage, offerLimit } = body;
 
     // Validate inputs
     if (!busId || !routeId || !date || !departureTime || fare === undefined) {
@@ -32,26 +32,37 @@ export async function POST(req: Request) {
       );
     }
 
+    let parsedOfferId: string | null = null;
     let parsedOfferPercentage = 0;
     let parsedOfferLimit = 0;
 
-    if (offerPercentage !== undefined && offerPercentage !== null && offerPercentage !== '') {
-      parsedOfferPercentage = Number(offerPercentage);
-      if (isNaN(parsedOfferPercentage) || parsedOfferPercentage < 0 || parsedOfferPercentage > 100) {
-        return NextResponse.json(
-          { success: false, message: 'Offer percentage must be a number between 0 and 100.' },
-          { status: 400 }
-        );
+    // If an Offer is selected by the operator
+    if (offerId && mongoose.Types.ObjectId.isValid(offerId)) {
+      const selectedOffer = await Offer.findOne({ _id: offerId, isActive: true });
+      if (selectedOffer) {
+        parsedOfferId = selectedOffer._id.toString();
+        parsedOfferPercentage = selectedOffer.discountPercentage;
+        parsedOfferLimit = selectedOffer.offerLimit;
       }
-    }
+    } else {
+      if (offerPercentage !== undefined && offerPercentage !== null && offerPercentage !== '') {
+        parsedOfferPercentage = Number(offerPercentage);
+        if (isNaN(parsedOfferPercentage) || parsedOfferPercentage < 0 || parsedOfferPercentage > 100) {
+          return NextResponse.json(
+            { success: false, message: 'Offer percentage must be a number between 0 and 100.' },
+            { status: 400 }
+          );
+        }
+      }
 
-    if (offerLimit !== undefined && offerLimit !== null && offerLimit !== '') {
-      parsedOfferLimit = Number(offerLimit);
-      if (isNaN(parsedOfferLimit) || parsedOfferLimit < 0) {
-        return NextResponse.json(
-          { success: false, message: 'Offer limit must be a non-negative number.' },
-          { status: 400 }
-        );
+      if (offerLimit !== undefined && offerLimit !== null && offerLimit !== '') {
+        parsedOfferLimit = Number(offerLimit);
+        if (isNaN(parsedOfferLimit) || parsedOfferLimit < 0) {
+          return NextResponse.json(
+            { success: false, message: 'Offer limit must be a non-negative number.' },
+            { status: 400 }
+          );
+        }
       }
     }
 
@@ -181,7 +192,7 @@ export async function POST(req: Request) {
     }
 
     // 4. Create Trip with denormalized fields
-    const newTrip = await Trip.create({
+    const tripPayload: any = {
       busId,
       routeId,
       busNumber: bus.busNumber,
@@ -196,7 +207,18 @@ export async function POST(req: Request) {
       offerLimit: parsedOfferLimit,
       offerBookedCount: 0,
       status: 'SCHEDULED'
-    });
+    };
+
+    if (parsedOfferId) {
+      tripPayload.offerId = new mongoose.Types.ObjectId(parsedOfferId);
+    }
+
+    const newTrip: any = await Trip.create(tripPayload);
+
+    // If an offer was linked, bind tripId on the Offer document as well
+    if (parsedOfferId) {
+      await Offer.findByIdAndUpdate(parsedOfferId, { tripId: newTrip._id });
+    }
 
     // Create Notification for Admins and Broadcast via Socket.io
     try {

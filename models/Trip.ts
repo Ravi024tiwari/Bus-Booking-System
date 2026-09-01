@@ -11,6 +11,7 @@ export interface ITrip extends Document {
   departureTime: Date;
   arrivalTime: Date;
   fare: number;
+  offerId?: mongoose.Types.ObjectId; // Ref to Offer
   offerPercentage?: number;
   offerLimit?: number;
   offerBookedCount?: number;
@@ -68,6 +69,12 @@ const TripSchema = new Schema<ITrip>({
     type: Number, 
     required: true,
     index: true 
+  },
+  offerId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Offer',
+    default: null,
+    index: true
   },
   offerPercentage: {
     type: Number,

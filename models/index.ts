@@ -9,3 +9,4 @@ export * from './IdempotencyLog';
 export * from './Notification';
 export * from './TrackingSession';
 export * from './Wishlist';
+export * from './Offer';

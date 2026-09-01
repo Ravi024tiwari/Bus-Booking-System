@@ -7,6 +7,10 @@ import KpiCards from './kpi-cards';
 import UpcomingTripCard from './upcoming-trip-card';
 import RecentBookingsList from './recent-bookings';
 import PopularRoutes from './popular-routes';
+import ExclusiveOffers from './exclusive-offers';
+
+import { getTopRatedPopularRoutes } from '@/lib/popular-routes';
+import { getActiveDiscountedOffers } from '@/lib/offers';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +27,8 @@ import {
 export default async function DashboardPage() {
   // Retrieve user name from JWT cookie server-side
   let firstName = 'Traveler';
+  let popularRoutes: any[] = [];
+  let discountedOffers: any[] = [];
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
@@ -36,6 +42,18 @@ export default async function DashboardPage() {
     }
   } catch (err) {
     console.error('[Dashboard Page Server] Failed to resolve name:', err);
+  }
+
+  try {
+    popularRoutes = await getTopRatedPopularRoutes(6);
+  } catch (err) {
+    console.error('[Dashboard Page Server] Failed to load popular routes:', err);
+  }
+
+  try {
+    discountedOffers = await getActiveDiscountedOffers(5);
+  } catch (err) {
+    console.error('[Dashboard Page Server] Failed to load discounted offers:', err);
   }
 
   // Dynamic greeting based on current hour
@@ -71,7 +89,7 @@ export default async function DashboardPage() {
           <RecentBookingsList />
 
           {/* DYNAMIC POPULAR ROUTES GRID */}
-          <PopularRoutes />
+          <PopularRoutes initialRoutes={popularRoutes} />
 
           {/* REFER & EARN BANNER */}
           <div className="bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] rounded-[2rem] p-6 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl shadow-[#ff2d88]/10 select-none">
@@ -136,99 +154,8 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* EXCLUSIVE OFFERS SLIDER PANEL */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] select-none">
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-base text-zinc-900 dark:text-white">Exclusive Offers</h3>
-              <Link
-                href="/customer/offers"
-                className="text-xs font-bold text-violet-600 hover:text-violet-700"
-              >
-                View All
-              </Link>
-            </div>
-
-            {/* Slider container */}
-            <div className="flex flex-col gap-4">
-
-              {/* Premium coupon card */}
-              <div className="relative bg-gradient-to-br from-[#533be1] to-[#a33be1] rounded-[2.2rem] p-6 text-white overflow-hidden shadow-lg flex flex-col gap-6 justify-between aspect-[1.3] group">
-                {/* Decorative glows */}
-                <div className="absolute top-[-10%] right-[-10%] w-[120px] h-[120px] bg-white/10 rounded-full blur-[30px] pointer-events-none" />
-                <div className="absolute bottom-[-15%] left-[-15%] w-[150px] h-[150px] bg-[#ff2d88]/20 rounded-full blur-[50px] pointer-events-none" />
-
-                {/* Background bus overlay */}
-                <div className="absolute right-0 bottom-0 w-[55%] h-[60%] opacity-40 pointer-events-none">
-                  <Image
-                    src="/images/bus-hero.jpg"
-                    alt="Offer Bus"
-                    fill
-                    sizes="(max-width: 768px) 50vw, 20vw"
-                    className="object-cover rounded-tl-[2rem]"
-                    loading="lazy"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1 z-10">
-                  <span className="text-[10px] text-zinc-300 font-extrabold uppercase tracking-widest leading-none">Special Discount</span>
-                  <span className="text-xl font-black mt-1 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-200">
-                    Flat 20% OFF
-                  </span>
-                  <span className="text-xs text-zinc-300 font-semibold mt-1">On Your First Booking</span>
-                </div>
-
-                <div className="flex flex-col gap-3.5 z-10">
-                  <div className="flex items-center gap-2">
-                    <span className="px-3.5 py-1.5 bg-white/15 border border-white/20 rounded-xl text-[10px] font-black tracking-widest uppercase block leading-none">
-                      FIRST20
-                    </span>
-                    <span className="text-[10px] text-zinc-300 font-bold">Coupon</span>
-                  </div>
-
-                  <Link 
-                    href="/customer/book"
-                    className="py-2.5 px-5 bg-white text-zinc-950 font-black text-xs rounded-xl shadow-md active:scale-95 transition-all duration-200 self-start leading-none flex items-center gap-1 group/btn"
-                  >
-                    Book Now
-                    <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Smaller coupon list */}
-              <div className="flex flex-col gap-3">
-                {[
-                  { title: 'Upto ₹300 OFF', desc: 'On Round Trip Bookings', code: 'ROUND300' },
-                  { title: 'Get 15% OFF', desc: 'On Bookings above ₹1500', code: 'SAVE15' }
-                ].map((promo, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3.5 border border-zinc-100 dark:border-zinc-800/50 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/10 hover:shadow-sm transition-shadow duration-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 bg-orange-500/10 text-orange-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-orange-500/15">
-                        <Percent className="h-4.5 w-4.5" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black text-zinc-800 dark:text-zinc-200 leading-none">
-                          {promo.title}
-                        </span>
-                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-1 leading-none">
-                          {promo.desc}
-                        </span>
-                      </div>
-                    </div>
-
-                    <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/50 text-[10px] font-black tracking-wider uppercase rounded-xl leading-none select-all text-zinc-800 dark:text-zinc-200 shadow-sm">
-                      {promo.code}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-            </div>
-
-          </div>
+          {/* DYNAMIC EXCLUSIVE OFFERS PANEL */}
+          <ExclusiveOffers initialOffers={discountedOffers} />
 
           {/* NEED HELP CARD */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] select-none">

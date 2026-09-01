@@ -545,10 +545,17 @@ export interface CustomerNextTrip {
 }
 
 export interface PopularRouteItem {
+  id?: string;
+  tripId?: string;
   source: string;
   destination: string;
   fare: string;
+  rawFare?: number;
   image: string;
+  busNumber?: string;
+  busType?: string;
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 interface CustomerDashboardState {

@@ -102,6 +102,8 @@ export default function OffersClient() {
   
   const [activeTab, setActiveTab] = useState<'available' | 'claimed'>('available');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [liveOffers, setLiveOffers] = useState<any[]>([]);
+  const [loadingOffers, setLoadingOffers] = useState(true);
 
   // Redux rewards state
   const { list: rewardsList, totalSavings, claimedCount, loading, error } = useSelector(
@@ -112,6 +114,26 @@ export default function OffersClient() {
   useEffect(() => {
     dispatch(fetchMyRewards());
   }, [dispatch]);
+
+  // Fetch dynamic active offers from operators
+  useEffect(() => {
+    const fetchLiveOffers = async () => {
+      setLoadingOffers(true);
+      try {
+        const res = await fetch('/api/offers');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setLiveOffers(data.data);
+        }
+      } catch (err) {
+        console.error('[Fetch Live Offers Error]:', err);
+      } finally {
+        setLoadingOffers(false);
+      }
+    };
+
+    fetchLiveOffers();
+  }, []);
 
   // Handle promo code copy
   const handleCopyCode = (code: string) => {
@@ -375,90 +397,214 @@ export default function OffersClient() {
 
       {/* 5. TAB CONTENT */}
       {activeTab === 'available' ? (
-        /* AVAILABLE PROMO CODES GRID */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {AVAILABLE_OFFERS.map((offer) => {
-            const isCopied = copiedCode === offer.code;
-
-            return (
-              <motion.div
-                key={offer.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-[1.75rem] p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden group"
-              >
-                {/* Top Row: Category and Badge */}
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-                    {offer.category}
-                  </span>
-                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-pink-500/10 text-[#ff2d88] dark:text-pink-400 border border-pink-500/20">
-                    {offer.badge}
-                  </span>
-                </div>
-
-                {/* Middle: Title, Discount & Description */}
-                <div className="my-4 flex flex-col gap-2">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">
-                      {offer.title}
-                    </h3>
-                    <span className="text-lg font-black text-[#ff5666] dark:text-pink-400 shrink-0 font-sans">
-                      {offer.discount}
-                    </span>
+        <div className="flex flex-col gap-8">
+          
+          {/* LIVE OPERATOR DISCOUNTED TRIPS */}
+          {liveOffers && liveOffers.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-xl bg-[#ff2d88]/10 text-[#ff2d88] flex items-center justify-center">
+                    <Sparkles className="h-4 w-4" />
                   </div>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
-                    {offer.description}
-                  </p>
+                  <h2 className="text-lg font-black text-zinc-900 dark:text-white tracking-tight">
+                    Active Operator Discounted Trips
+                  </h2>
                 </div>
+                <span className="text-xs font-bold text-zinc-400">
+                  {liveOffers.length} {liveOffers.length === 1 ? 'Trip on Sale' : 'Trips on Sale'}
+                </span>
+              </div>
 
-                {/* Validity Rules */}
-                <div className="flex items-center gap-4 text-[11px] text-zinc-400 font-medium border-t border-zinc-100 dark:border-zinc-800/80 pt-3 mb-4">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    {offer.validTill}
-                  </span>
-                  <span>•</span>
-                  <span>{offer.minBooking}</span>
-                </div>
-
-                {/* Bottom Row: Copy Code & Apply CTA */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 flex items-center justify-between bg-pink-50/60 dark:bg-pink-950/20 border border-dashed border-pink-200 dark:border-pink-800/50 rounded-xl px-3.5 py-2">
-                    <span className="font-mono font-black text-xs text-[#ff2d88] dark:text-pink-200 tracking-widest">
-                      {offer.code}
-                    </span>
-                    <button
-                      onClick={() => handleCopyCode(offer.code)}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#ff5666] dark:text-pink-400 hover:text-[#ff2d88] transition-colors cursor-pointer"
-                      title="Copy promo code"
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {liveOffers.map((offer) => {
+                  const trip = offer.tripDetails;
+                  return (
+                    <motion.div
+                      key={offer.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-[1.75rem] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
                     >
-                      {isCopied ? (
-                        <>
-                          <Check className="h-3.5 w-3.5 text-emerald-500" />
-                          <span className="text-emerald-500">Copied</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3.5 w-3.5" />
-                          <span>Copy</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+                      {/* Top Image Banner */}
+                      <div className="relative h-40 w-full overflow-hidden bg-zinc-950">
+                        <img 
+                          src={offer.bannerImage || '/images/volvo.png'} 
+                          alt={`${trip.source} to ${trip.destination}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
+                        
+                        {/* Top Badges */}
+                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-600/90 text-white text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-sm">
+                            {offer.badgeText || `${offer.discountPercentage}% OFF`}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-lg bg-black/60 text-amber-300 text-[10px] font-bold backdrop-blur-md border border-amber-400/30">
+                            Code: {offer.code}
+                          </span>
+                        </div>
 
-                  <Link
-                    href={`/customer/book?promo=${offer.code}`}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#ff5666] to-[#ff2d88] hover:opacity-95 shadow-sm shadow-[#ff2d88]/20 transition-all flex items-center gap-1 shrink-0 cursor-pointer active:scale-95"
+                        {/* Route Overlay on Image */}
+                        <div className="absolute bottom-3 left-3 right-3 text-white">
+                          <div className="flex items-center gap-1.5 text-base font-black tracking-tight drop-shadow-sm">
+                            <span className="truncate">{trip.source}</span>
+                            <span className="text-rose-400 font-normal">➔</span>
+                            <span className="truncate">{trip.destination}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-zinc-300 font-bold mt-0.5">
+                            <span>{trip.busType}</span>
+                            <span>•</span>
+                            <span>{trip.date}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Content Body */}
+                      <div className="p-4 flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-zinc-400 uppercase">Special Fare</span>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-lg font-black text-[#ff2d88] dark:text-rose-400">
+                                ₹{trip.discountedFare}
+                              </span>
+                              <span className="text-xs text-zinc-400 line-through font-bold">
+                                ₹{trip.originalFare}
+                              </span>
+                            </div>
+                          </div>
+
+                          <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 px-2 py-0.5 rounded-md">
+                            Save ₹{trip.discountAmount}
+                          </span>
+                        </div>
+
+                        {/* Quota Indicator */}
+                        <div className="flex items-center justify-between text-[11px] font-bold pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
+                          <span className="text-zinc-500 dark:text-zinc-400">Seat Quota:</span>
+                          {offer.remainingSeats > 0 ? (
+                            <span className="text-rose-600 dark:text-rose-400 font-black">
+                              {offer.remainingSeats} seats left
+                            </span>
+                          ) : (
+                            <span className="text-zinc-400 font-medium">Quota Exhausted</span>
+                          )}
+                        </div>
+
+                        {/* Direct Booking CTA Button */}
+                        <Link
+                          href={`/customer/book/${trip.tripId}`}
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#ff5666] to-[#ff2d88] hover:opacity-95 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-[#ff2d88]/20 transition-all cursor-pointer active:scale-98 text-center mt-1"
+                        >
+                          <span>Book This Trip Now</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* PLATFORM COUPON CODES */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                <Tag className="h-4 w-4" />
+              </div>
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white tracking-tight">
+                General Platform Promo Codes
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {AVAILABLE_OFFERS.map((offer) => {
+                const isCopied = copiedCode === offer.code;
+
+                return (
+                  <motion.div
+                    key={offer.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-[1.75rem] p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden group"
                   >
-                    <span>Use Code</span>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-              </motion.div>
-            );
-          })}
+                    {/* Top Row: Category and Badge */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                        {offer.category}
+                      </span>
+                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-pink-500/10 text-[#ff2d88] dark:text-pink-400 border border-pink-500/20">
+                        {offer.badge}
+                      </span>
+                    </div>
+
+                    {/* Middle: Title, Discount & Description */}
+                    <div className="my-4 flex flex-col gap-2">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">
+                          {offer.title}
+                        </h3>
+                        <span className="text-lg font-black text-[#ff5666] dark:text-pink-400 shrink-0 font-sans">
+                          {offer.discount}
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
+                        {offer.description}
+                      </p>
+                    </div>
+
+                    {/* Validity Rules */}
+                    <div className="flex items-center gap-4 text-[11px] text-zinc-400 font-medium border-t border-zinc-100 dark:border-zinc-800/80 pt-3 mb-4">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5" />
+                        {offer.validTill}
+                      </span>
+                      <span>•</span>
+                      <span>{offer.minBooking}</span>
+                    </div>
+
+                    {/* Bottom Row: Copy Code & Apply CTA */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 flex items-center justify-between bg-pink-50/60 dark:bg-pink-950/20 border border-dashed border-pink-200 dark:border-pink-800/50 rounded-xl px-3.5 py-2">
+                        <span className="font-mono font-black text-xs text-[#ff2d88] dark:text-pink-200 tracking-widest">
+                          {offer.code}
+                        </span>
+                        <button
+                          onClick={() => handleCopyCode(offer.code)}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#ff5666] dark:text-pink-400 hover:text-[#ff2d88] transition-colors cursor-pointer"
+                          title="Copy promo code"
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="h-3.5 w-3.5 text-emerald-500" />
+                              <span className="text-emerald-500">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3.5 w-3.5" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <Link
+                        href={`/customer/book?promo=${offer.code}`}
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#ff5666] to-[#ff2d88] hover:opacity-95 shadow-sm shadow-[#ff2d88]/20 transition-all flex items-center gap-1 shrink-0 cursor-pointer active:scale-95"
+                      >
+                        <span>Use Code</span>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
       ) : (
         /* REDEEMED TRIP HISTORY TAB */
