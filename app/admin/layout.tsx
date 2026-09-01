@@ -22,8 +22,7 @@ import {
   Settings,
   LogOut, 
   Menu, 
-  X, 
-  Rocket
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -169,31 +168,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* SIDEBAR PANEL */}
-      <aside className={`fixed inset-y-0 left-0 w-64 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 flex flex-col justify-between p-6 z-50 transition-transform duration-300 lg:translate-x-0 lg:static lg:h-screen shrink-0 border-r border-zinc-200/50 dark:border-zinc-800/55 overflow-y-auto ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      <aside className={`fixed inset-y-0 left-0 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 flex flex-col justify-between p-4 sm:p-5 z-50 transition-all duration-300 ease-in-out shrink-0 border-r border-zinc-200/50 dark:border-zinc-800/55 overflow-y-auto overflow-x-hidden ${
+        sidebarOpen 
+          ? 'translate-x-0 w-64 lg:static lg:h-screen' 
+          : '-translate-x-full lg:translate-x-0 lg:w-20 lg:static lg:h-screen'
       }`}>
         
         <div className="flex flex-col gap-6">
           {/* Top Logo & Close Button */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-indigo-600 p-2.5 rounded-2xl flex items-center justify-center shadow-md shadow-indigo-600/10">
+            <div className={`flex items-center gap-3 ${!sidebarOpen ? 'lg:justify-center lg:w-full' : ''}`}>
+              <div className="bg-indigo-600 p-2.5 rounded-2xl flex items-center justify-center shadow-md shadow-indigo-600/10 shrink-0">
                 <Bus className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <div className="flex items-center">
-                  <span className="font-extrabold text-xl text-indigo-600 dark:text-indigo-400 tracking-tight leading-none">Task</span>
-                  <span className="font-extrabold text-xl text-indigo-900 dark:text-white tracking-tight leading-none">ora</span>
+              {sidebarOpen && (
+                <div className="flex flex-col min-w-0 transition-opacity duration-200">
+                  <div className="flex items-center">
+                    <span className="font-extrabold text-xl text-zinc-900 dark:text-white tracking-tight leading-none">Trip</span>
+                    <span className="font-extrabold text-xl text-[#ff5666] tracking-tight leading-none">Go</span>
+                  </div>
+                  <span className="text-[9px] text-zinc-400 font-extrabold tracking-widest uppercase mt-1 block truncate">Admin Panel</span>
                 </div>
-                <span className="text-[9px] text-zinc-400 font-extrabold tracking-widest uppercase mt-1 block">Super Admin</span>
-              </div>
+              )}
             </div>
             
             <button 
               onClick={() => dispatch(setSidebarOpen(false))}
-              className="lg:hidden text-zinc-400 hover:text-zinc-600 dark:hover:text-white outline-none"
+              className="lg:hidden text-zinc-400 hover:text-zinc-600 dark:hover:text-white outline-none p-1"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
@@ -206,19 +209,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={item.name}
                   href={item.path}
-                  onClick={() => dispatch(setSidebarOpen(false))}
-                  className={`flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-200 group ${
+                  title={item.name}
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                      dispatch(setSidebarOpen(false));
+                    }
+                  }}
+                  className={`flex items-center py-3 rounded-2xl text-xs font-bold transition-all duration-200 group select-none ${
+                    sidebarOpen ? 'justify-between px-4' : 'lg:justify-center lg:px-0 px-4'
+                  } ${
                     isActive 
                       ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400' 
                       : 'hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`h-4.5 w-4.5 transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'}`} />
-                    {item.name}
+                  <div className={`flex items-center gap-3 ${!sidebarOpen ? 'lg:gap-0' : ''}`}>
+                    <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'}`} />
+                    {sidebarOpen && (
+                      <span className="truncate">{item.name}</span>
+                    )}
                   </div>
-                  {item.badge && (
-                    <span className="h-4.5 w-4.5 bg-indigo-500 text-[9px] font-black text-white rounded-full flex items-center justify-center select-none shadow-sm">
+                  {sidebarOpen && item.badge && (
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-indigo-600 text-white shadow-xs">
                       {item.badge}
                     </span>
                   )}
@@ -228,67 +240,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
 
-        {/* Upgrade Card / Support footer */}
-        <div className="flex flex-col gap-5 mt-6">
-          {/* Upgrade Card matching mockup screenshot */}
-          <div className="relative bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-950/40 rounded-3xl p-5 overflow-hidden flex flex-col items-center gap-3 text-center shadow-[0_10px_30px_rgba(99,102,241,0.02)] select-none">
-            <div className="absolute top-[-20%] right-[-20%] w-[100px] h-[100px] bg-indigo-500/10 rounded-full blur-[30px] pointer-events-none" />
-            <Rocket className="h-8 w-8 text-indigo-500 animate-pulse shrink-0 z-10" />
-            <div className="z-10">
-              <span className="text-xs font-black text-zinc-800 dark:text-white leading-tight block">Upgrade to Pro</span>
-              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-1 block max-w-[150px] leading-normal">
-                Unlock advanced features and grow your platform.
-              </span>
-            </div>
-            <button 
-              onClick={() => toast.success('Redirecting to plans...')}
-              className="z-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-md transition-all w-full cursor-pointer outline-none"
-            >
-              Upgrade Now
-            </button>
-          </div>
-
-          {/* User profile section matching mockup footer */}
-          <div className="flex items-center justify-between border-t border-zinc-150 dark:border-zinc-800/80 pt-4 px-1">
-            <div className="flex items-center gap-2.5 min-w-0">
+        {/* User profile footer */}
+        <div className={`mt-auto border-t border-zinc-150 dark:border-zinc-800/80 pt-4 ${sidebarOpen ? 'px-1' : 'lg:px-0 lg:flex lg:justify-center'}`}>
+          <div className="flex items-center justify-between gap-2">
+            <div className={`flex items-center gap-2.5 min-w-0 ${!sidebarOpen ? 'lg:justify-center lg:w-full' : ''}`}>
               <Avatar className="h-9.5 w-9.5 border border-indigo-200/50 dark:border-zinc-800/60 shrink-0">
                 <AvatarImage 
                   src={userProfile?.avatar || '/images/rohit-avatar.jpg'} 
                   alt={userProfile?.name || 'Admin'} 
                   className="object-cover"
                 />
-                <AvatarFallback className="bg-indigo-50 dark:bg-indigo-950/30 font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center justify-center h-full w-full">
+                <AvatarFallback className="bg-indigo-50 dark:bg-indigo-950/30 font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center justify-center h-full w-full text-xs">
                   AD
                 </AvatarFallback>
               </Avatar>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 leading-none truncate">
-                  {userProfile?.name || 'Admin'}
-                </span>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-1 leading-none truncate">
-                  Super Admin
-                </span>
-              </div>
+              {sidebarOpen && (
+                <div className="flex flex-col min-w-0 transition-opacity duration-200">
+                  <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 leading-none truncate">
+                    {userProfile?.name || 'Admin'}
+                  </span>
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-1 leading-none truncate">
+                    Super Admin
+                  </span>
+                </div>
+              )}
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white cursor-pointer select-none p-1 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/40 outline-none">
-                <Settings className="h-4.5 w-4.5 shrink-0" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 mt-1 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800/50 p-1 shadow-lg z-[100] select-none">
-                <DropdownMenuLabel className="px-2.5 py-1.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
-                  Quick Controls
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="h-px bg-zinc-100 dark:bg-zinc-800/50 my-1" />
-                <DropdownMenuItem 
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer outline-none w-full text-left"
-                >
-                  <LogOut className="h-3.5 w-3.5 shrink-0" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {sidebarOpen && (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white cursor-pointer select-none p-1 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/40 outline-none shrink-0">
+                  <Settings className="h-4.5 w-4.5 shrink-0" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 mt-1 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800/50 p-1 shadow-lg z-[100] select-none">
+                  <DropdownMenuLabel className="px-2.5 py-1.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+                    Quick Controls
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="h-px bg-zinc-100 dark:bg-zinc-800/50 my-1" />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer outline-none w-full text-left"
+                  >
+                    <LogOut className="h-3.5 w-3.5 shrink-0" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
@@ -298,19 +295,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         
         {/* TOP NAVBAR CONTAINER */}
-        <header className="h-20 bg-white dark:bg-zinc-900 border-b border-zinc-200/50 dark:border-zinc-800/50 px-6 sm:px-8 flex items-center justify-between z-30 shrink-0">
+        <header className="h-20 bg-white dark:bg-zinc-900 border-b border-zinc-200/50 dark:border-zinc-800/50 px-4 sm:px-8 flex items-center justify-between z-30 shrink-0 select-none">
           
-          {/* Mobile Hamburger & Logo */}
-          <div className="flex items-center gap-4 lg:hidden">
+          {/* Sidebar Toggle & Mobile Logo */}
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => dispatch(toggleSidebar())}
-              className="p-2 -ml-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-white outline-none"
+              className="p-2.5 rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-200 cursor-pointer outline-none"
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2">
-              <Bus className="h-5 w-5 text-indigo-600" />
-              <span className="font-extrabold text-lg tracking-tight">Taskora</span>
+            <div className="flex items-center gap-2 lg:hidden">
+              <Bus className="h-5 w-5 text-[#ff2d88]" />
+              <span className="font-extrabold text-lg tracking-tight">TripGo</span>
             </div>
           </div>
 

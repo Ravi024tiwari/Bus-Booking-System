@@ -239,24 +239,48 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
         </button>
       </div>
 
-      {/* BUS IMAGE BANNER */}
-      {trip.busImages && trip.busImages.length > 0 && (
-        <div className="relative h-48 w-full rounded-[2rem] overflow-hidden border border-zinc-200/50 dark:border-zinc-800/55 select-none shrink-0 shadow-[0_10px_30px_rgba(0,0,0,0.01)]">
-          <Image
-            src={trip.busImages[0]}
-            alt="Reserved Bus"
-            fill
-            sizes="100vw"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-          <div className="absolute inset-y-0 left-0 p-6 flex flex-col justify-center text-white gap-1 z-10">
-            <span className="text-[10px] text-zinc-350 font-black uppercase tracking-widest leading-none">Reserved Bus Plate Number</span>
-            <span className="text-xl font-extrabold tracking-wider mt-1.5 block leading-none">{trip.busNumber}</span>
-            <span className="text-xs font-semibold text-zinc-300 mt-1 block leading-none">{trip.busType}</span>
+      {/* BUS IMAGE / TRIP HERO BANNER (With Interactive Hover Zoom & Lighting) */}
+      <div className="group relative h-48 sm:h-56 w-full rounded-[2rem] overflow-hidden border border-zinc-200/80 dark:border-zinc-800 select-none shrink-0 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 dark:hover:shadow-indigo-900/20 transition-all duration-500 bg-zinc-900 cursor-pointer">
+        <img
+          src={trip.busImages && trip.busImages.length > 0 ? trip.busImages[0] : '/images/bus1.jpg'}
+          alt="Trip Route & Bus Preview"
+          className="h-full w-full object-cover transform group-hover:scale-108 group-hover:brightness-105 transition-transform duration-700 ease-out"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/images/bus1.jpg';
+          }}
+        />
+        
+        {/* Multi-tier Gradient overlay for optimal contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/30 sm:bg-gradient-to-r sm:from-black/90 sm:via-black/55 sm:to-black/20 group-hover:via-black/40 transition-colors duration-500" />
+        
+        {/* Soft Ambient Hover Glow Orb */}
+        <div className="absolute -top-12 -right-12 w-64 h-64 bg-indigo-500/20 dark:bg-indigo-400/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+        {/* Text Content Overlay */}
+        <div className="absolute inset-y-0 left-0 p-5 sm:p-8 flex flex-col justify-end sm:justify-center text-white gap-1.5 z-10">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-amber-300 font-extrabold uppercase tracking-widest bg-black/50 px-3 py-1 rounded-full backdrop-blur-md border border-amber-300/30 group-hover:border-amber-300/60 group-hover:bg-black/60 transition-all duration-300 shadow-xs">
+              Trip Manifest & Journey
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight mt-1 text-white flex items-center gap-2 transform group-hover:translate-x-1 transition-transform duration-300">
+            {trip.source} <span className="text-zinc-400">→</span> {trip.destination}
+          </h2>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold text-zinc-300 mt-1 transform group-hover:translate-x-1 transition-transform duration-300 delay-75">
+            <span>Bus: <strong className="text-white font-bold">{trip.busNumber}</strong></span>
+            <span>•</span>
+            <span>Type: <strong className="text-white font-bold">{trip.busType}</strong></span>
+            <span>•</span>
+            <span>Date: <strong className="text-white font-bold">{trip.date}</strong></span>
+            {trip.operatorDetails && (
+              <>
+                <span>•</span>
+                <span>Operator: <strong className="text-white font-bold">{trip.operatorDetails.name}</strong></span>
+              </>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* METRIC CARDS */}
       <div className="w-full">
