@@ -39,6 +39,7 @@ export default function ProfileForm({
   children
 }: ProfileFormProps) {
   const dispatch = useDispatch();
+  const userProfile = useSelector((state: RootState) => state.user.profile);
 
   // Dynamic titles based on role if not provided
   const displayTitle = title || (
@@ -54,8 +55,8 @@ export default function ProfileForm({
 
   // Form states
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: userProfile?.name || '',
+    email: userProfile?.email || '',
     phoneNumber: '',
     gender: 'male',
     emergencyContactName: '',
@@ -67,12 +68,26 @@ export default function ProfileForm({
 
   // Photo state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [photoPreview, setPhotoPreview] = useState<string>(userProfile?.avatar || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Loading states
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+
+  // Sync state if Redux userProfile updates
+  useEffect(() => {
+    if (userProfile?.avatar && !photoPreview) {
+      setPhotoPreview(userProfile.avatar);
+    }
+    if (userProfile?.name && !formData.name) {
+      setFormData(prev => ({
+        ...prev,
+        name: userProfile.name || prev.name,
+        email: userProfile.email || prev.email
+      }));
+    }
+  }, [userProfile, photoPreview, formData.name]);
 
   // Load profile on mount
   useEffect(() => {
@@ -92,8 +107,9 @@ export default function ProfileForm({
             newPassword: '',
             confirmPassword: '',
           });
-          if (u.profileImage) {
-            setPhotoPreview(u.profileImage);
+          const resolvedAvatar = u.profileImage || u.avatar || userProfile?.avatar || '';
+          if (resolvedAvatar) {
+            setPhotoPreview(resolvedAvatar);
           }
           // Sync with Redux properly mapping avatar
           dispatch(setUser({
@@ -101,7 +117,7 @@ export default function ProfileForm({
             name: u.name,
             email: u.email,
             role: u.role,
-            avatar: u.profileImage || u.avatar || '/images/rohit-avatar.jpg'
+            avatar: resolvedAvatar || '/images/rohit-avatar.jpg'
           }));
         }
       } catch (err: any) {
@@ -112,7 +128,7 @@ export default function ProfileForm({
       }
     };
     fetchProfile();
-  }, [dispatch]);
+  }, [dispatch, userProfile?.avatar]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -287,15 +303,15 @@ export default function ProfileForm({
             </div>
 
             {/* AVATAR & NAME BLOCK */}
-            <div className="flex items-center gap-6 py-2">
-              <div className="relative group cursor-pointer" onClick={triggerFileInput}>
-                <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-[#ff2d88]/20 shadow-md">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-5 sm:gap-6 py-2 text-center sm:text-left">
+              <div className="relative group cursor-pointer shrink-0" onClick={triggerFileInput}>
+                <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-[#ff2d88]/20 shadow-md shrink-0 bg-zinc-100 dark:bg-zinc-800">
                   <Image
-                    src={photoPreview || '/images/rohit-avatar.jpg'}
-                    alt={formData.name || 'Profile avatar'}
+                    src={photoPreview || userProfile?.avatar || '/images/rohit-avatar.jpg'}
+                    alt={formData.name || userProfile?.name || 'Profile avatar'}
                     fill
-                    loading="lazy"
-                    sizes="96px"
+                    priority
+                    sizes="(max-width: 640px) 96px, 112px"
                     className="object-cover group-hover:opacity-75 transition-opacity duration-300"
                   />
                   {/* Photo Overlay hover trigger */}
@@ -303,8 +319,8 @@ export default function ProfileForm({
                     <Camera className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                <div className="absolute bottom-0 right-0 h-7 w-7 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-zinc-900">
-                  <Camera className="h-3.5 w-3.5" />
+                <div className="absolute bottom-0 right-0 h-7 w-7 sm:h-8 sm:w-8 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-zinc-900">
+                  <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </div>
                 <input 
                   type="file" 
@@ -315,11 +331,11 @@ export default function ProfileForm({
                 />
               </div>
 
-              <div className="flex flex-col gap-1 select-none">
-                <h4 className="text-lg font-black text-zinc-900 dark:text-white leading-none">
-                  {formData.name || 'Ravi Tiwari'}
+              <div className="flex flex-col gap-1 select-none min-w-0 items-center sm:items-start">
+                <h4 className="text-lg sm:text-xl font-black text-zinc-900 dark:text-white leading-none truncate max-w-full">
+                  {formData.name || userProfile?.name || 'Ravi Tiwari'}
                 </h4>
-                <span className="inline-flex mt-1.5 px-3 py-1 bg-violet-500/10 text-violet-600 dark:bg-violet-950/20 dark:text-violet-400 text-[10px] font-black uppercase tracking-wider rounded-xl self-start leading-none">
+                <span className="inline-flex mt-1.5 px-3 py-1 bg-violet-500/10 text-violet-600 dark:bg-violet-950/20 dark:text-violet-400 text-[10px] font-black uppercase tracking-wider rounded-xl self-center sm:self-start leading-none">
                   {role.toUpperCase()}
                 </span>
                 <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-1 block">

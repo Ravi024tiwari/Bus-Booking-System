@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
 import redis from '@/lib/redis';
-import { Bus, Trip } from '@/models';
+import { Bus, Trip, Route } from '@/models';
 import { busSchema } from '@/lib/validations';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { verifyAuth } from '@/lib/auth-proxy';
@@ -44,21 +44,33 @@ export async function GET(
     }
 
     // 2. Cache Miss - Query MongoDB
-    const bus = await Bus.findById(busId);
+    const bus = await Bus.findById(busId).populate('routeId');
     if (!bus) {
       return NextResponse.json({ success: false, message: 'Bus not found.' }, { status: 404 });
     }
 
+    const routeObj = bus.routeId as any;
+    const routeId = routeObj?._id ? routeObj._id.toString() : (bus.routeId ? bus.routeId.toString() : '');
+
     const busDetails = {
       id: bus._id.toString(),
       operatorId: bus.operatorId.toString(),
+      routeId: routeId,
+      route: routeObj && routeObj._id ? {
+        id: routeObj._id.toString(),
+        source: routeObj.source,
+        destination: routeObj.destination,
+        stops: routeObj.stops || [],
+        totalDistance: routeObj.totalDistance,
+        description: routeObj.description,
+      } : null,
       busNumber: bus.busNumber,
       type: bus.type,
       capacity: bus.capacity,
       rows: bus.rows,
       cols: bus.cols,
-      sleeperSeats: bus.sleeperSeats,
-      amenities: bus.amenities,
+      sleeperSeats: bus.sleeperSeats || [],
+      amenities: bus.amenities || [],
       images: bus.images.map(optimizeImageUrl),
       createdAt: bus.createdAt,
     };
@@ -156,6 +168,15 @@ export async function PUT(
       sleeperSeats: validatedSleeperSeats = [],
       amenities: validatedAmenities = [],
     } = validationResult.data;
+
+    // Ensure referenced Route exists
+    const routeExists = await Route.findById(validatedRouteId);
+    if (!routeExists) {
+      return NextResponse.json(
+        { success: false, message: 'Referenced route does not exist.' },
+        { status: 404 }
+      );
+    }
 
     // Grid dimension check
     if (validatedRows * validatedCols < validatedCapacity) {

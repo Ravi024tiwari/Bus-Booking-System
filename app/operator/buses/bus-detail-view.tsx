@@ -99,12 +99,12 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
         setActiveImageIndex(0);
         
         // Populate form initial fields
-        setBusNumber(b.busNumber);
-        setType(b.type);
+        setBusNumber(b.busNumber || '');
+        setType(b.type || 'AC Seater');
         setRouteId(b.routeId || '');
-        setCapacity(b.capacity);
-        setRows(b.rows);
-        setCols(b.cols);
+        setCapacity(b.capacity || 30);
+        setRows(b.rows || 8);
+        setCols(b.cols || 4);
         setSleeperSeats(b.sleeperSeats || []);
         setAmenities(b.amenities || []);
         setExistingImages(b.images || []);
@@ -140,6 +140,17 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
     fetchRoutes();
   }, []);
 
+  // Sync routeId if routes load after bus details
+  useEffect(() => {
+    if (routes.length > 0 && !routeId) {
+      if (bus?.routeId) {
+        setRouteId(bus.routeId);
+      } else if (routes[0]?.id) {
+        setRouteId(routes[0].id);
+      }
+    }
+  }, [routes, bus, routeId]);
+
   // Local profile load fallback for loading states
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -166,16 +177,16 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
   const canEdit = (userProfile && (userProfile.role === 'admin' || userProfile.id === bus?.operatorId)) ||
                   (currentUser && (currentUser.role === 'admin' || (currentUser._id || currentUser.id) === bus?.operatorId));
 
-  // Sync columns based on type selection in edit mode to make it easier for user
-  useEffect(() => {
-    if (!isEditMode) return;
-    if (type.toLowerCase().includes('sleeper')) {
+  // Handler when user changes bus type in edit mode
+  const handleTypeChange = (newType: string) => {
+    setType(newType);
+    if (newType.toLowerCase().includes('sleeper')) {
       setCols(3); // Sleeper default columns
     } else {
       setCols(4); // Seater default columns
       setSleeperSeats([]); // Clear sleeper berths for seater category
     }
-  }, [type, isEditMode]);
+  };
 
   // Image upload handling for edit uploader
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,12 +255,12 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
   // Reset form editing states to initial fetched state
   const handleCancelEditing = () => {
     if (bus) {
-      setBusNumber(bus.busNumber);
-      setType(bus.type);
-      setRouteId(bus.routeId || '');
-      setCapacity(bus.capacity);
-      setRows(bus.rows);
-      setCols(bus.cols);
+      setBusNumber(bus.busNumber || '');
+      setType(bus.type || 'AC Seater');
+      setRouteId(bus.routeId || (routes[0]?.id || ''));
+      setCapacity(bus.capacity || 30);
+      setRows(bus.rows || 8);
+      setCols(bus.cols || 4);
       setSleeperSeats(bus.sleeperSeats || []);
       setAmenities(bus.amenities || []);
       setDeleteImages([]);
@@ -268,6 +279,10 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
       toast.error('Registration plate number is required.');
       return;
     }
+    if (!routeId) {
+      toast.error('Please select an assigned operations route.');
+      return;
+    }
     if (capacity <= 0 || rows <= 0 || cols <= 0) {
       toast.error('Dimensions and capacity values must be greater than 0.');
       return;
@@ -284,9 +299,7 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
       const fd = new FormData();
       fd.append('busNumber', busNumber.trim());
       fd.append('type', type);
-      if (routeId) {
-        fd.append('routeId', routeId);
-      }
+      fd.append('routeId', routeId);
       fd.append('capacity', capacity.toString());
       fd.append('rows', rows.toString());
       fd.append('cols', cols.toString());
@@ -660,7 +673,7 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
             <div className="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2.5rem] flex flex-col gap-4 shadow-[0_10px_30px_rgba(0,0,0,0.01)] w-full">
               <h3 className="font-extrabold text-base text-zinc-950 dark:text-white leading-none">Assigned Path Details</h3>
               {(() => {
-                const targetRoute = routes.find(r => r.id === bus.routeId);
+                const targetRoute = bus.route || routes.find(r => (r.id || r._id) === bus.routeId);
                 if (!targetRoute) {
                   return (
                     <span className="text-xs text-zinc-400 font-semibold italic mt-1 leading-normal pl-0.5">
@@ -736,7 +749,7 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
                 </label>
                 <select 
                   value={type}
-                  onChange={(e) => setType(e.target.value)}
+                  onChange={(e) => handleTypeChange(e.target.value)}
                   className="px-4 py-3 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200/60 dark:border-zinc-800 rounded-2xl text-zinc-800 dark:text-zinc-200 text-xs font-bold focus:outline-none focus:border-[#ff2d88] transition-colors cursor-pointer"
                 >
                   {BUS_TYPES.map((bt) => (
@@ -764,8 +777,9 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
                       className="px-4 py-3 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200/60 dark:border-zinc-800 rounded-2xl text-zinc-800 dark:text-zinc-200 text-xs font-bold focus:outline-none focus:border-[#ff2d88] transition-colors cursor-pointer w-full"
                       required
                     >
+                      <option value="" disabled>Select an Operations Route</option>
                       {routes.map((r) => (
-                        <option key={r.id} value={r.id} className="bg-white dark:bg-zinc-900 font-semibold">
+                        <option key={r.id || r._id} value={r.id || r._id} className="bg-white dark:bg-zinc-900 font-semibold">
                           {r.source} ➔ {r.destination} ({r.stops?.length || 0} stops)
                         </option>
                       ))}
@@ -773,7 +787,7 @@ export default function BusDetailView({ busId }: BusDetailViewProps) {
 
                     {/* Dynamic Route Stops Preview */}
                     {(() => {
-                      const selectedRoute = routes.find(r => r.id === routeId);
+                      const selectedRoute = routes.find(r => (r.id || r._id) === routeId);
                       if (!selectedRoute || !selectedRoute.stops || selectedRoute.stops.length === 0) return null;
                       return (
                         <div className="text-[10px] text-zinc-500 bg-zinc-50 dark:bg-zinc-950/30 border border-zinc-150 dark:border-zinc-850 p-2.5 rounded-xl font-semibold leading-normal select-none animate-in fade-in duration-200">
