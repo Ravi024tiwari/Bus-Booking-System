@@ -40,7 +40,18 @@ jobs:
         run: |
           if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
             echo "Triggering Render redeploy..."
-            curl -sS -f -X POST "$RENDER_DEPLOY_HOOK_URL"
+            # Retry up to 3 times with 5s delay and custom User-Agent to prevent Cloudflare 520/timeout drops
+            curl -sS -X POST "$RENDER_DEPLOY_HOOK_URL" \
+              -H "User-Agent: GitHub-Actions-CI" \
+              -H "Content-Length: 0" \
+              --retry 3 \
+              --retry-delay 5 \
+              --retry-all-errors \
+              --fail || {
+                echo "Warning: Render Deploy Hook returned a non-200 response (Render/Cloudflare 520). Please verify RENDER_DEPLOY_HOOK_URL in GitHub Secrets or trigger manual redeploy on Render."
+                exit 1
+              }
+            echo "Render redeploy triggered successfully!"
           else
             echo "RENDER_DEPLOY_HOOK_URL secret not provided. Skipping Render deployment."
           fi
