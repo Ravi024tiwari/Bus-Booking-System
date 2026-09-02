@@ -63,6 +63,17 @@ export default function ExclusiveOffers({ initialOffers }: ExclusiveOffersProps)
     }
   };
 
+  const [imgError, setImgError] = useState(false);
+
+  // Reset imgError when currentIndex changes
+  useEffect(() => {
+    setImgError(false);
+  }, [currentIndex]);
+
+  const activeImageSrc = imgError || !activeOffer.busImage
+    ? '/images/volvo.png'
+    : activeOffer.busImage;
+
   return (
     <div 
       onMouseEnter={() => setIsAutoPlaying(false)}
@@ -125,15 +136,17 @@ export default function ExclusiveOffers({ initialOffers }: ExclusiveOffersProps)
           onClick={() => handleSelectDeal(activeOffer)}
           className="relative bg-zinc-950 rounded-[1.35rem] overflow-hidden shadow-md border border-zinc-200/80 dark:border-zinc-800 flex flex-col justify-between h-[165px] sm:h-[175px] group cursor-pointer active:scale-[0.99] transition-all"
         >
-          {/* Background Bus Image with smooth zoom */}
+          {/* Background Bus Image with smooth zoom & onError fallback */}
           <div className="absolute inset-0 overflow-hidden">
             <Image
-              src={activeOffer.busImage || '/images/volvo.png'}
+              src={activeImageSrc}
               alt={`${activeOffer.source} to ${activeOffer.destination}`}
               fill
               sizes="(max-width: 640px) 90vw, 360px"
               className="object-cover group-hover:scale-106 transition-transform duration-500 ease-out"
               priority
+              onError={() => setImgError(true)}
+              unoptimized={typeof activeImageSrc === 'string' && activeImageSrc.startsWith('http')}
             />
           </div>
 

@@ -26,11 +26,109 @@ const LOCAL_BUS_FALLBACKS = [
   '/images/customer_bus_banner.jpg',
 ];
 
-function getRouteImage(route: { image?: string }, index: number): string {
-  if (route.image && route.image.trim() !== '' && !route.image.includes('unsplash.com')) {
-    return route.image;
-  }
-  return LOCAL_BUS_FALLBACKS[index % LOCAL_BUS_FALLBACKS.length];
+function RouteCard({
+  route,
+  index,
+  onClick,
+}: {
+  route: any;
+  index: number;
+  onClick: () => void;
+}) {
+  const [imgError, setImgError] = useState(false);
+  const fallbackSrc = LOCAL_BUS_FALLBACKS[index % LOCAL_BUS_FALLBACKS.length];
+  const imgSrc = imgError || !route.image || route.image.trim() === ''
+    ? fallbackSrc
+    : route.image;
+
+  return (
+    <div
+      onClick={onClick}
+      className="group relative rounded-[1.6rem] overflow-hidden border border-zinc-200/80 dark:border-zinc-800 bg-zinc-950 flex flex-col w-[78vw] max-w-[250px] sm:w-[230px] md:w-[250px] shrink-0 snap-center sm:snap-start aspect-[4/5] shadow-sm hover:shadow-2xl hover:shadow-violet-500/20 dark:hover:shadow-violet-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer active:scale-[0.98]"
+    >
+      {/* Bus Photography with smooth zoom & onError fallback */}
+      <div className="absolute inset-0 overflow-hidden">
+        <Image
+          src={imgSrc}
+          alt={`${route.source} to ${route.destination}`}
+          fill
+          sizes="(max-width: 640px) 78vw, (max-width: 768px) 230px, 250px"
+          className="object-cover transition-transform duration-700 ease-out group-hover:scale-112 group-hover:rotate-0.5"
+          loading="lazy"
+          onError={() => setImgError(true)}
+          unoptimized={typeof imgSrc === 'string' && imgSrc.startsWith('http')}
+        />
+      </div>
+
+      {/* Multi-layered cinematic gradient overlays for high legibility */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/25 pointer-events-none" />
+      <div className="absolute inset-0 bg-radial-at-t from-transparent via-transparent to-black/60 pointer-events-none" />
+
+      {/* Top Bar: Floating Verified Rating Badge & Fare Pill */}
+      <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-1.5">
+        {/* Rating Badge */}
+        <div className="flex items-center gap-1.2 px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md border border-amber-400/35 text-amber-300 text-[11px] font-black shadow-lg shadow-black/40">
+          <Star className="h-3.2 w-3.2 fill-amber-400 text-amber-400 shrink-0 drop-shadow-xs" />
+          <span>{route.averageRating ? Number(route.averageRating).toFixed(1) : '4.9'}</span>
+          {route.totalReviews ? (
+            <span className="text-[9.5px] text-zinc-300/90 font-medium">({route.totalReviews})</span>
+          ) : null}
+        </div>
+
+        {/* Price Pill */}
+        <div className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[11px] font-black shadow-md shadow-violet-900/40 border border-white/20 flex items-center gap-0.5">
+          <span className="text-[9px] opacity-80">₹</span>
+          <span>{route.fare}</span>
+        </div>
+      </div>
+
+      {/* Top Right Floating Hover Quick Arrow */}
+      <div className="absolute top-11 right-3 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 hidden sm:block">
+        <div className="h-6 w-6 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center shadow-md">
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </div>
+      </div>
+
+      {/* Bottom Card Content Area */}
+      <div className="absolute bottom-3.5 left-3.5 right-3.5 text-white z-10 flex flex-col gap-2 select-none">
+        
+        {/* Bus Details: Category Pill & Bus Number */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {route.busType ? (
+            <span className="text-[9.5px] font-extrabold text-violet-200 bg-violet-950/70 border border-violet-400/30 px-2 py-0.5 rounded-md backdrop-blur-xs flex items-center gap-1 truncate max-w-full">
+              <Bus className="h-2.5 w-2.5 shrink-0 text-violet-300" />
+              <span className="truncate">{route.busType}</span>
+            </span>
+          ) : null}
+
+          {route.busNumber ? (
+            <span className="text-[9px] font-bold text-zinc-300 bg-black/50 border border-white/10 px-1.5 py-0.5 rounded-md backdrop-blur-xs truncate">
+              {route.busNumber}
+            </span>
+          ) : null}
+        </div>
+
+        {/* Origin ➔ Destination Route */}
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1.5 text-sm sm:text-base font-black tracking-tight text-white drop-shadow-sm leading-tight">
+            <span className="truncate">{route.source}</span>
+            <span className="text-violet-400 shrink-0 font-normal">➔</span>
+            <span className="truncate">{route.destination}</span>
+          </div>
+          
+          <div className="flex items-center justify-between mt-0.5 text-[10px] text-zinc-300">
+            <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+              <ShieldCheck className="h-3 w-3" /> Guaranteed Seat
+            </span>
+            <span className="text-zinc-400 group-hover:text-white transition-colors flex items-center gap-0.5 text-[9.5px]">
+              Book ➔
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
 }
 
 export default function PopularRoutes({ initialRoutes }: { initialRoutes?: any[] }) {
@@ -248,96 +346,12 @@ export default function PopularRoutes({ initialRoutes }: { initialRoutes?: any[]
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {routes.map((route, i) => (
-            <div
+            <RouteCard
               key={route.tripId || i}
+              route={route}
+              index={i}
               onClick={() => handleCardClick(route)}
-              className="group relative rounded-[1.6rem] overflow-hidden border border-zinc-200/80 dark:border-zinc-800 bg-zinc-950 flex flex-col w-[78vw] max-w-[250px] sm:w-[230px] md:w-[250px] shrink-0 snap-center sm:snap-start aspect-[4/5] shadow-sm hover:shadow-2xl hover:shadow-violet-500/20 dark:hover:shadow-violet-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer active:scale-[0.98]"
-            >
-              {/* Bus Photography with smooth zoom */}
-              <div className="absolute inset-0 overflow-hidden">
-                <Image
-                  src={getRouteImage(route, i)}
-                  alt={`${route.source} to ${route.destination}`}
-                  fill
-                  sizes="(max-width: 640px) 78vw, (max-width: 768px) 230px, 250px"
-                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-112 group-hover:rotate-0.5"
-                  loading="lazy"
-                />
-              </div>
-
-              {/* Multi-layered cinematic gradient overlays for high legibility */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/25 pointer-events-none" />
-              <div className="absolute inset-0 bg-radial-at-t from-transparent via-transparent to-black/60 pointer-events-none" />
-
-              {/* Top Bar: Floating Verified Rating Badge & Fare Pill */}
-              <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-1.5">
-                {/* Rating Badge */}
-                <div className="flex items-center gap-1.2 px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md border border-amber-400/35 text-amber-300 text-[11px] font-black shadow-lg shadow-black/40">
-                  <Star className="h-3.2 w-3.2 fill-amber-400 text-amber-400 shrink-0 drop-shadow-xs" />
-                  <span>{route.averageRating ? Number(route.averageRating).toFixed(1) : '4.9'}</span>
-                  {route.totalReviews ? (
-                    <span className="text-[9.5px] text-zinc-300/90 font-medium">({route.totalReviews})</span>
-                  ) : null}
-                </div>
-
-                {/* Price Pill */}
-                <div className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[11px] font-black shadow-md shadow-violet-900/40 border border-white/20 flex items-center gap-0.5">
-                  <span className="text-[9px] opacity-80">₹</span>
-                  <span>{route.fare}</span>
-                </div>
-              </div>
-
-              {/* Top Right Floating Hover Quick Arrow */}
-              <div className="absolute top-11 right-3 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 hidden sm:block">
-                <div className="h-6 w-6 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center shadow-md">
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </div>
-              </div>
-
-              {/* Bottom Card Content Area */}
-              <div className="absolute bottom-3.5 left-3.5 right-3.5 text-white z-10 flex flex-col gap-2 select-none">
-                
-                {/* Bus Details: Category Pill & Bus Number */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {route.busType ? (
-                    <span className="text-[9.5px] font-extrabold text-violet-200 bg-violet-950/70 border border-violet-400/30 px-2 py-0.5 rounded-md backdrop-blur-xs flex items-center gap-1 truncate max-w-full">
-                      <Bus className="h-2.5 w-2.5 shrink-0 text-violet-300" />
-                      <span className="truncate">{route.busType}</span>
-                    </span>
-                  ) : null}
-
-                  {route.busNumber ? (
-                    <span className="text-[9px] font-bold text-zinc-300 bg-black/50 border border-white/10 px-1.5 py-0.5 rounded-md backdrop-blur-xs truncate">
-                      {route.busNumber}
-                    </span>
-                  ) : null}
-                </div>
-
-                {/* Origin ➔ Destination Route */}
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-1.5 text-sm sm:text-base font-black tracking-tight text-white drop-shadow-sm leading-tight">
-                    <span className="truncate">{route.source}</span>
-                    <span className="text-violet-400 shrink-0 font-normal">➔</span>
-                    <span className="truncate">{route.destination}</span>
-                  </div>
-                </div>
-
-                {/* Interactive Action Pill Button */}
-                <div className="pt-0.5">
-                  <div className="w-full py-1.8 px-3 rounded-xl bg-white/15 hover:bg-white text-white hover:text-zinc-950 backdrop-blur-md border border-white/25 text-[11px] font-black flex items-center justify-between transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-fuchsia-600 group-hover:text-white group-hover:border-violet-400/50 shadow-md">
-                    <span className="flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3 text-emerald-400 group-hover:text-white" />
-                      Instant Booking
-                    </span>
-                    <div className="flex items-center gap-1 text-[10px] font-bold">
-                      <span>Select</span>
-                      <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
+            />
           ))}
         </div>
       </div>

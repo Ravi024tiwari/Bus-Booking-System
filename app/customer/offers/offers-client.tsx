@@ -66,6 +66,23 @@ export interface LiveOffer {
   } | null;
 }
 
+function OfferCardImage({ src, alt }: { src?: string; alt: string }) {
+  const [imgError, setImgError] = useState(false);
+  const finalSrc = imgError || !src || src.trim() === '' ? '/images/volvo.png' : src;
+
+  return (
+    <Image 
+      src={finalSrc} 
+      alt={alt}
+      fill
+      sizes="(max-width: 768px) 100vw, 33vw"
+      className="object-cover group-hover:scale-106 transition-transform duration-500"
+      onError={() => setImgError(true)}
+      unoptimized={typeof finalSrc === 'string' && finalSrc.startsWith('http')}
+    />
+  );
+}
+
 export default function OffersClient() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
@@ -572,12 +589,9 @@ export default function OffersClient() {
                     {/* Top Visual Section */}
                     {isTripSpecific && trip ? (
                       <div className="relative h-44 w-full overflow-hidden bg-zinc-950">
-                        <Image 
+                        <OfferCardImage 
                           src={offer.bannerImage || trip.busImage || '/images/volvo.png'} 
                           alt={`${trip.source} to ${trip.destination}`}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                          className="object-cover group-hover:scale-106 transition-transform duration-500"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
                         
