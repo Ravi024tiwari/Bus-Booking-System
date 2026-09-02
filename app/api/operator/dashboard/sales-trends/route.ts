@@ -56,7 +56,7 @@ export async function GET(req: Request) {
       console.warn('[Redis] Cache get error for sales trends:', err);
     }
 
-    const currentTripQuery: any = { busId: { $in: busIds }, departureTime: { $gte: startDate, $lte: endDate } };
+    const currentTripQuery: any = { busId: { $in: busIds } };
 
     if (routeIdParam) {
       currentTripQuery.routeId = new mongoose.Types.ObjectId(routeIdParam);
@@ -65,23 +65,66 @@ export async function GET(req: Request) {
       currentTripQuery.busType = busTypeParam;
     }
 
-    const currentTrips = await Trip.find(currentTripQuery);
+    const currentTrips = await Trip.find(currentTripQuery).select('_id');
     const currentTripIds = currentTrips.map((t) => t._id);
 
-    const salesTrends = await Order.aggregate([
-      { $match: { tripId: { $in: currentTripIds }, status: 'CONFIRMED' } },
+    if (currentTripIds.length === 0) {
+      return NextResponse.json({
+        success: true,
+        cached: false,
+        data: []
+      });
+    }
+
+    const salesTrendsRaw = await Order.aggregate([
+      { 
+        $match: { 
+          tripId: { $in: currentTripIds }, 
+          status: 'CONFIRMED',
+          createdAt: { $gte: startDate, $lte: endDate }
+        } 
+      },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
           bookings: { $sum: 1 },
-          revenue: { $sum: '$amount' }
+          revenue: { $sum: '$amount' },
+          seats: { $sum: { $size: { $ifNull: ['$seatNumbers', []] } } }
         }
       },
       { $sort: { _id: 1 } }
     ]);
 
+    // Build continuous date map if date range is <= 62 days
+    const trendsMap = new Map<string, { bookings: number; revenue: number; seats: number }>();
+    salesTrendsRaw.forEach((item) => {
+      trendsMap.set(item._id, {
+        bookings: item.bookings || 0,
+        revenue: item.revenue || 0,
+        seats: item.seats || 0
+      });
+    });
+
+    const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    let finalSalesTrends = salesTrendsRaw;
+
+    if (diffDays > 0 && diffDays <= 62) {
+      const filledList: any[] = [];
+      const curr = new Date(startDate);
+      while (curr <= endDate) {
+        const dateStr = curr.toISOString().split('T')[0];
+        const item = trendsMap.get(dateStr) || { bookings: 0, revenue: 0, seats: 0 };
+        filledList.push({
+          _id: dateStr,
+          ...item
+        });
+        curr.setDate(curr.getDate() + 1);
+      }
+      finalSalesTrends = filledList;
+    }
+
     try {
-      await redis.setex(cacheKey, 60, JSON.stringify(salesTrends));
+      await redis.setex(cacheKey, 60, JSON.stringify(finalSalesTrends));
     } catch (err) {
       console.warn('[Redis] Cache set error for sales trends:', err);
     }
@@ -89,7 +132,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       success: true,
       cached: false,
-      data: salesTrends
+      data: finalSalesTrends
     });
 
   } catch (err: any) {

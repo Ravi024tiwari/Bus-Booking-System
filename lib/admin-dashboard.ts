@@ -152,6 +152,159 @@ export async function getAdminKPIs(startDate?: Date, endDate?: Date): Promise<KP
   };
 }
 
+export interface BookingOverviewResult {
+  timeframe: string;
+  chartData: {
+    label: string;
+    fullDate?: string;
+    bookings: number;
+    revenue: number;
+  }[];
+  metrics: {
+    totalBookings: number;
+    completed: number;
+    cancelled: number;
+    pending: number;
+  };
+}
+
+/**
+ * Get aggregated booking overview chart data and overall platform booking metrics.
+ */
+export async function getAdminBookingOverviewData(
+  timeframe: string = 'This Week'
+): Promise<BookingOverviewResult> {
+  await dbConnect();
+  const now = new Date();
+
+  // Metrics (platform order counts)
+  const [totalBookings, completed, cancelled, pending] = await Promise.all([
+    Order.countDocuments(),
+    Order.countDocuments({ status: 'CONFIRMED' }),
+    Order.countDocuments({ status: { $in: ['CANCELLED', 'PAYMENT_FAILED'] } }),
+    Order.countDocuments({ status: { $in: ['PENDING', 'PAYMENT_PENDING'] } })
+  ]);
+
+  let chartData: { label: string; fullDate?: string; bookings: number; revenue: number }[] = [];
+
+  if (timeframe === 'This Month') {
+    // Current month grouped into weeks (Week 1, Week 2, Week 3, Week 4, Week 5)
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const orders = await Order.find({
+      status: 'CONFIRMED',
+      createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+    }).select('amount createdAt');
+
+    const daysInMonth = endOfMonth.getDate();
+    const weeksCount = Math.ceil(daysInMonth / 7);
+    const weekBuckets = Array.from({ length: weeksCount }, (_, i) => {
+      const startDay = i * 7 + 1;
+      const endDay = Math.min((i + 1) * 7, daysInMonth);
+      return {
+        label: `Wk ${i + 1}`,
+        fullDate: `${startDay} - ${endDay} ${now.toLocaleString('en-US', { month: 'short' })}`,
+        bookings: 0,
+        revenue: 0
+      };
+    });
+
+    orders.forEach((order) => {
+      const day = new Date(order.createdAt).getDate();
+      const weekIndex = Math.min(Math.floor((day - 1) / 7), weeksCount - 1);
+      weekBuckets[weekIndex].bookings += 1;
+      weekBuckets[weekIndex].revenue += order.amount || 0;
+    });
+
+    chartData = weekBuckets;
+  } else if (timeframe === 'Last 30 Days') {
+    const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    const orders = await Order.find({
+      status: 'CONFIRMED',
+      createdAt: { $gte: thirtyDaysAgo, $lte: now }
+    }).select('amount createdAt');
+
+    const dateMap = new Map<string, { bookings: number; revenue: number }>();
+    orders.forEach((order) => {
+      const d = new Date(order.createdAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const curr = dateMap.get(key) || { bookings: 0, revenue: 0 };
+      curr.bookings += 1;
+      curr.revenue += order.amount || 0;
+      dateMap.set(key, curr);
+    });
+
+    const list = [];
+    const iter = new Date(thirtyDaysAgo);
+    while (iter <= now) {
+      const key = `${iter.getFullYear()}-${String(iter.getMonth() + 1).padStart(2, '0')}-${String(iter.getDate()).padStart(2, '0')}`;
+      const entry = dateMap.get(key) || { bookings: 0, revenue: 0 };
+      const dayLabel = `${iter.getDate()} ${iter.toLocaleString('en-US', { month: 'short' })}`;
+      list.push({
+        label: dayLabel,
+        fullDate: key,
+        bookings: entry.bookings,
+        revenue: entry.revenue
+      });
+      iter.setDate(iter.getDate() + 1);
+    }
+    chartData = list;
+  } else {
+    // Default: 'This Week' (Mon, Tue, Wed, Thu, Fri, Sat, Sun of current week)
+    const currentDayOfWeek = (now.getDay() + 6) % 7; // 0 = Mon, 6 = Sun
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - currentDayOfWeek);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    const orders = await Order.find({
+      status: 'CONFIRMED',
+      createdAt: { $gte: startOfWeek, $lte: endOfWeek }
+    }).select('amount createdAt');
+
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const daysData = dayLabels.map((label, idx) => {
+      const dateObj = new Date(startOfWeek);
+      dateObj.setDate(startOfWeek.getDate() + idx);
+      const fullDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return {
+        label,
+        fullDate,
+        bookings: 0,
+        revenue: 0
+      };
+    });
+
+    orders.forEach((order) => {
+      const d = new Date(order.createdAt);
+      const dayIndex = (d.getDay() + 6) % 7;
+      if (dayIndex >= 0 && dayIndex < 7) {
+        daysData[dayIndex].bookings += 1;
+        daysData[dayIndex].revenue += order.amount || 0;
+      }
+    });
+
+    chartData = daysData;
+  }
+
+  return {
+    timeframe,
+    chartData,
+    metrics: {
+      totalBookings,
+      completed,
+      cancelled,
+      pending
+    }
+  };
+}
+
 /**
  * Get daily booking and revenue trends for charts.
  */
@@ -211,36 +364,151 @@ export async function getAdminBookingOverview(startDate?: Date, endDate?: Date):
   return list;
 }
 
+export interface FleetSegment {
+  label: string;
+  count: number;
+  percent: number;
+  color: string;
+  badgeText?: string;
+}
+
+export interface FleetStatusResult {
+  total: number;
+  operational: {
+    active: number;
+    ready: number;
+    pending: number;
+    maintenance: number;
+  };
+  operationalSegments: FleetSegment[];
+  categorySegments: FleetSegment[];
+}
+
 /**
- * Get counts of buses by status for fleet overview.
+ * Get real fleet status breakdown (operational statuses and category types).
  */
-export async function getAdminFleetStatus(): Promise<FleetStatus> {
+export async function getAdminFleetStatus(): Promise<FleetStatusResult> {
   await dbConnect();
-  
-  // Note: Since the Bus model doesn't explicitly store status (like Maintenance or Inactive),
-  // we can base it on their active trip counts or simulate statuses using the license numbers/ids.
-  const totalBuses = await Bus.countDocuments();
+
+  const buses = await Bus.find().populate('operatorId', 'operatorApprovalStatus');
+  const totalBuses = buses.length;
+
   if (totalBuses === 0) {
-    return { active: 0, maintenance: 0, inactive: 0, pending: 0, total: 0 };
+    return {
+      total: 0,
+      operational: { active: 0, ready: 0, pending: 0, maintenance: 0 },
+      operationalSegments: [
+        { label: 'Active on Trips', count: 0, percent: 0, color: '#6366f1', badgeText: 'Live' },
+        { label: 'Standby / Ready', count: 0, percent: 0, color: '#10b981', badgeText: 'Available' },
+        { label: 'Pending Approval', count: 0, percent: 0, color: '#ff7c52', badgeText: 'In Review' },
+        { label: 'Maintenance / Idle', count: 0, percent: 0, color: '#ff2d88', badgeText: 'Inactive' }
+      ],
+      categorySegments: [
+        { label: 'AC Sleeper', count: 0, percent: 0, color: '#6366f1' },
+        { label: 'AC Seater', count: 0, percent: 0, color: '#3b82f6' },
+        { label: 'Non-AC Sleeper', count: 0, percent: 0, color: '#ec4899' },
+        { label: 'Non-AC Seater', count: 0, percent: 0, color: '#14b8a6' }
+      ]
+    };
   }
 
-  // Find all buses that have trips in future/present
+  // Active buses on present or future trips
   const activeBusIds = await Trip.distinct('busId', {
     status: { $in: ['SCHEDULED', 'BOARDING', 'DEPARTED', 'IN_TRANSIT'] }
   });
-  
-  const activeCount = activeBusIds.length;
-  // Deterministic simulation for demo databases, ensuring it matches 100% of the total:
-  const maintenanceCount = Math.max(0, Math.floor((totalBuses - activeCount) * 0.4));
-  const inactiveCount = Math.max(0, Math.floor((totalBuses - activeCount) * 0.3));
-  const pendingCount = Math.max(0, totalBuses - activeCount - maintenanceCount - inactiveCount);
+  const activeBusIdSet = new Set(activeBusIds.map(id => id.toString()));
+
+  let activeCount = 0;
+  let readyCount = 0;
+  let pendingCount = 0;
+  let maintenanceCount = 0;
+
+  // Category counts
+  const categoryCounts: Record<string, number> = {
+    'AC Sleeper': 0,
+    'AC Seater': 0,
+    'Non-AC Sleeper': 0,
+    'Non-AC Seater': 0
+  };
+
+  buses.forEach((bus) => {
+    const busIdStr = bus._id.toString();
+    const operator = bus.operatorId as any;
+    const operatorStatus = operator?.operatorApprovalStatus;
+
+    if (operatorStatus === 'PENDING') {
+      pendingCount++;
+    } else if (activeBusIdSet.has(busIdStr)) {
+      activeCount++;
+    } else if (bus.routeId) {
+      readyCount++;
+    } else {
+      maintenanceCount++;
+    }
+
+    const bType = bus.type || 'AC Seater';
+    if (categoryCounts[bType] !== undefined) {
+      categoryCounts[bType]++;
+    } else {
+      categoryCounts[bType] = (categoryCounts[bType] || 0) + 1;
+    }
+  });
+
+  const operationalSegments: FleetSegment[] = [
+    {
+      label: 'Active on Trips',
+      count: activeCount,
+      percent: Math.round((activeCount / totalBuses) * 100),
+      color: '#6366f1',
+      badgeText: 'Live'
+    },
+    {
+      label: 'Standby / Ready',
+      count: readyCount,
+      percent: Math.round((readyCount / totalBuses) * 100),
+      color: '#10b981',
+      badgeText: 'Available'
+    },
+    {
+      label: 'Pending Approval',
+      count: pendingCount,
+      percent: Math.round((pendingCount / totalBuses) * 100),
+      color: '#ff7c52',
+      badgeText: 'In Review'
+    },
+    {
+      label: 'Maintenance / Idle',
+      count: maintenanceCount,
+      percent: Math.max(0, 100 - Math.round((activeCount / totalBuses) * 100) - Math.round((readyCount / totalBuses) * 100) - Math.round((pendingCount / totalBuses) * 100)),
+      color: '#ff2d88',
+      badgeText: 'Inactive'
+    }
+  ];
+
+  const categoryColors: Record<string, string> = {
+    'AC Sleeper': '#6366f1',
+    'AC Seater': '#3b82f6',
+    'Non-AC Sleeper': '#ec4899',
+    'Non-AC Seater': '#14b8a6'
+  };
+
+  const categorySegments: FleetSegment[] = Object.entries(categoryCounts).map(([label, count]) => ({
+    label,
+    count,
+    percent: Math.round((count / totalBuses) * 100),
+    color: categoryColors[label] || '#8b5cf6'
+  }));
 
   return {
-    active: activeCount,
-    maintenance: maintenanceCount,
-    inactive: inactiveCount,
-    pending: pendingCount,
-    total: totalBuses
+    total: totalBuses,
+    operational: {
+      active: activeCount,
+      ready: readyCount,
+      pending: pendingCount,
+      maintenance: maintenanceCount
+    },
+    operationalSegments,
+    categorySegments
   };
 }
 

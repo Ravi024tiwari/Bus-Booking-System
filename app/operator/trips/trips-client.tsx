@@ -711,7 +711,7 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
 
                       {/* Status Badge overlay (top-left) */}
                       <div className="absolute top-2.5 left-2.5">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase backdrop-blur-md border border-white/20 shadow-xs ${getStatusBadgeStyle(trip.status)}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black tracking-wider uppercase backdrop-blur-md border border-white/20 shadow-xs ${getStatusBadgeStyle(trip.status)}`}>
                           {getStatusLabel(trip.status)}
                         </span>
                       </div>
@@ -719,14 +719,14 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                       {/* Verified Rating Badge overlay (top-right) */}
                       <div className="absolute top-2.5 right-2.5">
                         {trip.averageRating && trip.averageRating > 0 ? (
-                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md border border-amber-400/40 text-amber-400 font-black text-[10px] shadow-xs">
-                            <Star className="h-3 w-3 fill-amber-400 text-amber-400 drop-shadow-xs" />
+                          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-amber-400/40 text-amber-400 font-black text-xs shadow-xs">
+                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 drop-shadow-xs" />
                             <span>{trip.averageRating.toFixed(1)}</span>
-                            <span className="text-[9px] text-zinc-300 font-medium">({trip.totalReviews || 1})</span>
+                            <span className="text-[10px] text-zinc-300 font-medium">({trip.totalReviews || 1})</span>
                           </div>
                         ) : (
-                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-md border border-white/20 text-zinc-300 font-medium text-[9px]">
-                            <Star className="h-2.5 w-2.5 text-zinc-400" />
+                          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-md border border-white/20 text-zinc-300 font-bold text-[10px] sm:text-xs">
+                            <Star className="h-3 w-3 text-zinc-400" />
                             <span>New</span>
                           </div>
                         )}
@@ -734,11 +734,11 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
 
                       {/* Departure Timing & Date (bottom-left) */}
                       <div className="absolute bottom-2.5 left-2.5 flex flex-col text-white">
-                        <span className="text-xs sm:text-sm font-black tracking-tight drop-shadow-sm flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-[#ff2d88]" />
+                        <span className="text-xs sm:text-sm font-black tracking-tight drop-shadow-sm flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-[#ff2d88]" />
                           {formatTimeString(trip.departureTime)}
                         </span>
-                        <span className="text-[10px] text-zinc-200 font-semibold drop-shadow-sm">
+                        <span className="text-[11px] sm:text-xs text-zinc-200 font-semibold drop-shadow-sm mt-0.5">
                           {formatDateString(trip.date)}
                         </span>
                       </div>
@@ -746,7 +746,7 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                       {/* Discount offer tag if applicable (bottom-right) */}
                       {trip.offerPercentage && trip.offerPercentage > 0 ? (
                         <div className="absolute bottom-2.5 right-2.5">
-                          <span className="px-2 py-0.5 bg-rose-500 text-white rounded-lg text-[9px] font-black tracking-wider uppercase shadow-xs">
+                          <span className="px-2.5 py-1 bg-rose-500 text-white rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-xs">
                             {trip.offerPercentage}% Off
                           </span>
                         </div>
@@ -759,58 +759,58 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                       {/* Route Header */}
                       <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-1.5 text-zinc-900 dark:text-white">
-                          <span className="font-extrabold text-xs sm:text-sm truncate max-w-[120px]" title={trip.source}>
+                          <span className="font-extrabold text-sm sm:text-base truncate max-w-[130px]" title={trip.source}>
                             {trip.source}
                           </span>
-                          <ArrowRight className="h-3 w-3 text-zinc-400 shrink-0" />
-                          <span className="font-extrabold text-xs sm:text-sm truncate max-w-[120px]" title={trip.destination}>
+                          <ArrowRight className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                          <span className="font-extrabold text-sm sm:text-base truncate max-w-[130px]" title={trip.destination}>
                             {trip.destination}
                           </span>
                         </div>
                         {trip.viaStops && trip.viaStops.length > 0 && (
-                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium truncate">
+                          <span className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-medium truncate">
                             Via: {trip.viaStops.join(', ')}
                           </span>
                         )}
                       </div>
 
                       {/* Bus info & Seats meta pills */}
-                      <div className="grid grid-cols-2 gap-2 bg-zinc-50 dark:bg-zinc-850/60 border border-zinc-100 dark:border-zinc-800/80 rounded-xl p-2 text-xs select-none">
+                      <div className="grid grid-cols-2 gap-2.5 bg-zinc-50 dark:bg-zinc-850/60 border border-zinc-100 dark:border-zinc-800/80 rounded-xl p-2.5 text-xs select-none">
                         {/* Vehicle details */}
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <div className="h-6 w-6 rounded-lg bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200/50 dark:border-zinc-700/50 text-zinc-500">
-                            <Bus className="h-3 w-3" />
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="h-7 w-7 rounded-lg bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-200/50 dark:border-zinc-700/50 text-zinc-500">
+                            <Bus className="h-3.5 w-3.5" />
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 truncate leading-none">{trip.busNumber}</span>
-                            <span className="text-[8px] text-zinc-400 truncate mt-0.5 leading-none">{trip.busType}</span>
+                            <span className="text-[11px] sm:text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate leading-tight">{trip.busNumber}</span>
+                            <span className="text-[10px] text-zinc-400 truncate mt-0.5 leading-tight">{trip.busType}</span>
                           </div>
                         </div>
 
                         {/* Occupancy */}
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <div className="h-6 w-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center shrink-0 border border-indigo-100/50 dark:border-indigo-900/30 text-indigo-500">
-                            <Layers className="h-3 w-3" />
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center shrink-0 border border-indigo-100/50 dark:border-indigo-900/30 text-indigo-500">
+                            <Layers className="h-3.5 w-3.5" />
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate leading-none">{trip.bookedSeatsCount}/{trip.busCapacity}</span>
-                            <span className="text-[8px] text-zinc-400 truncate mt-0.5 leading-none">Seats Booked</span>
+                            <span className="text-[11px] sm:text-xs font-bold text-indigo-600 dark:text-indigo-400 truncate leading-tight">{trip.bookedSeatsCount}/{trip.busCapacity}</span>
+                            <span className="text-[10px] text-zinc-400 truncate mt-0.5 leading-tight">Seats Booked</span>
                           </div>
                         </div>
                       </div>
 
                       {/* 3. CARD BOTTOM ROW: FARE & ACTION BUTTON */}
-                      <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-800/60 relative">
+                      <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800/60 relative">
                         {/* Price Display */}
                         <div className="flex flex-col">
-                          <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider leading-none">Fare</span>
+                          <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider leading-none">Fare</span>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-sm sm:text-base font-black text-zinc-900 dark:text-white leading-none">
+                            <span className="text-base sm:text-lg font-black text-zinc-900 dark:text-white leading-none">
                               ₹{trip.fare}
                             </span>
                             {trip.offerPercentage && trip.offerPercentage > 0 ? (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[9px] font-black">
-                                <Percent className="h-2.5 w-2.5" />
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black">
+                                <Percent className="h-3 w-3" />
                                 {trip.offerPercentage}% OFF
                               </span>
                             ) : null}
@@ -824,7 +824,7 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                               e.stopPropagation();
                               setActiveMenuId(activeMenuId === trip.id ? null : trip.id);
                             }}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold text-[11px] rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+                            className="flex items-center gap-1.5 px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
                           >
                             <span>Manage</span>
                             <MoreVertical className="h-3.5 w-3.5" />
@@ -837,14 +837,14 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                                 className="fixed inset-0 z-40" 
                                 onClick={() => setActiveMenuId(null)}
                               />
-                              <div className="absolute right-0 bottom-full mb-2 bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-2xl rounded-2xl p-2 w-[165px] flex flex-col gap-1 z-50 animate-in fade-in zoom-in-95 duration-150">
-                                <span className="text-[9px] uppercase font-black text-zinc-400 px-2 py-1">Update Status</span>
+                              <div className="absolute right-0 bottom-full mb-2 bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-2xl rounded-2xl p-2 w-[175px] flex flex-col gap-1 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                <span className="text-[10px] uppercase font-black text-zinc-400 px-2.5 py-1">Update Status</span>
                                 
                                 {['SCHEDULED', 'BOARDING', 'DEPARTED', 'IN_TRANSIT', 'ARRIVED', 'CANCELLED'].map((st) => (
                                   <button
                                     key={st}
                                     onClick={() => handleUpdateStatus(trip.id, st)}
-                                    className="w-full text-left px-2 py-1.5 text-[11px] font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all cursor-pointer text-zinc-700 dark:text-zinc-300"
+                                    className="w-full text-left px-2.5 py-1.5 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all cursor-pointer text-zinc-700 dark:text-zinc-300"
                                   >
                                     {st === 'CANCELLED' ? 'Delayed / Cancel' : getStatusLabel(st)}
                                   </button>

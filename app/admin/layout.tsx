@@ -47,10 +47,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch admin profile on mount to ensure session validity
+  // Ref to suppress fetchProfile when logging out
+  const isLoggingOutRef = React.useRef(false);
+
   useEffect(() => {
+    let isMounted = true;
+
     const fetchProfile = async () => {
+      if (isLoggingOutRef.current) return;
       try {
         const response = await axios.get('/api/auth/me');
+        if (!isMounted || isLoggingOutRef.current) return;
         if (response.data?.success && response.data?.data) {
           const u = response.data.data;
           if (u.role !== 'admin') {
@@ -67,6 +74,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           }));
         }
       } catch (err: any) {
+        if (!isMounted || isLoggingOutRef.current) return;
+        if (err.response?.status === 401) {
+          router.replace('/login');
+          return;
+        }
         console.error('Failed to load admin profile:', err);
         toast.error('Session expired. Please log in.');
         router.replace('/login');
@@ -74,6 +86,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
   }, [dispatch, router]);
 
   // Fetch unread notifications count from database
@@ -144,10 +160,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     try {
+      isLoggingOutRef.current = true;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user_profile');
+      }
       await fetch('/api/auth/logout', { method: 'POST' });
       dispatch(clearUser());
       toast.success('Logged out successfully');
-      router.push('/login');
+      router.replace('/login');
     } catch (err) {
       console.error('Logout error:', err);
       toast.error('Failed to log out');

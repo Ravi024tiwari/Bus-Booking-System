@@ -12,7 +12,9 @@ import {
   getAdminRecentBookings,
   getAdminPopularRoutes,
   getAdminRecentActivity,
-  getAdminTopOperators
+  getAdminTopOperators,
+  getAdminBookingOverviewData,
+  getAdminFleetStatus
 } from '@/lib/admin-dashboard';
 
 // Import Server-side Components
@@ -71,14 +73,18 @@ export default async function AdminDashboardPage() {
     recentBookings,
     popularRoutes,
     recentActivity,
-    topOperators
+    topOperators,
+    bookingOverviewData,
+    fleetStatusData
   ] = await Promise.all([
     getAdminKPIs(),
     getAdminPendingApprovals(),
     getAdminRecentBookings(),
     getAdminPopularRoutes(),
     getAdminRecentActivity(),
-    getAdminTopOperators()
+    getAdminTopOperators(),
+    getAdminBookingOverviewData('This Week'),
+    getAdminFleetStatus()
   ]);
 
   return (
@@ -98,7 +104,7 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="lg:col-span-4">
-          <AdminBookingOverview />
+          <AdminBookingOverview initialData={bookingOverviewData} />
         </div>
 
       </div>
@@ -108,7 +114,7 @@ export default async function AdminDashboardPage() {
         
         {/* Fleet Status Donut Chart */}
         <div className="lg:col-span-4">
-          <AdminFleetStatus />
+          <AdminFleetStatus initialData={fleetStatusData} />
         </div>
 
         {/* Pending approvals counter */}

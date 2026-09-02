@@ -26,55 +26,59 @@ export async function GET() {
           select: 'busNumber type images name'
         }
       })
+      .populate({
+        path: 'operatorId',
+        select: 'name email'
+      })
       .lean();
 
-    const formattedOffers = activeOffers
-      .filter((offer: any) => offer.tripId) // only return offers with valid scheduled trips
-      .map((offer: any) => {
-        const trip = offer.tripId;
-        const bus = trip?.busId;
-        const baseFare = trip?.fare || 0;
-        const discountVal = offer.discountPercentage || 0;
-        const discountAmount = Math.round((baseFare * discountVal) / 100);
-        const finalFare = Math.max(0, baseFare - discountAmount);
-        const booked = trip?.offerBookedCount || 0;
-        const remaining = Math.max(0, offer.offerLimit - booked);
+    const formattedOffers = activeOffers.map((offer: any) => {
+      const trip = offer.tripId;
+      const bus = trip?.busId;
+      const baseFare = trip?.fare || 0;
+      const discountVal = offer.discountPercentage || 0;
+      const discountAmount = Math.round((baseFare * discountVal) / 100);
+      const finalFare = Math.max(0, baseFare - discountAmount);
+      const booked = trip?.offerBookedCount || 0;
+      const remaining = Math.max(0, offer.offerLimit - booked);
 
-        const busImage = bus?.images && bus.images.length > 0 && bus.images[0]?.trim() !== ''
-          ? bus.images[0]
-          : offer.bannerImage || '/images/volvo.png';
+      const busImage = bus?.images && bus.images.length > 0 && bus.images[0]?.trim() !== ''
+        ? bus.images[0]
+        : offer.bannerImage || '/images/volvo.png';
 
-        return {
-          id: offer._id.toString(),
-          code: offer.code,
-          title: offer.title,
-          description: offer.description,
-          discountPercentage: offer.discountPercentage,
-          maxDiscountAmount: offer.maxDiscountAmount,
-          offerLimit: offer.offerLimit,
-          offerBookedCount: booked,
-          remainingSeats: remaining,
-          isLimitReached: remaining <= 0,
-          badgeText: offer.badgeText || `${offer.discountPercentage}% OFF`,
-          bannerImage: busImage,
-          themeColor: offer.themeColor,
-          validTill: offer.validTill,
-          tripDetails: {
-            tripId: trip._id.toString(),
-            source: trip.source,
-            destination: trip.destination,
-            date: trip.date,
-            departureTime: trip.departureTime,
-            arrivalTime: trip.arrivalTime,
-            originalFare: baseFare,
-            discountedFare: finalFare,
-            discountAmount: discountAmount,
-            busNumber: bus?.busNumber || trip.busNumber,
-            busType: bus?.type || trip.busType,
-            busImage: busImage
-          }
-        };
-      });
+      return {
+        id: offer._id.toString(),
+        code: offer.code,
+        title: offer.title,
+        description: offer.description,
+        discountPercentage: offer.discountPercentage,
+        maxDiscountAmount: offer.maxDiscountAmount || 0,
+        offerLimit: offer.offerLimit,
+        offerBookedCount: booked,
+        remainingSeats: remaining,
+        isLimitReached: remaining <= 0,
+        badgeText: offer.badgeText || `${offer.discountPercentage}% OFF`,
+        bannerImage: busImage,
+        themeColor: offer.themeColor || 'from-[#ff5666] to-[#ff2d88]',
+        validFrom: offer.validFrom,
+        validTill: offer.validTill,
+        operatorName: offer.operatorId?.name || 'Authorized Operator',
+        tripDetails: trip ? {
+          tripId: trip._id.toString(),
+          source: trip.source,
+          destination: trip.destination,
+          date: trip.date,
+          departureTime: trip.departureTime,
+          arrivalTime: trip.arrivalTime,
+          originalFare: baseFare,
+          discountedFare: finalFare,
+          discountAmount: discountAmount,
+          busNumber: bus?.busNumber || trip.busNumber,
+          busType: bus?.type || trip.busType,
+          busImage: busImage
+        } : null
+      };
+    });
 
     return NextResponse.json({
       success: true,

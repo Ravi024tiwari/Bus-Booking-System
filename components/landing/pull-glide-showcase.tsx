@@ -168,7 +168,7 @@ export function TiltCard({
 
           <Button
             size="sm"
-            className="bg-[#1E40AF] hover:bg-blue-700 text-white font-bold text-xs rounded-xl px-4 py-2 flex items-center gap-1.5 shadow-sm group-hover:bg-[#FF6B00] group-hover:text-white transition-colors"
+            className="bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] hover:from-[#ff6b40] hover:to-[#ea1f7b] text-white font-bold text-xs rounded-xl px-4 py-2 flex items-center gap-1.5 shadow-md shadow-[#ff2d88]/20 transition-all cursor-pointer"
           >
             {card.actionLabel || 'Book Seat'}
             <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
@@ -213,29 +213,29 @@ export default function PullGlideShowcase({
     <div className="w-full relative">
       
       {/* DESKTOP VIEW: Scroll-Tethered Horizontal Pinned Scrub (>= 1024px) */}
-      <div ref={containerRef} className="hidden lg:block relative h-[240vh] bg-slate-50/50 dark:bg-zinc-950">
+      <div ref={containerRef} className="hidden lg:block relative h-[240vh] bg-zinc-50/50 dark:bg-zinc-950">
         
         <div className="sticky top-0 h-screen w-full flex flex-col justify-center overflow-hidden py-8">
           
           {/* Header Content */}
           <div className="max-w-[1400px] mx-auto px-8 w-full mb-8 flex justify-between items-end">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/60 dark:border-indigo-800 rounded-full py-1 px-3.5 mb-2 inline-block">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#ff2d88] bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 rounded-full py-1 px-3.5 mb-2 inline-block">
                 {badgeText}
               </span>
-              <h2 className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              <h2 className="text-3xl lg:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">
                 {title}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 max-w-xl">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-xl">
                 {subtitle}
               </p>
             </div>
 
             {/* Scroll Indicator Prompt */}
-            <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-3.5 py-1.5 rounded-full shadow-xs text-xs font-bold text-slate-600 dark:text-zinc-300">
-              <span className="size-2 rounded-full bg-[#FF6B00] animate-ping" />
+            <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 px-3.5 py-1.5 rounded-full shadow-xs text-xs font-bold text-zinc-600 dark:text-zinc-300">
+              <span className="size-2 rounded-full bg-[#ff2d88] animate-ping" />
               <span>Scroll down to glide through fleet</span>
-              <ArrowRight className="h-3.5 w-3.5 text-blue-600" />
+              <ArrowRight className="h-3.5 w-3.5 text-[#ff2d88]" />
             </div>
           </div>
 
@@ -258,10 +258,10 @@ export default function PullGlideShowcase({
 
           {/* Bottom Progress Bar Indicator */}
           <div className="max-w-[1400px] mx-auto px-8 w-full mt-8">
-            <div className="w-full h-1 bg-slate-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+            <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
               <motion.div
                 style={{ scaleX: smoothProgress, transformOrigin: '0%' }}
-                className="h-full bg-gradient-to-r from-blue-600 to-[#FF6B00] rounded-full"
+                className="h-full bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] rounded-full"
               />
             </div>
           </div>
@@ -272,13 +272,13 @@ export default function PullGlideShowcase({
       {/* MOBILE & TABLET VIEW: Native Momentum Touch Carousel (< 1024px) */}
       <div className="lg:hidden py-16 px-4 max-w-[1400px] mx-auto">
         <div className="mb-8 text-center sm:text-left">
-          <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 border border-indigo-200/60 rounded-full py-1 px-3.5 mb-2 inline-block">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#ff2d88] bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 rounded-full py-1 px-3.5 mb-2 inline-block">
             {badgeText}
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
             {title}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
             {subtitle}
           </p>
         </div>

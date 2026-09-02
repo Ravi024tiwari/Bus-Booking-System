@@ -8,7 +8,6 @@ export default function ProfilePage() {
     <ProfileForm
       role="customer"
       showEmergencyContact={true}
-      showPreferences={true}
       showProfileCompletion={true}
     />
   );

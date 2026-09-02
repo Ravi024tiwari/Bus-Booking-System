@@ -141,25 +141,27 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8FAFC] text-slate-900 selection:bg-[#FF6B00] selection:text-white font-sans antialiased overflow-x-hidden">
-      
+    <div className="flex flex-col min-h-screen bg-[#fafafc] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-[#ff2d88] selection:text-white font-sans antialiased overflow-x-hidden">
+
       {/* 1. Header Navbar */}
-      <Navbar 
-        activeSection={activeSection} 
-        onNavigate={scrollToSection} 
+      <Navbar
+        activeSection={activeSection}
+        onNavigate={scrollToSection}
       />
 
-      {/* 2. Hero Section with Search Form */}
-      <HeroSection 
-        fromCity={fromCity}
-        toCity={toCity}
-        travelDate={travelDate}
-        onFromChange={setFromCity}
-        onToChange={setToCity}
-        onDateChange={setTravelDate}
-        onSwapCities={handleSwapCities}
-        onSearch={handleSearch}
-      />
+      {/* 2. Pinned / Sticky Hero Banner (100vh viewport stage) */}
+      <div className="sticky top-0 z-0 w-full overflow-hidden">
+        <HeroSection 
+          fromCity={fromCity}
+          toCity={toCity}
+          travelDate={travelDate}
+          onFromChange={setFromCity}
+          onToChange={setToCity}
+          onDateChange={setTravelDate}
+          onSwapCities={handleSwapCities}
+          onSearch={handleSearch}
+        />
+      </div>
 
       {/* 3. Search Results Modal Drawer */}
       <SearchResultsModal 
@@ -170,46 +172,56 @@ export default function LandingPage() {
         travelDate={travelDate}
       />
 
-      {/* 4. Why Choose Us Feature Cards */}
-      <WhyChooseUs />
+      {/* 4. Overlapping Content Sheet (Glides directly OVER the pinned banner) */}
+      <div className="relative z-20 bg-[#fafafc] dark:bg-zinc-950 rounded-t-[36px] sm:rounded-t-[48px] md:rounded-t-[60px] shadow-[0_-30px_70px_-10px_rgba(0,0,0,0.55)] dark:shadow-[0_-30px_70px_-10px_rgba(0,0,0,0.95)] border-t border-white/20 dark:border-zinc-800 -mt-8 sm:-mt-12 transition-all">
+        
+        {/* Visual Grab Handle / Sheet Indicator */}
+        <div className="flex justify-center pt-3.5 pb-1">
+          <div className="w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700/80" />
+        </div>
 
-      {/* 5. Metrics Banner */}
-      <MetricsBanner />
+        {/* 5. Why Choose Us Feature Cards */}
+        <WhyChooseUs />
 
-      {/* 6. How It Works 4-Step Process */}
-      <HowItWorks />
+        {/* 6. Metrics Banner */}
+        <MetricsBanner />
 
-      {/* 7. Services Category Grid */}
-      <ServicesSection />
+        {/* 7. How It Works 4-Step Process */}
+        <HowItWorks />
 
-      {/* 8. Scroll-Tethered Pull & Glide Fleet Showcase */}
-      <section id="fleet" className="w-full">
-        <PullGlideShowcase 
-          title="Engineered for Royal Comfort"
-          subtitle="Glide through our handpicked fleet of multi-axle luxury Volvos, EV express coaches, and panoramic sleeper buses on TripGo."
-          badgeText="SCROLL-TETHERED FLEET SHOWCASE"
-          cards={fleetShowcaseCards}
-          onSelectCard={(card) => {
-            toast.success(`Selected ${card.name}. Ready to book!`);
-            window.scrollTo({ top: 300, behavior: 'smooth' });
-          }}
-        />
-      </section>
+        {/* 8. Services Category Grid */}
+        <ServicesSection />
 
-      {/* 9. Benefits 5-Pill Section */}
-      <BenefitsSection />
+        {/* 9. Scroll-Tethered Pull & Glide Fleet Showcase */}
+        <section id="fleet" className="w-full">
+          <PullGlideShowcase 
+            title="Engineered for Royal Comfort"
+            subtitle="Glide through our handpicked fleet of multi-axle luxury Volvos, EV express coaches, and panoramic sleeper buses on TripGo."
+            badgeText="SCROLL-TETHERED FLEET SHOWCASE"
+            cards={fleetShowcaseCards}
+            onSelectCard={(card) => {
+              toast.success(`Selected ${card.name}. Ready to book!`);
+              window.scrollTo({ top: 300, behavior: 'smooth' });
+            }}
+          />
+        </section>
 
-      {/* 10. Testimonials / Reviews */}
-      <TestimonialsSection />
+        {/* 10. Benefits 5-Pill Section */}
+        <BenefitsSection />
 
-      {/* 11. Download App Banner */}
-      <AppDownloadBanner />
+        {/* 11. Testimonials / Reviews */}
+        <TestimonialsSection />
 
-      {/* 12. Offers & Promo Subscription */}
-      <OffersNewsletter />
+        {/* 12. Download App Banner */}
+        <AppDownloadBanner />
 
-      {/* 13. Footer */}
-      <Footer onNavigate={scrollToSection} />
+        {/* 13. Offers & Promo Subscription */}
+        <OffersNewsletter />
+
+        {/* 14. Footer */}
+        <Footer onNavigate={scrollToSection} />
+
+      </div>
 
     </div>
   );

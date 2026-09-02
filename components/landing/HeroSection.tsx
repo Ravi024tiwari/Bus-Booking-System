@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import SearchWidget from './SearchWidget';
 import { customEase } from './motion';
@@ -28,19 +28,37 @@ export default function HeroSection({
   onSwapCities,
   onSearch,
 }: HeroSectionProps) {
+  const heroRef = useRef<HTMLElement>(null);
+
+  // Parallax Scroll Tracking for Sticky Hero Stage
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+
+  // Parallax Micro-Interactions
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.93]);
+  const opacity = useTransform(scrollYProgress, [0, 0.85], [1, 0.45]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, 45]);
+  const blur = useTransform(scrollYProgress, [0, 1], ['blur(0px)', 'blur(4px)']);
+
   return (
     <section
+      ref={heroRef}
       id="home"
-      className="relative bg-gradient-to-b from-[#1D4ED8] via-[#2563EB] to-[#1E40AF] text-white pt-32 pb-20 md:pb-28 rounded-b-[40px] md:rounded-b-[60px] shadow-2xl overflow-hidden"
+      className="relative bg-gradient-to-b from-[#0b0827] via-[#100b38] to-[#0e0a30] text-white pt-28 sm:pt-32 pb-20 md:pb-28 overflow-hidden min-h-[92vh] flex flex-col justify-center"
     >
       {/* Ambient Glows */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-35">
-        <div className="absolute top-[-10%] right-[-10%] w-[550px] h-[550px] bg-cyan-400/25 rounded-full blur-[140px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[450px] h-[450px] bg-orange-500/20 rounded-full blur-[130px]" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
+        <div className="absolute top-[-10%] right-[-10%] w-[550px] h-[550px] bg-[#ff2d88]/20 rounded-full blur-[140px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[450px] h-[450px] bg-[#ff7c52]/20 rounded-full blur-[130px]" />
+        <div className="absolute top-[30%] left-[40%] w-[350px] h-[350px] bg-indigo-600/15 rounded-full blur-[150px]" />
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-        
+      <motion.div
+        style={{ scale, opacity, y, filter: blur }}
+        className="max-w-[1400px] mx-auto px-4 md:px-8 will-change-transform w-full"
+      >
         {/* Main Hero Header */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           
@@ -51,8 +69,8 @@ export default function HeroSection({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/20 rounded-full py-1.5 px-4 text-xs font-semibold text-white mb-6 shadow-sm">
-                <Sparkles className="h-3.5 w-3.5 text-[#FF6B00]" /> Your Journey, Our Responsibility
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-full py-1.5 px-4 text-xs font-semibold text-white mb-6 shadow-sm">
+                <Sparkles className="h-3.5 w-3.5 text-[#ff7c52]" /> Your Journey, Our Priority
               </div>
             </motion.div>
 
@@ -63,16 +81,16 @@ export default function HeroSection({
               className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]"
             >
               Smart Bus Booking <br />
-              for a <span className="text-[#FF6B00]">Better Journey</span>
+              for a <span className="bg-gradient-to-r from-[#ff7c52] via-[#ff5666] to-[#ff2d88] bg-clip-text text-transparent">Better Journey</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.15, ease: customEase }}
-              className="text-sm md:text-base text-blue-100 mt-5 leading-relaxed max-w-lg"
+              className="text-sm md:text-base text-zinc-300 mt-5 leading-relaxed max-w-lg"
             >
-              Discover, compare, and book bus trips across cities with ease on TripGo. Safe, reliable, and comfortable travel – all in one place with instant booking confirmations.
+              Discover, compare, and book luxury bus trips across 100+ cities with instant confirmation, live GPS telemetry tracking, and guaranteed comfort on TripGo.
             </motion.p>
           </div>
 
@@ -89,18 +107,18 @@ export default function HeroSection({
                 alt="TripGo Luxury Multi-Axle Bus"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover rounded-3xl shadow-2xl border border-white/20 select-none"
+                className="object-cover rounded-3xl shadow-2xl border border-white/15 select-none"
                 priority
               />
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-[#1E40AF]/80 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-[#0e0a30]/85 via-transparent to-transparent pointer-events-none" />
 
               {/* Live Tracking GPS Pill */}
-              <div className="absolute bottom-4 left-4 bg-slate-950/75 backdrop-blur-md border border-white/20 px-3.5 py-2 rounded-2xl flex items-center gap-2.5 shadow-lg text-xs font-semibold text-white">
+              <div className="absolute bottom-4 left-4 bg-[#0e0a30]/85 backdrop-blur-md border border-white/15 px-3.5 py-2 rounded-2xl flex items-center gap-2.5 shadow-lg text-xs font-semibold text-white">
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
-                Live GPS & Telemetry Active
+                Live GPS Telemetry Active
               </div>
             </motion.div>
           </div>
@@ -119,7 +137,7 @@ export default function HeroSection({
           onSearch={onSearch}
         />
 
-      </div>
+      </motion.div>
     </section>
   );
 }

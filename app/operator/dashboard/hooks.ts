@@ -30,6 +30,7 @@ export interface SalesTrend {
   _id: string; // date YYYY-MM-DD
   bookings: number;
   revenue: number;
+  seats?: number;
 }
 
 export interface UpcomingSchedule {
@@ -40,12 +41,6 @@ export interface UpcomingSchedule {
   departureTime: string;
   capacity: number;
   occupiedSeats: number;
-  status: string;
-}
-
-export interface DriverPerformance {
-  driverName: string;
-  onTimeRate: number;
   status: string;
 }
 
@@ -191,38 +186,7 @@ export function useUpcomingSchedules() {
   return { data, loading, error, refetch: fetchData };
 }
 
-// 5. Hook for Driver Performance Leaderboard
-export function useDriverPerformance() {
-  const [data, setData] = useState<DriverPerformance[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get('/api/operator/dashboard/driver-performance');
-      if (res.data?.success && Array.isArray(res.data?.data)) {
-        setData(res.data.data);
-      } else {
-        setError('Failed to load driver performance.');
-      }
-    } catch (err: any) {
-      console.error('[useDriverPerformance] Fetch error:', err);
-      setError(err?.response?.data?.message || 'Error fetching driver performance.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, loading, error, refetch: fetchData };
-}
-
-// 6. Hook for Feedback Reviews
+// 5. Hook for Feedback Reviews
 export function useFeedback(params: { startDate: string; endDate: string }) {
   const [data, setData] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);

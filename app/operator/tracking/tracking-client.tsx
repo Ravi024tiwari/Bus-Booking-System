@@ -148,10 +148,10 @@ export default function OperatorTrackingClient({ initialActiveTrips }: OperatorT
       {/* TRIP CARDS CONTAINER */}
       <div className="flex flex-col gap-5">
         <div className="flex items-center justify-between select-none">
-          <h2 className="text-sm font-extrabold uppercase tracking-wider text-zinc-400">
+          <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-400">
             Active Runs ({activeTrips.length})
           </h2>
-          <span className="text-xs text-zinc-400 font-bold">
+          <span className="text-xs sm:text-sm text-zinc-400 font-semibold">
             Real-time status changes sync automatically
           </span>
         </div>
@@ -165,16 +165,16 @@ export default function OperatorTrackingClient({ initialActiveTrips }: OperatorT
               className="bg-white dark:bg-zinc-900 rounded-[2rem] p-16 flex flex-col items-center justify-center text-center border border-zinc-200/50 dark:border-zinc-850 shadow-sm"
             >
               <Bus className="h-12 w-12 text-zinc-300 dark:text-zinc-700 animate-bounce" />
-              <h3 className="font-extrabold text-sm text-zinc-800 dark:text-zinc-200 mt-4">No active trips on road</h3>
-              <p className="text-xs text-zinc-450 text-zinc-500 font-semibold mt-1.5 max-w-[340px] leading-relaxed">
+              <h3 className="font-extrabold text-base sm:text-lg text-zinc-800 dark:text-zinc-200 mt-4">No active trips on road</h3>
+              <p className="text-xs sm:text-sm text-zinc-500 font-semibold mt-1.5 max-w-[340px] leading-relaxed">
                 Currently, none of your buses are in Boarding or In Transit states. Update trip statuses in your scheduler.
               </p>
               <Link
                 href="/operator/trips"
-                className="mt-6 px-5 py-2.5 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs rounded-xl shadow-md hover:opacity-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                className="mt-6 px-5 py-2.5 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md hover:opacity-95 transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 Go to Trip Scheduler
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-4 w-4" />
               </Link>
             </motion.div>
           ) : (
@@ -192,33 +192,33 @@ export default function OperatorTrackingClient({ initialActiveTrips }: OperatorT
                   {/* Card Header: Route & Status */}
                   <div className="flex justify-between items-start border-b border-zinc-100 dark:border-zinc-850 pb-3">
                     <div className="flex flex-col">
-                      <div className="flex items-center gap-1.5 text-sm sm:text-base font-black text-zinc-900 dark:text-white">
+                      <div className="flex items-center gap-1.5 text-base sm:text-lg font-black text-zinc-900 dark:text-white">
                         <span>{trip.source}</span>
-                        <ArrowRight className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                        <ArrowRight className="h-4 w-4 text-zinc-400 shrink-0" />
                         <span>{trip.destination}</span>
                       </div>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-1">
+                      <span className="text-xs sm:text-sm text-zinc-400 dark:text-zinc-500 font-bold mt-1">
                         Date: {formatDate(trip.date)} • Bus: {trip.busNumber}
                       </span>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider ${getStatusStyle(trip.status)}`}>
+                    <span className={`px-3 py-1 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider ${getStatusStyle(trip.status)}`}>
                       {trip.status === 'BOARDING' ? 'Boarding Open' : 'In Transit'}
                     </span>
                   </div>
 
                   {/* Operational Details Grid */}
-                  <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
+                  <div className="grid grid-cols-2 gap-4 text-xs sm:text-sm font-semibold">
                     <div className="flex flex-col gap-1">
-                      <span className="text-[9px] text-zinc-450 uppercase font-black text-zinc-450 tracking-wider">Departure Time</span>
-                      <span className="text-zinc-800 dark:text-zinc-250 flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                      <span className="text-[10px] sm:text-xs uppercase font-bold text-zinc-400 tracking-wider">Departure Time</span>
+                      <span className="text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 font-bold">
+                        <Clock className="h-4 w-4 text-zinc-400 shrink-0" />
                         {formatTime(trip.departureTime)}
                       </span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <span className="text-[9px] text-zinc-450 uppercase font-black text-zinc-450 tracking-wider">Estimated Arrival</span>
-                      <span className="text-[#ff2d88] flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-[#ff2d88]/80 shrink-0" />
+                      <span className="text-[10px] sm:text-xs uppercase font-bold text-zinc-400 tracking-wider">Estimated Arrival</span>
+                      <span className="text-[#ff2d88] flex items-center gap-1.5 font-bold">
+                        <Clock className="h-4 w-4 text-[#ff2d88]/80 shrink-0" />
                         {formatTime(trip.arrivalTime)}
                       </span>
                     </div>
@@ -226,12 +226,12 @@ export default function OperatorTrackingClient({ initialActiveTrips }: OperatorT
 
                   {/* Via stops preview */}
                   {trip.viaStops.length > 0 && (
-                    <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850/60 rounded-xl p-3 text-[11px] font-semibold text-zinc-500 flex flex-wrap gap-x-2">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400 self-center">Via:</span>
+                    <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850/60 rounded-xl p-3 text-xs font-semibold text-zinc-500 flex flex-wrap gap-x-2">
+                      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-zinc-400 self-center">Via:</span>
                       {trip.viaStops.map((stop, index) => (
                         <span key={index} className="flex items-center gap-1">
                           {stop}
-                          {index < trip.viaStops.length - 1 && <span className="text-[9px] text-zinc-300">•</span>}
+                          {index < trip.viaStops.length - 1 && <span className="text-zinc-300">•</span>}
                         </span>
                       ))}
                     </div>
@@ -244,7 +244,7 @@ export default function OperatorTrackingClient({ initialActiveTrips }: OperatorT
                       <button
                         disabled={loadingTripId === trip.id}
                         onClick={() => handleUpdateTripStatus(trip.id, 'DEPARTED')}
-                        className="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:opacity-95 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow shadow-indigo-500/20 hover:shadow-indigo-500/35 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        className="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:opacity-95 text-white rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider shadow shadow-indigo-500/20 hover:shadow-indigo-500/35 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                       >
                         <Play className="h-3.5 w-3.5" />
                         Depart Bus
@@ -255,7 +255,7 @@ export default function OperatorTrackingClient({ initialActiveTrips }: OperatorT
                       <button
                         disabled={loadingTripId === trip.id}
                         onClick={() => handleUpdateTripStatus(trip.id, 'ARRIVED')}
-                        className="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow shadow-emerald-500/20 hover:shadow-emerald-500/35 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        className="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider shadow shadow-emerald-500/20 hover:shadow-emerald-500/35 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                       >
                         <Flag className="h-3.5 w-3.5" />
                         Arrived (Complete)
@@ -265,7 +265,7 @@ export default function OperatorTrackingClient({ initialActiveTrips }: OperatorT
                     <button
                       disabled={loadingTripId === trip.id}
                       onClick={() => handleUpdateTripStatus(trip.id, 'CANCELLED')}
-                      className="px-4 py-2.5 border border-rose-200 dark:border-rose-950 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl text-xs font-black uppercase tracking-wider active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      className="px-4 py-2.5 border border-rose-200 dark:border-rose-950 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                       <XOctagon className="h-3.5 w-3.5 shrink-0" />
                       Delay/Cancel

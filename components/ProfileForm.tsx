@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, setUser } from '@/store';
 import axios from 'axios';
@@ -14,15 +14,16 @@ import {
   ShieldCheck, 
   Camera, 
   Lock,
-  Settings,
-  Languages,
-  Coins
+  CheckCircle2,
+  Circle,
+  Sparkles,
+  ArrowRight,
+  Check
 } from 'lucide-react';
 
 interface ProfileFormProps {
   role: 'customer' | 'operator' | 'admin';
   showEmergencyContact?: boolean;
-  showPreferences?: boolean;
   showProfileCompletion?: boolean;
   title?: string;
   subtitle?: string;
@@ -32,7 +33,6 @@ interface ProfileFormProps {
 export default function ProfileForm({
   role,
   showEmergencyContact = false,
-  showPreferences = false,
   showProfileCompletion = false,
   title,
   subtitle,
@@ -91,9 +91,12 @@ export default function ProfileForm({
 
   // Load profile on mount
   useEffect(() => {
+    let isMounted = true;
+
     const fetchProfile = async () => {
       try {
         const response = await axios.get('/api/auth/me');
+        if (!isMounted) return;
         if (response.data?.success && response.data?.data) {
           const u = response.data.data;
           setFormData({
@@ -121,14 +124,26 @@ export default function ProfileForm({
           }));
         }
       } catch (err: any) {
+        if (!isMounted) return;
+        // Ignore 401 when logging out or unauthenticated
+        if (err.response?.status === 401) {
+          return;
+        }
         console.error('Failed to load profile:', err);
         toast.error('Failed to fetch user profile details.');
       } finally {
-        setFetching(false);
+        if (isMounted) {
+          setFetching(false);
+        }
       }
     };
+
     fetchProfile();
-  }, [dispatch, userProfile?.avatar]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -243,6 +258,82 @@ export default function ProfileForm({
     }
   };
 
+  // Focus helper for interactive checklist clicks
+  const handleFocusField = (fieldId: string) => {
+    if (fieldId === 'avatar') {
+      triggerFileInput();
+      return;
+    }
+    const el = document.getElementById(fieldId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus();
+    }
+  };
+
+  // Dynamic Profile Completion Calculation
+  const completionItems = useMemo(() => {
+    const items = [
+      {
+        id: 'profile-field-name',
+        fieldKey: 'name',
+        label: 'Full Name',
+        completed: Boolean(formData.name && formData.name.trim().length > 0),
+        hint: 'Enter your legal full name'
+      },
+      {
+        id: 'profile-field-email',
+        fieldKey: 'email',
+        label: 'Email Verified',
+        completed: Boolean(formData.email && formData.email.trim().length > 0),
+        hint: 'Verified for ticket confirmations'
+      },
+      {
+        id: 'profile-field-phone',
+        fieldKey: 'phoneNumber',
+        label: 'Phone Number',
+        completed: Boolean(formData.phoneNumber && formData.phoneNumber.trim().length >= 10),
+        hint: '10-digit number for trip SMS & OTP'
+      },
+      {
+        id: 'avatar',
+        fieldKey: 'avatar',
+        label: 'Profile Photo',
+        completed: Boolean(selectedFile || (photoPreview && photoPreview !== '' && !photoPreview.endsWith('rohit-avatar.jpg'))),
+        hint: 'Upload photo for boarding verification'
+      },
+      {
+        id: 'profile-field-gender',
+        fieldKey: 'gender',
+        label: 'Gender',
+        completed: Boolean(formData.gender),
+        hint: 'Helps in seat allocation preferences'
+      },
+    ];
+
+    if (showEmergencyContact) {
+      items.push({
+        id: 'profile-field-emergency-name',
+        fieldKey: 'emergencyContact',
+        label: 'Emergency Contact',
+        completed: Boolean(
+          formData.emergencyContactName &&
+          formData.emergencyContactName.trim().length > 0 &&
+          formData.emergencyContactPhone &&
+          formData.emergencyContactPhone.trim().length >= 10
+        ),
+        hint: 'Name & phone for traveler safety'
+      });
+    }
+
+    return items;
+  }, [formData, photoPreview, selectedFile, showEmergencyContact]);
+
+  const completedCount = useMemo(() => completionItems.filter(item => item.completed).length, [completionItems]);
+  const totalCount = completionItems.length;
+  const completionPercentage = Math.round((completedCount / totalCount) * 100);
+  const nextIncompleteItem = useMemo(() => completionItems.find(item => !item.completed), [completionItems]);
+
   if (fetching) {
     return (
       <div className="flex flex-col gap-6 w-full animate-pulse select-none">
@@ -263,10 +354,10 @@ export default function ProfileForm({
       
       {/* HEADER SECTION */}
       <div className="flex flex-col select-none">
-        <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
           {displayTitle}
         </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 font-semibold mt-1">
+        <p className="text-xs sm:text-sm lg:text-base text-zinc-500 dark:text-zinc-400 font-semibold mt-1">
           {displaySubtitle}
         </p>
       </div>
@@ -286,8 +377,8 @@ export default function ProfileForm({
                   <UserIcon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-zinc-900 dark:text-white">Personal Information</h3>
-                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mt-0.5">
+                  <h3 className="font-extrabold text-base sm:text-lg text-zinc-900 dark:text-white">Personal Information</h3>
+                  <span className="text-[11px] sm:text-xs text-zinc-400 font-bold uppercase tracking-wider block mt-0.5">
                     Update your personal profile details
                   </span>
                 </div>
@@ -296,7 +387,7 @@ export default function ProfileForm({
               <button 
                 type="submit"
                 disabled={loading}
-                className="py-3 px-6 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs rounded-xl shadow-lg hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all duration-200 cursor-pointer"
+                className="py-2.5 sm:py-3 px-5 sm:px-6 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all duration-200 cursor-pointer"
               >
                 {loading ? 'Saving...' : 'Save Changes'}
               </button>
@@ -335,10 +426,10 @@ export default function ProfileForm({
                 <h4 className="text-lg sm:text-xl font-black text-zinc-900 dark:text-white leading-none truncate max-w-full">
                   {formData.name || userProfile?.name || 'Ravi Tiwari'}
                 </h4>
-                <span className="inline-flex mt-1.5 px-3 py-1 bg-violet-500/10 text-violet-600 dark:bg-violet-950/20 dark:text-violet-400 text-[10px] font-black uppercase tracking-wider rounded-xl self-center sm:self-start leading-none">
+                <span className="inline-flex mt-1.5 px-3 py-1 bg-violet-500/10 text-violet-600 dark:bg-violet-950/20 dark:text-violet-400 text-xs font-black uppercase tracking-wider rounded-xl self-center sm:self-start leading-none">
                   {role.toUpperCase()}
                 </span>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-1 block">
+                <span className="text-xs text-zinc-400 dark:text-zinc-500 font-semibold mt-1 block">
                   Member since May 2024
                 </span>
               </div>
@@ -348,27 +439,28 @@ export default function ProfileForm({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-2">
               
               {/* Full Name */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
                   Full Name
                 </label>
-                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3 rounded-2xl">
+                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3 rounded-2xl focus-within:border-[#ff2d88]/50 transition-colors">
                   <UserIcon className="h-4.5 w-4.5 text-zinc-400" />
                   <input 
                     type="text" 
+                    id="profile-field-name"
                     name="name" 
                     value={formData.name} 
                     onChange={handleChange}
                     required
                     placeholder="Enter your name" 
-                    className="bg-transparent border-none outline-none w-full text-xs font-semibold text-zinc-800 dark:text-zinc-200"
+                    className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200"
                   />
                 </div>
               </div>
 
               {/* Email (Disabled, Verified Badge) */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
                   Email Address
                 </label>
                 <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200/10 dark:border-zinc-700/10 px-4 py-3 rounded-2xl cursor-not-allowed">
@@ -376,47 +468,50 @@ export default function ProfileForm({
                     <Mail className="h-4.5 w-4.5 text-zinc-400" />
                     <input 
                       type="email" 
+                      id="profile-field-email"
                       value={formData.email} 
                       disabled
-                      className="bg-transparent border-none outline-none w-full text-xs font-semibold text-zinc-500 dark:text-zinc-500 cursor-not-allowed"
+                      className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-semibold text-zinc-500 dark:text-zinc-500 cursor-not-allowed"
                     />
                   </div>
-                  <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-xl text-[9px] font-black uppercase tracking-wide flex items-center gap-1 shrink-0 select-none">
-                    <ShieldCheck className="h-3 w-3" />
+                  <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wide flex items-center gap-1 shrink-0 select-none">
+                    <ShieldCheck className="h-3.5 w-3.5" />
                     Verified
                   </span>
                 </div>
               </div>
 
               {/* Phone Number */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
                   Phone Number
                 </label>
-                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3 rounded-2xl">
+                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3 rounded-2xl focus-within:border-[#ff2d88]/50 transition-colors">
                   <Phone className="h-4.5 w-4.5 text-zinc-400" />
-                  <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 shrink-0 select-none border-r border-zinc-200 dark:border-zinc-700 pr-3">+91</span>
+                  <span className="text-xs sm:text-sm font-bold text-zinc-400 dark:text-zinc-500 shrink-0 select-none border-r border-zinc-200 dark:border-zinc-700 pr-3">+91</span>
                   <input 
                     type="tel" 
+                    id="profile-field-phone"
                     name="phoneNumber" 
                     value={formData.phoneNumber} 
                     onChange={handleChange}
                     placeholder="Enter 10-digit number" 
-                    className="bg-transparent border-none outline-none w-full text-xs font-semibold text-zinc-800 dark:text-zinc-200"
+                    className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200"
                   />
                 </div>
               </div>
 
               {/* Gender */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
                   Gender
                 </label>
                 <select 
+                  id="profile-field-gender"
                   name="gender" 
                   value={formData.gender} 
                   onChange={handleChange}
-                  className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3.5 rounded-2xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 outline-none w-full cursor-pointer"
+                  className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200 outline-none w-full cursor-pointer focus:border-[#ff2d88]/50 transition-colors"
                 >
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -429,19 +524,20 @@ export default function ProfileForm({
 
               {/* Emergency Contact Name (Conditional) */}
               {showEmergencyContact && (
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
                     Emergency Contact Name / Relation
                   </label>
-                  <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3 rounded-2xl">
+                  <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3 rounded-2xl focus-within:border-[#ff2d88]/50 transition-colors">
                     <UserIcon className="h-4.5 w-4.5 text-zinc-400" />
                     <input 
                       type="text" 
+                      id="profile-field-emergency-name"
                       name="emergencyContactName" 
                       value={formData.emergencyContactName} 
                       onChange={handleChange}
                       placeholder="e.g. Rahul Tiwari (Brother)" 
-                      className="bg-transparent border-none outline-none w-full text-xs font-semibold text-zinc-800 dark:text-zinc-200"
+                      className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200"
                     />
                   </div>
                 </div>
@@ -449,20 +545,21 @@ export default function ProfileForm({
 
               {/* Emergency Contact Phone (Conditional) */}
               {showEmergencyContact && (
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
                     Emergency Contact Phone Number
                   </label>
-                  <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3 rounded-2xl">
+                  <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-3 rounded-2xl focus-within:border-[#ff2d88]/50 transition-colors">
                     <Phone className="h-4.5 w-4.5 text-zinc-400" />
-                    <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 shrink-0 select-none border-r border-zinc-200 dark:border-zinc-700 pr-3">+91</span>
+                    <span className="text-xs sm:text-sm font-bold text-zinc-400 dark:text-zinc-500 shrink-0 select-none border-r border-zinc-200 dark:border-zinc-700 pr-3">+91</span>
                     <input 
                       type="tel" 
+                      id="profile-field-emergency-phone"
                       name="emergencyContactPhone" 
                       value={formData.emergencyContactPhone} 
                       onChange={handleChange}
                       placeholder="Enter 10-digit number" 
-                      className="bg-transparent border-none outline-none w-full text-xs font-semibold text-zinc-800 dark:text-zinc-200"
+                      className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200"
                     />
                   </div>
                 </div>
@@ -472,98 +569,7 @@ export default function ProfileForm({
 
           </div>
 
-          {/* PREFERENCES CARD (Conditional) */}
-          {showPreferences && (
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 sm:p-8 flex flex-col gap-6 shadow-[0_10px_30px_rgba(0,0,0,0.01)] relative overflow-hidden">
-              
-              <div className="flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800/60 pb-5 select-none">
-                <div className="h-10 w-10 bg-indigo-500/10 text-indigo-500 rounded-xl flex items-center justify-center shrink-0 border border-indigo-500/15">
-                  <Settings className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-zinc-900 dark:text-white">Preferences</h3>
-                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mt-0.5">
-                    Customize your booking experience
-                  </span>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 select-none">
-                {/* Preferred Language */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
-                    Preferred Language
-                  </label>
-                  <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-1 rounded-2xl">
-                    <Languages className="h-4.5 w-4.5 text-zinc-400 shrink-0" />
-                    <select 
-                      className="bg-transparent border-none outline-none w-full py-2.5 text-xs font-semibold text-zinc-850 dark:text-zinc-250 cursor-pointer"
-                      defaultValue="English"
-                    >
-                      <option value="English">English</option>
-                      <option value="Hindi">Hindi</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Preferred Currency */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider leading-none">
-                    Preferred Currency
-                  </label>
-                  <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/40 dark:border-zinc-700/40 px-4 py-1 rounded-2xl">
-                    <Coins className="h-4.5 w-4.5 text-zinc-400 shrink-0" />
-                    <select 
-                      className="bg-transparent border-none outline-none w-full py-2.5 text-xs font-semibold text-zinc-855 dark:text-zinc-255 cursor-pointer"
-                      defaultValue="INR"
-                    >
-                      <option value="INR">INR (₹)</option>
-                      <option value="USD">USD ($)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notification Toggles */}
-              <div className="flex flex-col gap-4 mt-1 border-t border-zinc-100 dark:border-zinc-800/60 pt-5 select-none">
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-zinc-800 dark:text-zinc-200">Email Notifications</span>
-                    <span className="text-[10px] text-zinc-400 font-semibold mt-0.5">Receive updates about bookings and offers</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-9 h-5 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff2d88]" />
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-zinc-800 dark:text-zinc-200">SMS Notifications</span>
-                    <span className="text-[10px] text-zinc-400 font-semibold mt-0.5">Receive SMS about booking updates</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-9 h-5 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff2d88]" />
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-zinc-800 dark:text-zinc-200">Newsletter</span>
-                    <span className="text-[10px] text-zinc-400 font-semibold mt-0.5">Get best offers and travel tips</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" />
-                    <div className="w-9 h-5 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff2d88]" />
-                  </label>
-                </div>
-
-              </div>
-
-            </div>
-          )}
 
           {/* PASSWORD UPDATE CARD */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 sm:p-8 flex flex-col gap-6 shadow-[0_10px_30px_rgba(0,0,0,0.01)] relative overflow-hidden">
@@ -644,16 +650,34 @@ export default function ProfileForm({
         {showProfileCompletion && (
           <div className="lg:col-span-4 flex flex-col gap-6 select-none">
             
-            {/* PROFILE COMPLETION WIDGET */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 flex flex-col gap-6 shadow-[0_10px_30px_rgba(0,0,0,0.01)] text-center relative overflow-hidden">
-              <h3 className="font-extrabold text-base text-zinc-900 dark:text-white self-start">Profile Completion</h3>
+            {/* DYNAMIC PROFILE COMPLETION WIDGET */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 sm:p-7 flex flex-col gap-6 shadow-[0_10px_30px_rgba(0,0,0,0.01)] relative overflow-hidden">
               
-              <div className="flex flex-col items-center justify-center py-4">
-                
-                {/* Radial Completion Chart */}
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/60 pb-4">
+                <div className="flex flex-col">
+                  <h3 className="font-extrabold text-base text-zinc-900 dark:text-white leading-tight">Profile Completion</h3>
+                  <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-semibold mt-0.5">
+                    {completedCount} of {totalCount} sections complete
+                  </span>
+                </div>
+                {completionPercentage === 100 ? (
+                  <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-wide flex items-center gap-1 border border-emerald-500/20">
+                    <Sparkles className="h-3 w-3" />
+                    Complete
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 bg-[#ff2d88]/10 text-[#ff2d88] rounded-xl text-[11px] font-black uppercase tracking-wide flex items-center gap-1 border border-[#ff2d88]/20">
+                    In Progress
+                  </span>
+                )}
+              </div>
+
+              {/* Radial Completion Chart */}
+              <div className="flex flex-col items-center justify-center py-2">
                 <div className="relative w-36 h-36 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                    {/* Gray background track */}
+                    {/* Background track */}
                     <circle 
                       cx="50" 
                       cy="50" 
@@ -661,50 +685,134 @@ export default function ProfileForm({
                       stroke="currentColor" 
                       strokeWidth="8" 
                       fill="none" 
-                      className="text-zinc-100 dark:text-zinc-800"
+                      className="text-zinc-100 dark:text-zinc-800 transition-colors"
                     />
-                    {/* Pink completion track */}
+                    {/* Dynamic completion track */}
                     <circle 
                       cx="50" 
                       cy="50" 
                       r="40" 
-                      stroke="url(#completionGradient)" 
+                      stroke={completionPercentage === 100 ? "url(#completeGradient)" : "url(#completionGradient)"} 
                       strokeWidth="8" 
-                      strokeDasharray="251.2" 
-                      strokeDashoffset={251.2 - (251.2 * 0.8)} 
+                      strokeDasharray="251.327" 
+                      strokeDashoffset={251.327 - (251.327 * (completionPercentage / 100))} 
                       strokeLinecap="round"
                       fill="none" 
+                      className="transition-[stroke-dashoffset] duration-700 ease-out"
                     />
                     <defs>
                       <linearGradient id="completionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#ff7c52" />
                         <stop offset="100%" stopColor="#ff2d88" />
                       </linearGradient>
+                      <linearGradient id="completeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#10b981" />
+                        <stop offset="100%" stopColor="#059669" />
+                      </linearGradient>
                     </defs>
                   </svg>
-                  {/* Center text */}
+                  {/* Center percentage text */}
                   <div className="absolute flex flex-col items-center justify-center">
-                    <span className="text-3xl font-black text-zinc-800 dark:text-white leading-none">80%</span>
-                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mt-1">Complete</span>
+                    <span className="text-3xl font-black text-zinc-900 dark:text-white leading-none transition-all duration-300">
+                      {completionPercentage}%
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mt-1">
+                      {completionPercentage === 100 ? 'Verified' : 'Complete'}
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1.5 mt-5">
-                  <h4 className="font-bold text-sm text-zinc-800 dark:text-zinc-200">Complete your profile</h4>
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold leading-relaxed max-w-[200px] mx-auto">
-                    Add more details to get better travel recommendations and complete security verification.
-                  </p>
+                {/* Progress bar visual indicator */}
+                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full mt-5 overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-700 ease-out rounded-full ${
+                      completionPercentage === 100 
+                        ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' 
+                        : 'bg-gradient-to-r from-[#ff7c52] to-[#ff2d88]'
+                    }`}
+                    style={{ width: `${completionPercentage}%` }}
+                  />
                 </div>
 
-                <button 
-                  type="submit"
-                  disabled={loading}
-                  className="w-full mt-6 py-3 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs rounded-xl shadow-lg hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all duration-200 cursor-pointer"
-                >
-                  Complete Now
-                </button>
-
+                <div className="flex flex-col gap-1 mt-4 text-center">
+                  <h4 className="font-bold text-sm text-zinc-800 dark:text-zinc-200">
+                    {completionPercentage === 100 ? '🎉 Profile is 100% Complete!' : 'Complete your profile'}
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium leading-relaxed max-w-[240px] mx-auto">
+                    {completionPercentage === 100 
+                      ? 'Your profile information is up to date and ready for fast checkout.' 
+                      : nextIncompleteItem 
+                        ? `Tip: Complete "${nextIncompleteItem.label}" to improve verification.` 
+                        : 'Add more details for personalized travel recommendations.'}
+                  </p>
+                </div>
               </div>
+
+              {/* Interactive Checklist items */}
+              <div className="flex flex-col gap-2.5 pt-2 border-t border-zinc-100 dark:border-zinc-800/60">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                    Checklist
+                  </span>
+                  <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+                    {completedCount}/{totalCount}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {completionItems.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleFocusField(item.id)}
+                      className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                        item.completed
+                          ? 'bg-emerald-500/5 border-emerald-500/20 text-zinc-700 dark:text-zinc-300 hover:bg-emerald-500/10'
+                          : 'bg-zinc-50 dark:bg-zinc-800/40 border-zinc-200/40 dark:border-zinc-700/40 text-zinc-600 dark:text-zinc-400 hover:border-[#ff2d88]/40 hover:bg-[#ff2d88]/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {item.completed ? (
+                          <div className="h-5 w-5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          </div>
+                        ) : (
+                          <div className="h-5 w-5 rounded-full bg-zinc-200 dark:bg-zinc-700/60 text-zinc-400 flex items-center justify-center shrink-0">
+                            <Circle className="h-2.5 w-2.5 fill-current" />
+                          </div>
+                        )}
+                        <div className="flex flex-col min-w-0">
+                          <span className={`text-xs font-bold truncate ${item.completed ? 'text-zinc-800 dark:text-zinc-200' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                            {item.label}
+                          </span>
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">
+                            {item.hint}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 ml-2">
+                        {item.completed ? (
+                          <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">Done</span>
+                        ) : (
+                          <span className="text-[10px] font-black uppercase text-[#ff2d88] flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                            Fill <ArrowRight className="h-2.5 w-2.5 inline" />
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 py-3 bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+              >
+                {loading ? 'Saving Changes...' : completionPercentage === 100 ? 'Save Profile' : `Save & Update (${completionPercentage}%)`}
+              </button>
 
             </div>
 

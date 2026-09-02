@@ -68,29 +68,29 @@ export default function AdminKPIs({ stats }: { stats: KPIStats }) {
       </div>
 
       {/* KPI Cards Container: strictly compact, non-stretching horizontal row */}
-      <div className="flex overflow-x-auto sm:overflow-x-visible no-scrollbar flex-nowrap gap-3 sm:gap-4 pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none w-full sm:w-auto">
+      <div className="flex overflow-x-auto sm:overflow-x-visible no-scrollbar flex-nowrap gap-3.5 sm:gap-4 lg:gap-5 pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none w-full sm:w-auto">
         {cards.map((card, idx) => {
           const Icon = card.icon;
           const isPositive = card.growth >= 0;
           return (
             <div
               key={idx}
-              className="w-[165px] sm:w-[195px] shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden group select-none"
+              className="w-[175px] sm:w-[205px] lg:flex-1 shrink-0 snap-start bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl p-4 sm:p-4.5 lg:p-5 flex items-center gap-3.5 lg:gap-4 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden group select-none"
             >
-              <div className={`h-10 w-10 rounded-xl ${card.iconBg} ${card.iconColor} flex items-center justify-center shrink-0 border border-black/5 dark:border-white/5`}>
-                <Icon className="h-5 w-5" />
+              <div className={`h-11 w-11 lg:h-12 lg:w-12 rounded-2xl ${card.iconBg} ${card.iconColor} flex items-center justify-center shrink-0 border border-black/5 dark:border-white/5`}>
+                <Icon className="h-5 w-5 lg:h-6 lg:w-6" />
               </div>
               
               <div className="flex flex-col min-w-0">
-                <span className="text-zinc-400 dark:text-zinc-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate">
+                <span className="text-zinc-400 dark:text-zinc-500 text-[11px] sm:text-xs lg:text-sm font-bold uppercase tracking-wider block truncate">
                   {card.title}
                 </span>
-                <span className="text-base sm:text-lg font-extrabold text-zinc-900 dark:text-white mt-0.5 block leading-none truncate">
+                <span className="text-lg sm:text-xl lg:text-2xl font-black text-zinc-900 dark:text-white mt-0.5 block leading-tight truncate">
                   {card.value}
                 </span>
                 <div className="mt-1 flex items-center leading-none">
-                  <span className={`text-[10px] font-bold flex items-center gap-0.5 shrink-0 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    {isPositive ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                  <span className={`text-[11px] lg:text-xs font-bold flex items-center gap-0.5 shrink-0 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                     {card.isAbsoluteGrowth ? `${isPositive ? '+' : ''}${card.growth}` : `${Math.abs(card.growth)}%`}
                   </span>
                 </div>

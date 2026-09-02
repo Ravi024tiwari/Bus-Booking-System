@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth-proxy';
-import { getAdminBookingOverview } from '@/lib/admin-dashboard';
+import { getAdminBookingOverviewData } from '@/lib/admin-dashboard';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,13 +15,9 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const startDateParam = searchParams.get('startDate');
-    const endDateParam = searchParams.get('endDate');
+    const timeframe = searchParams.get('timeframe') || 'This Week';
 
-    const startDate = startDateParam ? new Date(startDateParam) : undefined;
-    const endDate = endDateParam ? new Date(endDateParam) : undefined;
-
-    const data = await getAdminBookingOverview(startDate, endDate);
+    const data = await getAdminBookingOverviewData(timeframe);
 
     return NextResponse.json({
       success: true,

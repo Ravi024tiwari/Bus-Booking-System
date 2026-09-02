@@ -95,18 +95,18 @@ export default function SearchWidget({
       
       {/* Search Input Box */}
       <PullUpReveal yOffset={35} delay={0.2}>
-        <div className="w-full bg-white text-slate-900 border border-slate-100 p-4 md:p-6 rounded-[24px] shadow-2xl mt-10 md:mt-12">
+        <div className="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white border border-zinc-200/80 dark:border-zinc-800 p-4 md:p-6 rounded-[28px] shadow-2xl shadow-black/20 mt-10 md:mt-12">
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-center">
             
             {/* Departure */}
             <div className="lg:col-span-4 relative flex flex-col gap-1 text-left">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">From</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">From</label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-blue-600" />
+                <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-[#ff5666]" />
                 <Input
                   type="text"
                   placeholder="Starting Point (e.g. Delhi)"
-                  className="pl-9 pr-8 bg-slate-50 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 text-sm font-semibold h-11 rounded-xl text-slate-800"
+                  className="pl-10 pr-8 bg-zinc-50 dark:bg-zinc-800/70 border-zinc-200 dark:border-zinc-700/80 focus-visible:ring-2 focus-visible:ring-[#ff2d88] text-sm font-semibold h-12 rounded-xl text-zinc-800 dark:text-zinc-100"
                   value={fromCity}
                   onChange={(e) => {
                     onFromChange(e.target.value);
@@ -121,16 +121,16 @@ export default function SearchWidget({
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
-                      className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 overflow-hidden max-h-48 overflow-y-auto"
+                      className="absolute left-0 right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 py-1.5 overflow-hidden max-h-48 overflow-y-auto"
                     >
                       {POPULAR_CITIES.filter((c) => c.toLowerCase().includes(fromCity.toLowerCase())).map((city) => (
                         <li
                           key={city}
                           onMouseDown={() => onFromChange(city)}
-                          className="px-4 py-2 text-xs font-bold hover:bg-blue-50 cursor-pointer text-slate-700 flex items-center justify-between"
+                          className="px-4 py-2 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer text-zinc-700 dark:text-zinc-200 flex items-center justify-between"
                         >
                           <span>{city}</span>
-                          <span className="text-[10px] text-slate-400 uppercase">Hub</span>
+                          <span className="text-[10px] text-zinc-400 uppercase">Hub</span>
                         </li>
                       ))}
                     </motion.ul>
@@ -144,7 +144,7 @@ export default function SearchWidget({
               <button
                 type="button"
                 onClick={onSwapCities}
-                className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-full transition-all hover:rotate-180 duration-300 cursor-pointer"
+                className="p-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-zinc-600 dark:text-zinc-300 hover:text-[#ff2d88] rounded-full transition-all hover:rotate-180 duration-300 cursor-pointer"
                 title="Swap Cities"
               >
                 <ArrowLeftRight className="h-4 w-4" />
@@ -153,13 +153,13 @@ export default function SearchWidget({
 
             {/* Destination */}
             <div className="lg:col-span-3 relative flex flex-col gap-1 text-left">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">To</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">To</label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-blue-600" />
+                <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-[#ff2d88]" />
                 <Input
                   type="text"
                   placeholder="Destination (e.g. Jaipur)"
-                  className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 text-sm font-semibold h-11 rounded-xl text-slate-800"
+                  className="pl-10 bg-zinc-50 dark:bg-zinc-800/70 border-zinc-200 dark:border-zinc-700/80 focus-visible:ring-2 focus-visible:ring-[#ff2d88] text-sm font-semibold h-12 rounded-xl text-zinc-800 dark:text-zinc-100"
                   value={toCity}
                   onChange={(e) => {
                     onToChange(e.target.value);
@@ -174,16 +174,16 @@ export default function SearchWidget({
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
-                      className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 overflow-hidden max-h-48 overflow-y-auto"
+                      className="absolute left-0 right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 py-1.5 overflow-hidden max-h-48 overflow-y-auto"
                     >
                       {POPULAR_CITIES.filter((c) => c.toLowerCase().includes(toCity.toLowerCase())).map((city) => (
                         <li
                           key={city}
                           onMouseDown={() => onToChange(city)}
-                          className="px-4 py-2 text-xs font-bold hover:bg-blue-50 cursor-pointer text-slate-700 flex items-center justify-between"
+                          className="px-4 py-2 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer text-zinc-700 dark:text-zinc-200 flex items-center justify-between"
                         >
                           <span>{city}</span>
-                          <span className="text-[10px] text-slate-400 uppercase">Hub</span>
+                          <span className="text-[10px] text-zinc-400 uppercase">Hub</span>
                         </li>
                       ))}
                     </motion.ul>
@@ -194,12 +194,12 @@ export default function SearchWidget({
 
             {/* Date */}
             <div className="lg:col-span-2 flex flex-col gap-1 text-left">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Date</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Date</label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-4 w-4 text-blue-600 pointer-events-none" />
+                <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-[#ff5666] pointer-events-none" />
                 <Input
                   type="date"
-                  className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 text-xs font-semibold h-11 rounded-xl text-slate-800"
+                  className="pl-10 bg-zinc-50 dark:bg-zinc-800/70 border-zinc-200 dark:border-zinc-700/80 focus-visible:ring-2 focus-visible:ring-[#ff2d88] text-xs font-semibold h-12 rounded-xl text-zinc-800 dark:text-zinc-100"
                   value={travelDate}
                   onChange={(e) => onDateChange(e.target.value)}
                 />
@@ -210,7 +210,7 @@ export default function SearchWidget({
             <div className="lg:col-span-2 flex flex-col justify-end">
               <Button
                 type="submit"
-                className="w-full bg-[#FF6B00] hover:bg-[#EA580C] text-white font-black h-11 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 cursor-pointer"
+                className="w-full bg-gradient-to-r from-[#ff7c52] to-[#ff2d88] hover:from-[#ff6b40] hover:to-[#ea1f7b] text-white font-black h-12 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#ff2d88]/25 cursor-pointer transition-transform active:scale-95"
               >
                 <Search className="h-4 w-4" /> Search Buses
               </Button>
@@ -230,16 +230,16 @@ export default function SearchWidget({
           ].map((stat, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-2xl shadow-xs"
+              className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/15 p-3.5 rounded-2xl shadow-xs"
             >
-              <div className="p-2.5 bg-[#FF6B00]/25 text-[#FF6B00] rounded-xl shrink-0">
+              <div className="p-2.5 bg-gradient-to-br from-[#ff7c52]/20 to-[#ff2d88]/20 text-[#ff5666] border border-white/10 rounded-xl shrink-0">
                 <stat.icon className="h-5 w-5" />
               </div>
               <div className="text-left">
                 <h4 className="text-lg md:text-xl font-extrabold text-white leading-none">
                   {stat.isStatic ? stat.isStatic : <AnimatedCounter value={stat.value!} />}
                 </h4>
-                <p className="text-[10px] font-bold text-blue-100 mt-1 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-zinc-300 mt-1 uppercase tracking-wider">
                   {stat.label}
                 </p>
               </div>

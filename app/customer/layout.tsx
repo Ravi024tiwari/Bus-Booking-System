@@ -47,17 +47,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const userProfile = useSelector((state: RootState) => state.user.profile);
   const sidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
 
+  // Ref to suppress syncProfile when logging out
+  const isLoggingOutRef = React.useRef(false);
+
   // Sync customer profile on mount from localStorage or API
   useEffect(() => {
+    let isMounted = true;
+
     const syncProfile = async () => {
+      if (isLoggingOutRef.current) return;
+
       // 1. Try loading from localStorage first
       if (typeof window !== 'undefined') {
         const saved = localStorage.getItem('user_profile');
         if (saved) {
           try {
             const profile = JSON.parse(saved);
-            dispatch(setUser(profile));
-            return;
+            if (isMounted) {
+              dispatch(setUser(profile));
+              return;
+            }
           } catch (e) {
             console.error('Failed to parse user profile from localStorage:', e);
           }
@@ -67,6 +76,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       // 2. Fallback to API if not in localStorage
       try {
         const response = await axios.get('/api/auth/me');
+        if (!isMounted || isLoggingOutRef.current) return;
         if (response.data?.success && response.data?.data) {
           const u = response.data.data;
           // Check role validation
@@ -84,16 +94,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }));
         }
       } catch (err: any) {
+        if (!isMounted || isLoggingOutRef.current) return;
+        if (err.response?.status === 401) {
+          // Normal unauthenticated session; redirect without throwing intrusive toast
+          router.replace('/login');
+          return;
+        }
         console.error('Failed to load customer profile:', err);
         toast.error('Failed to load session. Please log in.');
         router.replace('/login');
       }
     };
 
-    if (!userProfile) {
+    if (!userProfile && !isLoggingOutRef.current) {
       syncProfile();
     }
-  }, [dispatch, userProfile, router]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, router]);
 
   const menuItems = [
     { name: 'Dashboard', path: '/customer/dashboard', icon: LayoutDashboard },
@@ -108,10 +128,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = async () => {
     try {
+      isLoggingOutRef.current = true;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user_profile');
+      }
       await fetch('/api/auth/logout', { method: 'POST' });
       dispatch(clearUser());
       toast.success('Logged out successfully');
-      router.push('/login');
+      router.replace('/login');
     } catch (err) {
       console.error('Logout error:', err);
       toast.error('Failed to log out');

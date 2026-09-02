@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch, fetchMyRewards } from '@/store';
 import { 
@@ -15,98 +17,72 @@ import {
   ArrowRight, 
   TrendingUp, 
   ShieldCheck, 
-  Zap, 
   Copy, 
   Check, 
   Tag, 
   Percent, 
   Clock, 
   CheckCircle2, 
-  Info,
-  ChevronRight
+  ChevronRight,
+  Search,
+  RefreshCw,
+  Bus as BusIcon,
+  Flame,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
-interface PromoOffer {
+export interface LiveOffer {
   id: string;
   code: string;
   title: string;
-  description: string;
-  discount: string;
-  discountType: 'percentage' | 'flat';
-  minBooking: string;
+  description?: string;
+  discountPercentage: number;
+  maxDiscountAmount?: number;
+  offerLimit: number;
+  offerBookedCount: number;
+  remainingSeats: number;
+  isLimitReached: boolean;
+  badgeText?: string;
+  bannerImage?: string;
+  themeColor?: string;
+  validFrom?: string;
   validTill: string;
-  category: string;
-  color: string;
-  badge: string;
+  operatorName?: string;
+  tripDetails?: {
+    tripId: string;
+    source: string;
+    destination: string;
+    date: string;
+    departureTime: string;
+    arrivalTime: string;
+    originalFare: number;
+    discountedFare: number;
+    discountAmount: number;
+    busNumber: string;
+    busType: string;
+    busImage: string;
+  } | null;
 }
 
-const AVAILABLE_OFFERS: PromoOffer[] = [
-  {
-    id: 'promo-1',
-    code: 'FIRSTTRIP',
-    title: 'First Journey Special',
-    description: 'Get 20% instant discount on your first bus reservation across all operator routes.',
-    discount: '20% OFF',
-    discountType: 'percentage',
-    minBooking: 'Min. booking ₹500',
-    validTill: 'Valid until 31 Dec',
-    category: 'Welcome Offer',
-    color: 'from-orange-500 to-[#ff5666]',
-    badge: 'Popular'
-  },
-  {
-    id: 'promo-2',
-    code: 'SEATPLUS50',
-    title: 'Flat ₹50 Savings',
-    description: 'Enjoy a flat ₹50 instant deduction on any AC Sleeper or Multi-Axle luxury coach.',
-    discount: '₹50 FLAT',
-    discountType: 'flat',
-    minBooking: 'Min. booking ₹400',
-    validTill: 'Valid all weekdays',
-    category: 'Daily Deal',
-    color: 'from-[#ff5666] to-[#ff2d88]',
-    badge: 'Daily'
-  },
-  {
-    id: 'promo-3',
-    code: 'WEEKEND15',
-    title: 'Weekend Getaway',
-    description: 'Save 15% on Friday through Sunday departures for intercity routes.',
-    discount: '15% OFF',
-    discountType: 'percentage',
-    minBooking: 'Min. 2 seats',
-    validTill: 'Fri - Sun journeys',
-    category: 'Weekend Saver',
-    color: 'from-pink-500 to-purple-600',
-    badge: 'Weekend'
-  },
-  {
-    id: 'promo-4',
-    code: 'VIPROYALTY',
-    title: 'Frequent Traveler Privilege',
-    description: 'Exclusive 25% discount for Gold and Platinum loyalty members on premium Volvo buses.',
-    discount: '25% OFF',
-    discountType: 'percentage',
-    minBooking: 'Min. booking ₹800',
-    validTill: 'Limited slots',
-    category: 'Loyalty Exclusive',
-    color: 'from-[#ff2d88] to-rose-600',
-    badge: 'Exclusive'
-  }
-];
-
 export default function OffersClient() {
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   
+  // Navigation & filtering state
   const [activeTab, setActiveTab] = useState<'available' | 'claimed'>('available');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [liveOffers, setLiveOffers] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'trips' | 'general' | 'high_discount'>('all');
+
+  // Real live offers state from API
+  const [liveOffers, setLiveOffers] = useState<LiveOffer[]>([]);
   const [loadingOffers, setLoadingOffers] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Redux rewards state
-  const { list: rewardsList, totalSavings, claimedCount, loading, error } = useSelector(
+  const { list: rewardsList, totalSavings, claimedCount, loading: loadingRewards, error: errorRewards } = useSelector(
     (state: RootState) => state.rewards
   );
   const userProfile = useSelector((state: RootState) => state.user.profile);
@@ -115,37 +91,90 @@ export default function OffersClient() {
     dispatch(fetchMyRewards());
   }, [dispatch]);
 
-  // Fetch dynamic active offers from operators
-  useEffect(() => {
-    const fetchLiveOffers = async () => {
-      setLoadingOffers(true);
-      try {
-        const res = await fetch('/api/offers');
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          setLiveOffers(data.data);
-        }
-      } catch (err) {
-        console.error('[Fetch Live Offers Error]:', err);
-      } finally {
-        setLoadingOffers(false);
-      }
-    };
+  // Fetch real active offers from database
+  const fetchOffers = async (isManualRefresh = false) => {
+    if (isManualRefresh) setRefreshing(true);
+    else setLoadingOffers(true);
 
-    fetchLiveOffers();
+    try {
+      const res = await fetch('/api/offers', { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setLiveOffers(data.data);
+      } else {
+        setLiveOffers([]);
+      }
+    } catch (err) {
+      console.error('[Fetch Live Offers Error]:', err);
+      toast.error('Could not load promotional offers.');
+    } finally {
+      setLoadingOffers(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOffers();
   }, []);
 
   // Handle promo code copy
-  const handleCopyCode = (code: string) => {
+  const handleCopyCode = (code: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
-    toast.success(`Coupon code "${code}" copied to clipboard!`);
+    toast.success(`Promo code "${code}" copied to clipboard!`);
     setTimeout(() => {
       setCopiedCode(null);
-    }, 3000);
+    }, 2500);
   };
 
-  // Dynamic Tier Logic based on totalSavings
+  // Handle "Use Code" / "Book Trip" redirect
+  const handleUseOffer = (offer: LiveOffer) => {
+    navigator.clipboard.writeText(offer.code);
+    setCopiedCode(offer.code);
+
+    if (offer.tripDetails?.tripId) {
+      toast.success(`Promo code "${offer.code}" applied! Redirecting to trip booking...`);
+      setTimeout(() => {
+        router.push(`/customer/book/${offer.tripDetails!.tripId}`);
+      }, 350);
+    } else {
+      toast.success(`Promo code "${offer.code}" copied! Pick your journey to apply.`);
+      setTimeout(() => {
+        router.push(`/customer/book?promo=${encodeURIComponent(offer.code)}`);
+      }, 350);
+    }
+  };
+
+  // Format valid date
+  const formatExpiry = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return 'Valid Today';
+    }
+  };
+
+  // Calculate days remaining
+  const getDaysRemaining = (dateStr: string) => {
+    try {
+      const target = new Date(dateStr).getTime();
+      const now = Date.now();
+      const diffDays = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 0) return 'Ends Today';
+      if (diffDays === 1) return 'Ends Tomorrow';
+      return `${diffDays} days left`;
+    } catch {
+      return 'Limited Time';
+    }
+  };
+
+  // Dynamic Tier Info based on accumulated savings
   const getTierInfo = (savings: number) => {
     if (savings >= 1000) {
       return {
@@ -202,10 +231,44 @@ export default function OffersClient() {
   const tier = getTierInfo(totalSavings);
   const TierIcon = tier.icon;
 
+  // Filtered live offers
+  const filteredOffers = useMemo(() => {
+    return liveOffers.filter((offer) => {
+      // Type Filter
+      if (filterType === 'trips' && !offer.tripDetails) return false;
+      if (filterType === 'general' && offer.tripDetails) return false;
+      if (filterType === 'high_discount' && offer.discountPercentage < 20) return false;
+
+      // Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesCode = offer.code.toLowerCase().includes(q);
+        const matchesTitle = offer.title.toLowerCase().includes(q);
+        const matchesDescription = offer.description?.toLowerCase().includes(q);
+        const matchesOperator = offer.operatorName?.toLowerCase().includes(q);
+        const matchesSource = offer.tripDetails?.source?.toLowerCase().includes(q);
+        const matchesDestination = offer.tripDetails?.destination?.toLowerCase().includes(q);
+        const matchesBusType = offer.tripDetails?.busType?.toLowerCase().includes(q);
+
+        return Boolean(
+          matchesCode || 
+          matchesTitle || 
+          matchesDescription || 
+          matchesOperator || 
+          matchesSource || 
+          matchesDestination || 
+          matchesBusType
+        );
+      }
+
+      return true;
+    });
+  }, [liveOffers, filterType, searchQuery]);
+
   return (
-    <div className="flex flex-col gap-8 pb-12 select-none">
+    <div className="flex flex-col gap-8 pb-14 select-none">
       
-      {/* 1. HEADER SECTION (Consistent with other customer dashboard pages) */}
+      {/* 1. HEADER SECTION */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2.5">
@@ -213,22 +276,33 @@ export default function OffersClient() {
             Offers & Loyalty Rewards
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium mt-1">
-            Discover active promotional discount codes and monitor your traveler loyalty status.
+            Browse real-time operator discounts, promotional codes, and your loyalty member benefits.
           </p>
         </div>
 
-        <Link
-          href="/customer/book"
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-[#ff5666] to-[#ff2d88] hover:opacity-95 shadow-md shadow-[#ff2d88]/20 transition-all shrink-0 cursor-pointer active:scale-95"
-        >
-          <span>Book a Trip Now</span>
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => fetchOffers(true)}
+            disabled={refreshing || loadingOffers}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer disabled:opacity-50"
+            title="Refresh active offers"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+
+          <Link
+            href="/customer/book"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-[#ff5666] to-[#ff2d88] hover:opacity-95 shadow-md shadow-[#ff2d88]/20 transition-all shrink-0 cursor-pointer active:scale-95"
+          >
+            <span>Book a Trip Now</span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
 
-      {/* 2. LOYALTY TIER STATUS HERO CARD (Soft Muted Rose & Dusky Pink Aesthetic) */}
+      {/* 2. LOYALTY TIER STATUS HERO CARD */}
       <div className="bg-gradient-to-br from-[#d95d6a]/90 via-[#c4436e]/85 to-[#cf6953]/85 text-white rounded-[2rem] p-6 sm:p-7.5 border border-white/15 shadow-lg shadow-rose-900/5 relative overflow-hidden backdrop-blur-sm">
-        {/* Subtle, softer ambient lighting */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-rose-300/15 rounded-full blur-3xl pointer-events-none" />
 
@@ -251,7 +325,7 @@ export default function OffersClient() {
                 Welcome back, {userProfile?.name?.split(' ')[0] || 'Traveler'}
               </h2>
               <p className="text-xs sm:text-[13px] text-rose-100/90 mt-1 leading-relaxed max-w-xl font-normal">
-                You have accumulated <strong className="text-amber-100 font-bold">₹{totalSavings}</strong> in total booking savings. Every trip discount brings you closer to higher tier rewards and exclusive perks.
+                You have accumulated <strong className="text-amber-100 font-bold">₹{totalSavings}</strong> in total booking discounts. Use active operator offers to earn more travel savings!
               </p>
             </div>
 
@@ -268,7 +342,7 @@ export default function OffersClient() {
               </div>
               <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden">
                 <div 
-                  className={`h-full bg-gradient-to-r from-amber-200 via-rose-100 to-pink-200 transition-all duration-1000 ease-out`}
+                  className="h-full bg-gradient-to-r from-amber-200 via-rose-100 to-pink-200 transition-all duration-1000 ease-out"
                   style={{ width: `${Math.min(tier.progress, 100)}%` }}
                 />
               </div>
@@ -296,18 +370,6 @@ export default function OffersClient() {
 
       {/* 3. KPI STATS CARDS */}
       <div className="w-full">
-        {/* Mobile Scroll Indicator */}
-        <div className="flex items-center justify-between sm:hidden mb-2 px-1 select-none">
-          <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#ff5666] animate-pulse" />
-            Rewards Overview
-          </span>
-          <span className="text-[10px] font-semibold text-[#ff5666] dark:text-pink-400 flex items-center gap-1">
-            Scroll to view all <ArrowRight className="w-3 h-3 animate-bounce-x" />
-          </span>
-        </div>
-
-        {/* Container: Horizontal Scroll on Mobile, Compact Auto-Fit Grid on Sm+ */}
         <div className="flex sm:grid sm:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto sm:overflow-x-visible no-scrollbar pb-2 sm:pb-0 pt-0.5 px-1 -mx-1 snap-x snap-mandatory sm:snap-none select-none">
           
           {/* Stat 1: Total Savings */}
@@ -363,13 +425,13 @@ export default function OffersClient() {
           }`}
         >
           <Percent className="h-3.5 w-3.5" />
-          <span>Available Promo Codes</span>
+          <span>Active Operator Offers</span>
           <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
             activeTab === 'available'
               ? 'bg-white/20 text-white'
               : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
           }`}>
-            {AVAILABLE_OFFERS.length}
+            {liveOffers.length}
           </span>
         </button>
 
@@ -397,220 +459,287 @@ export default function OffersClient() {
 
       {/* 5. TAB CONTENT */}
       {activeTab === 'available' ? (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6">
           
-          {/* LIVE OPERATOR DISCOUNTED TRIPS */}
-          {liveOffers && liveOffers.length > 0 && (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-xl bg-[#ff2d88]/10 text-[#ff2d88] flex items-center justify-center">
-                    <Sparkles className="h-4 w-4" />
-                  </div>
-                  <h2 className="text-lg font-black text-zinc-900 dark:text-white tracking-tight">
-                    Active Operator Discounted Trips
-                  </h2>
-                </div>
-                <span className="text-xs font-bold text-zinc-400">
-                  {liveOffers.length} {liveOffers.length === 1 ? 'Trip on Sale' : 'Trips on Sale'}
-                </span>
-              </div>
+          {/* SEARCH & FILTER CONTROLS */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-3 shadow-xs">
+            
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by code (e.g. SAVE20), route, city, or operator..."
+                className="w-full bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl pl-10 pr-4 py-2 text-xs font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-[#ff2d88]/60 transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {liveOffers.map((offer) => {
-                  const trip = offer.tripDetails;
-                  return (
-                    <motion.div
-                      key={offer.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-[1.75rem] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
-                    >
-                      {/* Top Image Banner */}
-                      <div className="relative h-40 w-full overflow-hidden bg-zinc-950">
-                        <img 
-                          src={offer.bannerImage || '/images/volvo.png'} 
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              <button
+                onClick={() => setFilterType('all')}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
+                  filterType === 'all'
+                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                All Deals ({liveOffers.length})
+              </button>
+
+              <button
+                onClick={() => setFilterType('trips')}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
+                  filterType === 'trips'
+                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                Trip Specials
+              </button>
+
+              <button
+                onClick={() => setFilterType('high_discount')}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
+                  filterType === 'high_discount'
+                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                ≥ 20% OFF
+              </button>
+            </div>
+
+          </div>
+
+          {/* OFFERS LISTING */}
+          {loadingOffers ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div 
+                  key={i} 
+                  className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-[1.75rem] h-80 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : filteredOffers.length === 0 ? (
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-[2rem] p-12 text-center flex flex-col items-center justify-center shadow-xs">
+              <div className="h-14 w-14 rounded-2xl bg-rose-50 dark:bg-rose-950/30 text-[#ff2d88] flex items-center justify-center mb-4">
+                <Tag className="h-7 w-7" />
+              </div>
+              <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">
+                {searchQuery ? 'No Matching Offers Found' : 'No Active Offers Available Right Now'}
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mt-1.5 leading-relaxed">
+                {searchQuery 
+                  ? `We couldn't find any active deals matching "${searchQuery}". Try searching a different city or clearing filters.`
+                  : 'Operators update discounts daily. Check back shortly or browse upcoming standard routes to secure your seats.'}
+              </p>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer"
+                >
+                  Clear Search
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredOffers.map((offer) => {
+                const trip = offer.tripDetails;
+                const isCopied = copiedCode === offer.code;
+                const isTripSpecific = Boolean(trip && trip.tripId);
+
+                return (
+                  <motion.div
+                    key={offer.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-[1.75rem] overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+                  >
+                    {/* Top Visual Section */}
+                    {isTripSpecific && trip ? (
+                      <div className="relative h-44 w-full overflow-hidden bg-zinc-950">
+                        <Image 
+                          src={offer.bannerImage || trip.busImage || '/images/volvo.png'} 
                           alt={`${trip.source} to ${trip.destination}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover group-hover:scale-106 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
                         
                         {/* Top Badges */}
-                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                          <span className="px-2.5 py-0.5 rounded-full bg-rose-600/90 text-white text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-sm">
+                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-10">
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-600/90 text-white text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-xs border border-rose-400/30 flex items-center gap-1">
+                            <Flame className="h-3 w-3" />
                             {offer.badgeText || `${offer.discountPercentage}% OFF`}
                           </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-black/60 text-amber-300 text-[10px] font-bold backdrop-blur-md border border-amber-400/30">
-                            Code: {offer.code}
+                          <span className="px-2.5 py-0.5 rounded-full bg-black/60 text-amber-300 text-[10px] font-bold backdrop-blur-md border border-amber-400/30 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {getDaysRemaining(offer.validTill)}
                           </span>
                         </div>
 
                         {/* Route Overlay on Image */}
-                        <div className="absolute bottom-3 left-3 right-3 text-white">
+                        <div className="absolute bottom-3 left-3.5 right-3.5 text-white z-10">
                           <div className="flex items-center gap-1.5 text-base font-black tracking-tight drop-shadow-sm">
                             <span className="truncate">{trip.source}</span>
                             <span className="text-rose-400 font-normal">➔</span>
                             <span className="truncate">{trip.destination}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-[10px] text-zinc-300 font-bold mt-0.5">
+                          <div className="flex items-center gap-2 text-[10px] text-zinc-200 font-bold mt-0.5">
                             <span>{trip.busType}</span>
                             <span>•</span>
                             <span>{trip.date}</span>
+                            <span>•</span>
+                            <span>{trip.departureTime}</span>
                           </div>
                         </div>
                       </div>
+                    ) : (
+                      /* General Promo Code Card Header */
+                      <div className="p-5 pb-0 flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="px-2.5 py-0.5 rounded-full bg-pink-500/10 text-[#ff2d88] dark:text-pink-400 text-[10px] font-black uppercase tracking-wider border border-pink-500/20 flex items-center gap-1">
+                            <Sparkles className="h-3 w-3" />
+                            {offer.operatorName || 'Special Promo'}
+                          </span>
+                          <span className="text-[10px] font-bold text-zinc-400 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {getDaysRemaining(offer.validTill)}
+                          </span>
+                        </div>
 
-                      {/* Card Content Body */}
-                      <div className="p-4 flex flex-col gap-3">
+                        <div className="flex items-baseline justify-between gap-2 mt-1">
+                          <h3 className="text-base font-extrabold text-zinc-900 dark:text-white leading-tight">
+                            {offer.title}
+                          </h3>
+                          <span className="text-lg font-black text-[#ff5666] dark:text-pink-400 font-sans shrink-0">
+                            {offer.discountPercentage}% OFF
+                          </span>
+                        </div>
+
+                        {offer.description && (
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed mt-0.5 line-clamp-2">
+                            {offer.description}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Card Content Body */}
+                    <div className="p-4.5 flex flex-col gap-3.5">
+                      
+                      {/* Price / Discount Breakdown */}
+                      {isTripSpecific && trip ? (
                         <div className="flex items-center justify-between">
                           <div className="flex flex-col">
-                            <span className="text-[10px] font-bold text-zinc-400 uppercase">Special Fare</span>
+                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Special Fare</span>
                             <div className="flex items-baseline gap-2">
-                              <span className="text-lg font-black text-[#ff2d88] dark:text-rose-400">
+                              <span className="text-xl font-black text-[#ff2d88] dark:text-rose-400 font-sans">
                                 ₹{trip.discountedFare}
                               </span>
-                              <span className="text-xs text-zinc-400 line-through font-bold">
+                              <span className="text-xs text-zinc-400 line-through font-bold font-sans">
                                 ₹{trip.originalFare}
                               </span>
                             </div>
                           </div>
 
-                          <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 px-2 py-0.5 rounded-md">
+                          <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 px-2.5 py-1 rounded-lg">
                             Save ₹{trip.discountAmount}
                           </span>
                         </div>
-
-                        {/* Quota Indicator */}
-                        <div className="flex items-center justify-between text-[11px] font-bold pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
-                          <span className="text-zinc-500 dark:text-zinc-400">Seat Quota:</span>
-                          {offer.remainingSeats > 0 ? (
-                            <span className="text-rose-600 dark:text-rose-400 font-black">
-                              {offer.remainingSeats} seats left
-                            </span>
-                          ) : (
-                            <span className="text-zinc-400 font-medium">Quota Exhausted</span>
-                          )}
+                      ) : (
+                        <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
+                          <span>Max Discount:</span>
+                          <span className="font-bold text-zinc-800 dark:text-zinc-200">
+                            {offer.maxDiscountAmount ? `Up to ₹${offer.maxDiscountAmount}` : 'No Limit'}
+                          </span>
                         </div>
+                      )}
 
-                        {/* Direct Booking CTA Button */}
-                        <Link
-                          href={`/customer/book/${trip.tripId}`}
-                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#ff5666] to-[#ff2d88] hover:opacity-95 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-[#ff2d88]/20 transition-all cursor-pointer active:scale-98 text-center mt-1"
-                        >
-                          <span>Book This Trip Now</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* PLATFORM COUPON CODES */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">
-                <Tag className="h-4 w-4" />
-              </div>
-              <h2 className="text-lg font-black text-zinc-900 dark:text-white tracking-tight">
-                General Platform Promo Codes
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {AVAILABLE_OFFERS.map((offer) => {
-                const isCopied = copiedCode === offer.code;
-
-                return (
-                  <motion.div
-                    key={offer.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-[1.75rem] p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden group"
-                  >
-                    {/* Top Row: Category and Badge */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-                        {offer.category}
-                      </span>
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-pink-500/10 text-[#ff2d88] dark:text-pink-400 border border-pink-500/20">
-                        {offer.badge}
-                      </span>
-                    </div>
-
-                    {/* Middle: Title, Discount & Description */}
-                    <div className="my-4 flex flex-col gap-2">
-                      <div className="flex items-baseline justify-between gap-3">
-                        <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">
-                          {offer.title}
-                        </h3>
-                        <span className="text-lg font-black text-[#ff5666] dark:text-pink-400 shrink-0 font-sans">
-                          {offer.discount}
+                      {/* Seat Quota & Validity Info */}
+                      <div className="flex items-center justify-between text-[11px] font-medium pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
+                        <span className="text-zinc-400">
+                          Valid till <strong className="text-zinc-600 dark:text-zinc-300 font-semibold">{formatExpiry(offer.validTill)}</strong>
                         </span>
+
+                        {offer.offerLimit > 0 && (
+                          <span className={`text-[11px] font-bold ${
+                            offer.remainingSeats > 0 ? 'text-[#ff2d88]' : 'text-zinc-400'
+                          }`}>
+                            {offer.remainingSeats > 0 ? `${offer.remainingSeats} seats left` : 'Quota Filled'}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
-                        {offer.description}
-                      </p>
-                    </div>
 
-                    {/* Validity Rules */}
-                    <div className="flex items-center gap-4 text-[11px] text-zinc-400 font-medium border-t border-zinc-100 dark:border-zinc-800/80 pt-3 mb-4">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {offer.validTill}
-                      </span>
-                      <span>•</span>
-                      <span>{offer.minBooking}</span>
-                    </div>
-
-                    {/* Bottom Row: Copy Code & Apply CTA */}
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 flex items-center justify-between bg-pink-50/60 dark:bg-pink-950/20 border border-dashed border-pink-200 dark:border-pink-800/50 rounded-xl px-3.5 py-2">
-                        <span className="font-mono font-black text-xs text-[#ff2d88] dark:text-pink-200 tracking-widest">
-                          {offer.code}
-                        </span>
+                      {/* Promo Code Box & Action Button */}
+                      <div className="flex items-center gap-2 pt-1">
+                        
+                        {/* Copy Code Pill */}
                         <button
-                          onClick={() => handleCopyCode(offer.code)}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#ff5666] dark:text-pink-400 hover:text-[#ff2d88] transition-colors cursor-pointer"
-                          title="Copy promo code"
+                          type="button"
+                          onClick={(e) => handleCopyCode(offer.code, e)}
+                          className="flex-1 flex items-center justify-between bg-pink-50/60 dark:bg-pink-950/20 border border-dashed border-pink-200 dark:border-pink-800/50 rounded-xl px-3 py-2 hover:bg-pink-100/50 dark:hover:bg-pink-950/40 transition-colors cursor-pointer group/btn"
+                          title="Click to copy promo code"
                         >
-                          {isCopied ? (
-                            <>
-                              <Check className="h-3.5 w-3.5 text-emerald-500" />
-                              <span className="text-emerald-500">Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3.5 w-3.5" />
-                              <span>Copy</span>
-                            </>
-                          )}
+                          <span className="font-mono font-black text-xs text-[#ff2d88] dark:text-pink-200 tracking-wider">
+                            {offer.code}
+                          </span>
+                          
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 group-hover/btn:text-[#ff2d88]">
+                            {isCopied ? (
+                              <>
+                                <Check className="h-3 w-3 text-emerald-500" />
+                                <span className="text-emerald-500">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </span>
                         </button>
+
+                        {/* Use Code / Book Trip Redirect CTA */}
+                        <button
+                          type="button"
+                          onClick={() => handleUseOffer(offer)}
+                          className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#ff5666] to-[#ff2d88] hover:opacity-95 shadow-xs shadow-[#ff2d88]/20 transition-all flex items-center gap-1 shrink-0 cursor-pointer active:scale-95"
+                        >
+                          <span>{isTripSpecific ? 'Book Trip' : 'Use Code'}</span>
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+
                       </div>
 
-                      <Link
-                        href={`/customer/book?promo=${offer.code}`}
-                        className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#ff5666] to-[#ff2d88] hover:opacity-95 shadow-sm shadow-[#ff2d88]/20 transition-all flex items-center gap-1 shrink-0 cursor-pointer active:scale-95"
-                      >
-                        <span>Use Code</span>
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </Link>
                     </div>
                   </motion.div>
                 );
               })}
             </div>
-          </div>
+          )}
 
         </div>
       ) : (
         /* REDEEMED TRIP HISTORY TAB */
         <div className="flex flex-col gap-4">
           <AnimatePresence mode="popLayout">
-            {loading ? (
+            {loadingRewards ? (
               <div className="flex flex-col gap-3">
                 {[1, 2, 3].map((i) => (
                   <div 
@@ -619,24 +748,27 @@ export default function OffersClient() {
                   />
                 ))}
               </div>
-            ) : error ? (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-6 rounded-2xl text-center text-xs font-semibold">
-                {error}
+            ) : errorRewards ? (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-6 rounded-2xl text-center text-xs font-semibold flex items-center justify-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <span>{errorRewards}</span>
               </div>
             ) : !rewardsList || rewardsList.length === 0 ? (
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-12 text-center flex flex-col items-center justify-center">
-                <Ticket className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3" />
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-12 text-center flex flex-col items-center justify-center shadow-xs">
+                <div className="h-14 w-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 flex items-center justify-center mb-3">
+                  <Ticket className="h-7 w-7" />
+                </div>
                 <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
                   No Redeemed Offers Recorded
                 </span>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mt-1 leading-relaxed">
-                  You haven't used any discount promo codes on your past trips yet. Apply an active code from the available list when booking your next journey!
+                  You haven't used any discount promo codes on your past trips yet. Apply an active operator offer from the list when booking your next journey!
                 </p>
                 <button
                   onClick={() => setActiveTab('available')}
                   className="mt-4 px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#ff5666] to-[#ff2d88] hover:opacity-95 text-white shadow-md shadow-[#ff2d88]/20 transition-all cursor-pointer active:scale-95"
                 >
-                  Browse Available Codes
+                  Browse Active Operator Offers
                 </button>
               </div>
             ) : (
@@ -646,7 +778,7 @@ export default function OffersClient() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-sm overflow-hidden flex flex-col sm:flex-row justify-between"
+                  className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xs overflow-hidden flex flex-col sm:flex-row justify-between"
                 >
                   {/* Left: Journey info */}
                   <div className="p-5 flex flex-col gap-3 flex-1">

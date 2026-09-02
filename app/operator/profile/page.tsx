@@ -8,8 +8,7 @@ export default function OperatorProfilePage() {
     <ProfileForm
       role="operator"
       showEmergencyContact={false}
-      showPreferences={false}
-      showProfileCompletion={false}
+      showProfileCompletion={true}
     />
   );
 }
