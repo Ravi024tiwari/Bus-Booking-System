@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚌 SeatPlus (MoveGo) - Smart Bus Booking & Fleet Management Platform
+# 🚌 SeatPlus (TripGo) - Smart Bus Booking & Fleet Management Platform
 
 [![CI/CD Pipeline](https://github.com/Ravi024tiwari/Bus-Booking-System/actions/workflows/deploy.yml/badge.svg)](https://github.com/Ravi024tiwari/Bus-Booking-System/actions/workflows/deploy.yml)
 [![Docker Image](https://img.shields.io/badge/Docker%20Hub-ravitiwari005%2Fbusbookingservice-blue?logo=docker)](https://hub.docker.com/r/ravitiwari005/busbookingservice)
@@ -11,22 +11,24 @@
 [![Redis](https://img.shields.io/badge/Redis-BullMQ%20%26%20Locking-DC382D?logo=redis)](https://redis.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**A high-performance, real-time bus ticket booking, operator fleet tracking, and administrative orchestration platform powered by Next.js 16, Custom Socket.io, BullMQ, Redis, and MongoDB.**
+**A high-performance, enterprise-ready bus ticket booking, operator fleet tracking, and administrative orchestration platform powered by Next.js 16, Custom Socket.io, BullMQ, Redis, and MongoDB.**
 
-[🌐 Live Demo (Render)](https://busbookingservice-latest.onrender.com) • [📖 Architecture](#-architecture--system-design) • [🚀 Quickstart](#-getting-started) • [🐳 Docker Setup](#-docker--container-deployment) • [🤝 Contributing](#-contributing)
+[🌐 Live Demo (Render)](https://busbookingservice-latest.onrender.com) • [📖 Architecture](#-architecture--system-design) • [🚦 Workflows](#-end-to-end-platform-workflows) • [🚀 Quickstart](#-getting-started) • [🐳 Docker Setup](#-docker--container-deployment) • [💡 Ideas & Contributing](#-ideas--contributing)
 
 </div>
 
 ---
 
-## 🌟 Key Highlights
+## 🌟 Key Highlights & Innovations
 
-- **⚡ Real-Time Seat Locking & Sync**: Socket.io backed with Redis atomic lock mechanisms prevents double-booking race conditions during high-demand booking surges.
-- **🔄 Asynchronous Queue Processing**: BullMQ job queues handle automated seat-release timeouts, booking status reconciliations, and background operations.
-- **🛡️ Multi-Role Architecture (RBAC)**: Dedicated, isolated portals and permission layers for **Customers**, **Bus Operators**, and **Super Admins**.
-- **💳 End-to-End Payments**: Seamless Razorpay checkout with webhook simulation & signature verification.
-- **📍 Real-Time Live Bus Tracking**: GPS / Coordinate broadcasting from operator dashboards directly to user booking screens.
-- **🚀 Production-Ready DevOps**: Multi-stage Dockerized builds, Docker Compose orchestration, and an automated GitHub Actions CI/CD pipeline deploying directly to Render.
+- **⚡ Real-Time Seat Locking & Color-Coded Matrix**: Socket.io backed with Redis atomic lock mechanisms prevents double-booking race conditions during high-demand surges. Occupied/held seats dynamically reflect with real-time visual statuses.
+- **🛣️ Auto-Calculated Stop Distances & Route Metrics**: Adding intermediate sub-stops automatically aggregates total distance (KM) on the fly, calculating precise segment distances and journey durations for passenger boarding/dropping points.
+- **🚦 Production-Grade Guided Trip State Machine**: Operators manage trips through an enforced, forward-only lifecycle (`SCHEDULED` ➔ `BOARDING` ➔ `DEPARTED` ➔ `IN_TRANSIT` ➔ `ARRIVED`), with strict time-window validations and confirmation modals.
+- **⏱️ Automated Stale Trip Reconciler & Auto-Cancellation**: Unstarted or abandoned runs past their departure window are automatically reconciled and marked `CANCELLED` to keep searches clean.
+- **🔄 Asynchronous Queue Processing**: BullMQ queues handle automated seat-release timeouts, booking status reconciliations, and background notification tasks.
+- **📱 Mobile BFCache Hardening**: Zero-leak authentication lifecycle with Back-Forward Cache (BFCache) invalidation and hard document redirection on logout.
+- **📍 Real-Time Live Bus Tracking**: GPS / Coordinate broadcasting from operator dashboards directly to user booking screens over WebSockets.
+- **💳 End-to-End Payments**: Seamless Razorpay checkout with webhook simulation, signature verification, and automated ticket generation.
 
 ---
 
@@ -34,12 +36,13 @@
 
 ```mermaid
 flowchart TD
-    Client["🌐 Client (Web / Mobile Browser)"]
+    Client["🌐 Client (Desktop / Mobile Browser)"]
     
     subgraph AppServer["🚀 Express & Next.js Custom Server"]
-        NextCore["Next.js 16 (App Router + Server Components)"]
+        NextCore["Next.js 16 (App Router + Server Actions)"]
         SocketServer["Socket.io Engine (Real-Time Events)"]
         BullWorker["BullMQ Worker (Queue Processing)"]
+        Reconciler["Trip Reconciliation & Auto-Sweeper"]
     end
     
     subgraph DataStore["💾 Persistence & Cache Layer"]
@@ -59,8 +62,40 @@ flowchart TD
     SocketServer <--> Redis
     BullWorker <--> Redis
     BullWorker <--> Mongo
+    Reconciler <--> Mongo
     NextCore --> Razorpay
     NextCore --> Cloudinary
+```
+
+---
+
+## 🚦 End-to-End Platform Workflows
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Super Admin
+    actor Operator as Bus Operator
+    actor Passenger as Customer
+
+    Note over Admin: 1. Route & Infrastructure Setup
+    Admin->>Admin: Creates Route template (Stops, Auto-calculated Distances, Fares)
+    
+    Note over Operator: 2. Fleet & Trip Scheduling
+    Operator->>Operator: Adds Bus & Schedules Trip on Route
+    
+    Note over Passenger: 3. Search & Booking
+    Passenger->>Passenger: Searches Source ➔ Destination with filters
+    Passenger->>Passenger: Selects Boarding & Dropping Points (Live Segment Distance)
+    Passenger->>Passenger: Locks Seat (Redis Atomic Hold & Socket.io broadcast)
+    Passenger->>Passenger: Completes Razorpay Payment
+    
+    Note over Operator: 4. Guided Journey Operations
+    Operator->>Operator: Advances Status (SCHEDULED ➔ BOARDING ➔ DEPARTED ➔ IN_TRANSIT ➔ ARRIVED)
+    Operator-->>Passenger: Real-time Socket.io status update reflected on Passenger UI
+    
+    Note over Passenger: 5. Review & Rating
+    Passenger->>Passenger: Rates completed journey (1 to 5 stars)
 ```
 
 ---
@@ -69,19 +104,22 @@ flowchart TD
 
 ### 👤 Customer Portal
 - 🔍 **Interactive Trip Search**: Dynamic filtering by departure, arrival, bus types (AC / Sleeper / Seater), dates, and operators.
-- 💺 **Live Interactive Seat Layout**: Real-time seat selection with live occupancy updates and temporary hold timers.
-- 💳 **Checkout & Instant Ticketing**: Razorpay payments, dynamic fare breakdown, promo/rewards balance usage.
-- 📋 **Trip Management**: Real-time GPS bus tracking, booking history, PDF/invoice viewing, and 1-click cancellations.
-- ❤️ **Wishlist & Saved Routes**: Bookmark frequent routes for quick re-booking.
+- 💺 **Interactive Seat Matrix**: Visual seat selection with live occupancy color-coding, segment bounds, and countdown hold timers.
+- 🛣️ **Dynamic Segment Details**: Displays exact KM distance and estimated duration between chosen boarding and dropping stops.
+- 💳 **Instant Checkout & Ticketing**: Razorpay payments, dynamic fare breakdown, promo/rewards balance usage.
+- 📋 **Trip Dashboard & Live Tracking**: Real-time status badges, GPS bus tracking, booking history, and 1-click cancellations.
+- ⭐ **Verified Journey Ratings**: Verified passengers can submit ratings and reviews upon journey completion.
 
 ### 🚍 Operator Portal
 - 🚌 **Fleet Management**: Add, update, and manage bus fleets, seat matrix configurations, and amenities.
-- 📅 **Trip Scheduling**: Create daily/recurring route schedules, assign drivers, pricing rules, and boarding/dropping points.
+- 📅 **Trip Scheduling**: Create daily/recurring route schedules, assign buses, custom pricing, and promotional discount campaigns.
+- 🎯 **Guided State-Machine Controls**: Context-aware action buttons (`Start Boarding`, `Mark Departed`, `Mark In-Transit`, `Mark as Arrived`) with confirmation modals.
 - 📡 **Live GPS Tracker Broadcasting**: Broadcast live bus coordinates to active passengers.
-- 📊 **Manifest & Passenger Roster**: Instant passenger check-in rosters and seat occupancy analytics.
+- 📊 **Manifest & Occupancy Analytics**: Real-time passenger check-in rosters and seat fill-rates.
 
 ### 🛡️ Admin Dashboard
 - 📈 **Executive Analytics**: Gross ticket sales, active fleets, passenger demographics, and route profitability charts.
+- 🛣️ **Route Builder & Inspection**: Visual stop sequence builder with auto-calculated distance in KM and full tabular inspection modal.
 - ⚖️ **Platform Approvals**: Manage operator onboarding, bus verifications, and route approvals.
 - 💳 **Payment Logs & Reconciliation**: Full transaction audit trail with webhook status inspection.
 
@@ -95,7 +133,7 @@ flowchart TD
 | **Backend & Realtime** | [Express 5](https://expressjs.com/), [Socket.io](https://socket.io/), [Node.js 20+](https://nodejs.org/), [TypeScript](https://www.typescriptlang.org/) |
 | **Database & Caching** | [MongoDB 7.0+](https://www.mongodb.com/) via [Mongoose 9](https://mongoosejs.com/), [Redis 7.0+](https://redis.io/) via [ioredis](https://github.com/redis/ioredis) |
 | **Queues & Jobs** | [BullMQ](https://docs.bullmq.io/) (Asynchronous seat release timers & worker queues) |
-| **Authentication** | [Better-Auth](https://better-auth.com/) & JSON Web Tokens (JWT) with HTTP-Only Cookie Sessions |
+| **Authentication** | [Better-Auth](https://better-auth.com/) & JSON Web Tokens (JWT) with HTTP-Only Cookie Sessions & BFCache hardening |
 | **Payments & Media** | [Razorpay SDK](https://razorpay.com/docs/), [Cloudinary SDK](https://cloudinary.com/) |
 | **DevOps & Containers** | [Docker](https://www.docker.com/), [Docker Compose](https://docs.docker.com/compose/), [GitHub Actions](https://github.com/features/actions), [Render](https://render.com/) |
 
@@ -164,6 +202,26 @@ CLOUDINARY_API_SECRET="your_api_secret"
    npm run dev:custom
    ```
    Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🧪 Quick Test & Demo Scenarios
+
+Want to quickly test the entire workflow? Follow this test script:
+
+1. **Register as an Operator**:
+   - Go to `/register` and select **Bus Operator**.
+   - Create a Bus in the Operator Fleet view (`/operator/buses`).
+   - Create a Route in `/admin/routes` with intermediate stops (verify total distance auto-calculation).
+   - Schedule a Trip on that Route in `/operator/trips`.
+2. **Book as a Passenger**:
+   - Open an incognito window, register as **Passenger** (`/register`).
+   - Search for the trip, select boarding/dropping stops, and pick a seat.
+   - Observe the seat color changing and temporary hold countdown.
+   - Complete checkout via Razorpay Test mode.
+3. **Advance Trip Lifecycle**:
+   - In the Operator window, advance status from `SCHEDULED` ➔ `BOARDING` ➔ `DEPARTED`.
+   - In the Passenger window, observe the live badge updating without refreshing!
 
 ---
 
@@ -236,47 +294,38 @@ sequenceDiagram
 
 ---
 
-## 📁 Repository Structure
+## 💡 Ideas & Roadmap
 
-```
-├── app/                        # Next.js 16 App Router pages & layouts
-│   ├── actions/                # Server Actions
-│   ├── admin/                  # Super Admin Dashboard & Management views
-│   ├── api/                    # RESTful endpoints (Auth, Bookings, Trips, etc.)
-│   ├── customer/               # Customer Booking, Seat Matrix, Wishlist & Tracking
-│   ├── operator/               # Bus Operator Fleet & Trip management views
-│   ├── login/ & register/      # Authentication pages
-│   └── globals.css             # TailwindCSS v4 design tokens
-├── components/                 # Reusable UI component library (Shadcn + custom)
-├── lib/                        # Core utilities, DB client, Auth & Cloudinary
-├── models/                     # Mongoose Schemas (User, Bus, Trip, Booking, etc.)
-├── store/                      # Redux Toolkit state slices
-├── server.ts                   # Custom Express + Socket.io + BullMQ HTTP Server
-├── Dockerfile                  # Optimized multi-stage Docker build
-├── docker-compose.yml          # Local container orchestration
-└── .github/workflows/          # GitHub Actions CI/CD automation pipelines
-```
+We are continuously evolving SeatPlus (MoveGo). Here are some upcoming ideas and exploration areas:
+
+- [ ] **AI Trip Demand Prediction**: Machine learning model forecasting peak travel periods to recommend dynamic surge pricing to operators.
+- [ ] **WhatsApp & SMS Ticket Delivery**: Automated ticket PDFs and booking confirmations via Twilio / WhatsApp Business API.
+- [ ] **Native Mobile App (React Native / Expo)**: Cross-platform iOS and Android companion app with background GPS tracking for drivers.
+- [ ] **Multi-Currency & International Gateway**: Stripe and PayPal integration for cross-border transit bookings.
+- [ ] **Live Driver App PWA**: Offline-capable Progressive Web App for ticket scanning with QR codes at boarding gates.
+
+Got an idea or feedback? Open a [GitHub Discussion](https://github.com/Ravi024tiwari/Bus-Booking-System/discussions) or submit a feature proposal!
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
+Contributions make the open-source community an incredible place to learn, inspire, and create. Any contributions you make are **greatly appreciated**!
 
-1. **Fork** the repository.
-2. **Create a Feature Branch**:
+1. **Fork** the Project.
+2. **Create your Feature Branch**:
    ```bash
-   git checkout -b feature/amazing-feature
+   git checkout -b feature/AmazingFeature
    ```
 3. **Commit your Changes**:
    ```bash
-   git commit -m "feat: add amazing new feature"
+   git commit -m "feat: add some AmazingFeature"
    ```
 4. **Push to the Branch**:
    ```bash
-   git push origin feature/amazing-feature
+   git push origin feature/AmazingFeature
    ```
-5. **Open a Pull Request** describing your changes and testing notes.
+5. **Open a Pull Request** with a detailed explanation of your improvements and testing notes.
 
 ---
 

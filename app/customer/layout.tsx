@@ -85,13 +85,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             router.replace('/login');
             return;
           }
-          dispatch(setUser({
+
+          const avatarUrl = u.profileImage || u.image || u.avatar || '/images/rohit-avatar.jpg';
+          const profilePayload = {
             id: u._id || u.id,
             name: u.name,
             email: u.email,
             role: u.role,
-            avatar: u.profileImage || u.avatar || '/images/rohit-avatar.jpg'
-          }));
+            avatar: avatarUrl,
+            profileImage: avatarUrl
+          };
+          dispatch(setUser(profilePayload));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('user_profile', JSON.stringify(profilePayload));
+          }
         }
       } catch (err: any) {
         if (!isMounted || isLoggingOutRef.current) return;

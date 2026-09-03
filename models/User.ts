@@ -9,6 +9,8 @@ export interface IUser extends Document {
   gender?: 'male' | 'female' | 'other';
   age?: number;
   profileImage?: string;
+  image?: string; // Better-Auth / Google OAuth avatar URL
+  emailVerified?: boolean;
   phoneNumber?: string;
   emergencyContactName?: string;
   emergencyContactPhone?: string;
@@ -53,6 +55,13 @@ const UserSchema = new Schema<IUser>({
   },
   profileImage: {
     type: String
+  },
+  image: {
+    type: String
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
   },
   phoneNumber: {
     type: String,

@@ -30,10 +30,17 @@ export const auth = betterAuth({
     }
   },
 
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+    },
+  },
+
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || "google-client-id-placeholder",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "google-client-secret-placeholder",
     },
   },
 });

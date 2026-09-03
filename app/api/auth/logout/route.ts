@@ -7,10 +7,12 @@ export async function POST() {
     
     // 1. Delete from cookieStore
     cookieStore.delete('token');
-    cookieStore.delete({
-      name: 'token',
-      path: '/',
-    });
+    cookieStore.delete('better-auth.session_token');
+    cookieStore.delete('__Secure-better-auth.session_token');
+
+    cookieStore.delete({ name: 'token', path: '/' });
+    cookieStore.delete({ name: 'better-auth.session_token', path: '/' });
+    cookieStore.delete({ name: '__Secure-better-auth.session_token', path: '/' });
 
     const response = NextResponse.json({
       success: true,
@@ -18,19 +20,20 @@ export async function POST() {
     });
 
     // 2. Explicitly attach Set-Cookie header on the HTTP response with expired date & 0 maxAge
-    response.cookies.set({
-      name: 'token',
-      value: '',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      expires: new Date(0),
-      maxAge: 0,
-      path: '/'
+    const cookieNames = ['token', 'better-auth.session_token', '__Secure-better-auth.session_token'];
+    cookieNames.forEach((cookieName) => {
+      response.cookies.set({
+        name: cookieName,
+        value: '',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(0),
+        maxAge: 0,
+        path: '/'
+      });
+      response.cookies.delete(cookieName);
     });
-
-    // Extra safeguard: also delete via response.cookies helper
-    response.cookies.delete('token');
 
     return response;
 
