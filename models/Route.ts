@@ -6,6 +6,7 @@ export interface IStop {
   departureOffsetMinutes: number; // Minutes from journey start
   sequence: number; // Order of stop in route
   fareFromPreviousStop: number; // Segment price from the stop immediately before this one
+  distanceFromPreviousStop: number; // Distance in KM from the stop immediately before this one
 }
 
 export interface IRoute extends Document {
@@ -36,6 +37,11 @@ const StopSchema = new Schema<IStop>({
     required: true 
   },
   fareFromPreviousStop: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  distanceFromPreviousStop: {
     type: Number,
     required: true,
     default: 0

@@ -146,6 +146,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
   }, []);
 
+  // Detect if page was restored from browser back-forward cache (BFCache)
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Force refresh from server to ensure unauthenticated pages are not restored from memory
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
+
   const menuItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Operators', path: '/admin/operators', icon: Building2 },
@@ -153,7 +168,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Routes', path: '/admin/routes', icon: MapPin },
     { name: 'Bookings', path: '/admin/bookings', icon: Calendar },
     { name: 'Payments', path: '/admin/payments', icon: CreditCard },
-    { name: 'Reports & Analytics', path: '/admin/analytics', icon: BarChart3 },
     { name: 'Notifications', path: '/admin/notifications', icon: Bell, badge: unreadCount > 0 ? unreadCount : undefined },
     { name: 'Support', path: '/admin/support', icon: HelpCircle },
   ];
@@ -167,7 +181,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       await fetch('/api/auth/logout', { method: 'POST' });
       dispatch(clearUser());
       toast.success('Logged out successfully');
-      router.replace('/login');
+      if (typeof window !== 'undefined') {
+        window.location.replace('/login');
+      } else {
+        router.replace('/login');
+      }
     } catch (err) {
       console.error('Logout error:', err);
       toast.error('Failed to log out');

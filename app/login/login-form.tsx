@@ -149,8 +149,8 @@ export default function LoginForm() {
     <div className="w-full max-w-[460px] bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.04)] p-8 sm:p-10 flex flex-col gap-5 relative z-10 transition-shadow duration-300 hover:shadow-[0_20px_70px_rgba(0,0,0,0.06)]">
       
       {/* Header Graphic (Cute Bus Graphic) */}
-      <div className="flex flex-col items-center justify-center gap-1 select-none">
-        <div className="relative w-24 h-16 flex items-center justify-center">
+      <Link href="/" className="flex flex-col items-center justify-center gap-1 select-none group cursor-pointer hover:opacity-90 transition-opacity">
+        <div className="relative w-24 h-16 flex items-center justify-center group-hover:scale-105 transition-transform">
           <svg className="w-16 h-12 text-violet-500 fill-current" viewBox="0 0 64 48">
             {/* Bus Body */}
             <rect x="4" y="6" width="56" height="34" rx="6" />
@@ -186,7 +186,7 @@ export default function LoginForm() {
         <p className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold mt-1">
           Glad to see you again! 👋
         </p>
-      </div>
+      </Link>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         

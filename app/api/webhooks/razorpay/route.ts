@@ -118,8 +118,12 @@ export async function POST(req: Request) {
     // 6. Broadcast socket event to turn seats RED on active client screens
     const io = (global as any).io;
     if (io) {
-      io.to(order.tripId.toString()).emit('seat:booked', { seatNumbers: order.seatNumbers });
-      console.log(`[Razorpay Webhook] Socket broadcasted seat:booked for seats: ${order.seatNumbers}`);
+      io.to(order.tripId.toString()).emit('seat:booked', { 
+        seatNumbers: order.seatNumbers,
+        fromSequence: order.fromSequence,
+        toSequence: order.toSequence
+      });
+      console.log(`[Razorpay Webhook] Socket broadcasted seat:booked for seats: ${order.seatNumbers} (${order.fromSequence}->${order.toSequence})`);
     }
 
     return NextResponse.json({

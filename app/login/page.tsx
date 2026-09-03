@@ -21,8 +21,8 @@ export default function LoginPage() {
         <div className="absolute bottom-[-15%] left-[-15%] w-[400px] h-[400px] bg-gradient-to-tr from-orange-500 to-violet-500 rounded-full blur-[120px] opacity-15 pointer-events-none" />
         
         {/* Top Logo */}
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="bg-white/10 p-2.5 rounded-2xl border border-white/15 backdrop-blur-md flex items-center justify-center">
+        <Link href="/" className="flex items-center gap-3 relative z-10 hover:opacity-90 transition-opacity cursor-pointer group w-fit">
+          <div className="bg-white/10 p-2.5 rounded-2xl border border-white/15 backdrop-blur-md flex items-center justify-center group-hover:scale-105 transition-transform">
             <Bus className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -32,7 +32,7 @@ export default function LoginPage() {
             </div>
             <span className="text-[10px] text-zinc-400 font-semibold tracking-widest uppercase mt-1 block">Bus Booking</span>
           </div>
-        </div>
+        </Link>
 
         {/* Hero Welcome Back Section */}
         <div className="my-auto py-8 flex flex-col gap-6 relative z-10">

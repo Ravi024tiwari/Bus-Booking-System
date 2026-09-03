@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { io } from 'socket.io-client';
 
 type TabType = 'today' | 'upcoming' | 'history';
 
@@ -67,6 +68,22 @@ export default function MyTripsPage() {
 
   useEffect(() => {
     dispatch(fetchMyTrips({ tab: activeTab }));
+  }, [activeTab, dispatch]);
+
+  // Real-time status update listener via Socket.io
+  useEffect(() => {
+    let socket: any;
+    try {
+      socket = io();
+      socket.on('trip:status-updated', () => {
+        dispatch(fetchMyTrips({ tab: activeTab }));
+      });
+    } catch (err) {
+      console.warn('Socket connect failed on MyTripsPage:', err);
+    }
+    return () => {
+      if (socket) socket.disconnect();
+    };
   }, [activeTab, dispatch]);
 
   /* ── helpers ──────────────────────────────────────────────────────── */

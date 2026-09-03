@@ -89,6 +89,21 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
     };
   }, [dispatch, router]);
 
+  // Detect if page was restored from browser back-forward cache (BFCache)
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Force refresh from server to ensure unauthenticated pages are not restored from memory
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
+
   const menuItems = [
     { name: 'Dashboard', path: '/operator/dashboard', icon: LayoutDashboard },
     { name: 'My Buses', path: '/operator/buses', icon: Bus },
@@ -107,7 +122,11 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
       await fetch('/api/auth/logout', { method: 'POST' });
       dispatch(clearUser());
       toast.success('Logged out successfully');
-      router.replace('/login');
+      if (typeof window !== 'undefined') {
+        window.location.replace('/login');
+      } else {
+        router.replace('/login');
+      }
     } catch (err) {
       console.error('Logout error:', err);
       toast.error('Failed to log out');

@@ -3,10 +3,12 @@ import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
 import { Trip, SeatState, Route } from '@/models';
 import { tripSearchSchema } from '@/lib/validations';
+import { reconcileStaleTrips } from '@/lib/reconcile-trips';
 
 export async function GET(req: Request) {
   try {
     await dbConnect();
+    await reconcileStaleTrips();
     const { searchParams } = new URL(req.url);
    
 

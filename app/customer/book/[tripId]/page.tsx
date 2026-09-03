@@ -55,14 +55,14 @@ export default async function TripDetailPage({ params }: PageProps) {
 
       // Format Stop Details
       const stopsTimeline = route.stops.map((stop: any) => {
-        
         const stopTime = new Date(trip.departureTime.getTime() + stop.arrivalOffsetMinutes * 60 * 1000);
         return {
           stopName: stop.stopName,
           sequence: stop.sequence,
           arrivalTime: stopTime.toISOString(),
           offsetMinutes: stop.arrivalOffsetMinutes,
-          fareFromPrev: stop.fareFromPreviousStop
+          fareFromPrev: stop.fareFromPreviousStop,
+          distanceFromPrev: stop.distanceFromPreviousStop || 0
         };
       });
 
@@ -88,6 +88,7 @@ export default async function TripDetailPage({ params }: PageProps) {
         busType: trip.busType,
         source: trip.source,
         destination: trip.destination,
+        totalDistance: route.totalDistance || 0,
         date: trip.date,
         departureTime: trip.departureTime.toISOString(),
         arrivalTime: trip.arrivalTime.toISOString(),

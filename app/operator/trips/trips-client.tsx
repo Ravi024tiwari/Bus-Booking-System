@@ -27,7 +27,9 @@ import {
   Tag,
   Percent,
   Sparkles,
-  X
+  X,
+  AlertTriangle,
+  ShieldAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BusHeroBanner from '../buses/bus-hero-banner';
@@ -97,6 +99,11 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
 
   // Active Tab: today, future, history
   const [activeTab, setActiveTab] = useState<'today' | 'future' | 'history'>('today');
+
+  // Status Action Confirmation Modal States
+  const [statusModalTrip, setStatusModalTrip] = useState<{ trip: TripItem; targetStatus: TripItem['status'] } | null>(null);
+  const [cancelModalTrip, setCancelModalTrip] = useState<TripItem | null>(null);
+  const [statusActionLoading, setStatusActionLoading] = useState(false);
 
   // Filter States
   const [filterDate, setFilterDate] = useState('');
@@ -409,17 +416,75 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
     }
   };
 
+  // Next action configuration for guided state machine
+  const getNextActionConfig = (status: TripItem['status']) => {
+    switch (status) {
+      case 'SCHEDULED':
+        return {
+          nextStatus: 'BOARDING' as const,
+          label: 'Start Boarding',
+          buttonClass: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20',
+          allowCancel: true,
+          description: 'Open passenger check-in and boarding at the source terminal.'
+        };
+      case 'BOARDING':
+        return {
+          nextStatus: 'DEPARTED' as const,
+          label: 'Mark Departed',
+          buttonClass: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20',
+          allowCancel: true,
+          description: 'Confirm that the bus has departed the source station.'
+        };
+      case 'DEPARTED':
+        return {
+          nextStatus: 'IN_TRANSIT' as const,
+          label: 'Mark In-Transit',
+          buttonClass: 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/20',
+          allowCancel: false,
+          description: 'Update live tracking to indicate the bus is en route across intermediate stops.'
+        };
+      case 'IN_TRANSIT':
+        return {
+          nextStatus: 'ARRIVED' as const,
+          label: 'Mark as Arrived',
+          buttonClass: 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-600/20',
+          allowCancel: false,
+          description: 'Complete the trip and confirm arrival at the final destination.'
+        };
+      case 'ARRIVED':
+        return {
+          nextStatus: null,
+          label: 'Completed ✓',
+          buttonClass: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed',
+          allowCancel: false,
+          description: 'This trip has reached its final destination and is completed.'
+        };
+      case 'CANCELLED':
+        return {
+          nextStatus: null,
+          label: 'Cancelled ✕',
+          buttonClass: 'bg-rose-500/10 text-rose-500 dark:bg-rose-950/30 border border-rose-500/20 cursor-not-allowed',
+          allowCancel: false,
+          description: 'This trip was cancelled or auto-expired.'
+        };
+    }
+  };
+
   // Status Change handler
   const handleUpdateStatus = async (tripId: string, newStatus: string) => {
+    setStatusActionLoading(true);
     try {
       const response = await axios.patch(`/api/trips/${tripId}`, { status: newStatus });
       if (response.data?.success) {
-        toast.success(`Trip status updated to ${newStatus}`);
+        toast.success(`Trip status successfully advanced to ${newStatus}`);
         setTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: newStatus as any } : t));
+        setStatusModalTrip(null);
+        setCancelModalTrip(null);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to update trip status.');
     } finally {
+      setStatusActionLoading(false);
       setActiveMenuId(null);
     }
   };
@@ -817,41 +882,48 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
                           </div>
                         </div>
 
-                        {/* Action Dropdown Trigger Button */}
-                        <div className="relative">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveMenuId(activeMenuId === trip.id ? null : trip.id);
-                            }}
-                            className="flex items-center gap-1.5 px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
-                          >
-                            <span>Manage</span>
-                            <MoreVertical className="h-3.5 w-3.5" />
-                          </button>
-
-                          {/* Dropdown status update popup */}
-                          {activeMenuId === trip.id && (
-                            <>
-                              <div 
-                                className="fixed inset-0 z-40" 
-                                onClick={() => setActiveMenuId(null)}
-                              />
-                              <div className="absolute right-0 bottom-full mb-2 bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-2xl rounded-2xl p-2 w-[175px] flex flex-col gap-1 z-50 animate-in fade-in zoom-in-95 duration-150">
-                                <span className="text-[10px] uppercase font-black text-zinc-400 px-2.5 py-1">Update Status</span>
-                                
-                                {['SCHEDULED', 'BOARDING', 'DEPARTED', 'IN_TRANSIT', 'ARRIVED', 'CANCELLED'].map((st) => (
+                        {/* Smart Action Buttons Row */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {(() => {
+                            const actionConfig = getNextActionConfig(trip.status);
+                            return (
+                              <>
+                                {/* Optional Cancel button if allowed */}
+                                {actionConfig.allowCancel && (
                                   <button
-                                    key={st}
-                                    onClick={() => handleUpdateStatus(trip.id, st)}
-                                    className="w-full text-left px-2.5 py-1.5 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all cursor-pointer text-zinc-700 dark:text-zinc-300"
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCancelModalTrip(trip);
+                                    }}
+                                    title="Cancel Trip"
+                                    className="px-2.5 py-1.5 text-[11px] font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-all cursor-pointer"
                                   >
-                                    {st === 'CANCELLED' ? 'Delayed / Cancel' : getStatusLabel(st)}
+                                    Cancel
                                   </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
+                                )}
+
+                                {/* Primary Next Action Button */}
+                                {actionConfig.nextStatus ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setStatusModalTrip({ trip, targetStatus: actionConfig.nextStatus! });
+                                    }}
+                                    className={`flex items-center gap-1 px-3 py-1.5 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95 ${actionConfig.buttonClass}`}
+                                  >
+                                    <span>{actionConfig.label}</span>
+                                    <ArrowRight className="h-3.5 w-3.5" />
+                                  </button>
+                                ) : (
+                                  <span className={`px-2.5 py-1 text-[11px] font-black rounded-xl select-none ${actionConfig.buttonClass}`}>
+                                    {actionConfig.label}
+                                  </span>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -1268,6 +1340,150 @@ export default function TripsClient({ initialTrips, buses, routes }: TripsClient
               </form>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* 6. ADVANCE STATUS CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {statusModalTrip && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-zinc-900 dark:text-white leading-tight">
+                      Advance Trip Status
+                    </h3>
+                    <p className="text-[11px] text-zinc-400 font-bold">
+                      {statusModalTrip.trip.busNumber} • {statusModalTrip.trip.source} ➔ {statusModalTrip.trip.destination}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStatusModalTrip(null)}
+                  className="h-8 w-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Status Transition Badges */}
+              <div className="flex items-center justify-center gap-3 py-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-850">
+                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${getStatusBadgeStyle(statusModalTrip.trip.status)}`}>
+                  {statusModalTrip.trip.status}
+                </span>
+                <ArrowRight className="h-4 w-4 text-zinc-400" />
+                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase shadow-xs ${getStatusBadgeStyle(statusModalTrip.targetStatus)}`}>
+                  {statusModalTrip.targetStatus}
+                </span>
+              </div>
+
+              {/* Guidance Description */}
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                {getNextActionConfig(statusModalTrip.trip.status).description}
+              </p>
+
+              <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-xl text-[11px] font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                <Info className="h-4 w-4 shrink-0 text-indigo-500" />
+                <span>This real-time update will be broadcasted live to all booked passengers.</span>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={statusActionLoading}
+                  onClick={() => setStatusModalTrip(null)}
+                  className="w-1/2 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={statusActionLoading}
+                  onClick={() => handleUpdateStatus(statusModalTrip.trip.id, statusModalTrip.targetStatus)}
+                  className="w-1/2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md shadow-indigo-600/20 cursor-pointer transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {statusActionLoading ? 'Updating...' : `Confirm & Advance`}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 7. CANCEL TRIP CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {cancelModalTrip && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white dark:bg-zinc-900 border border-rose-200 dark:border-rose-900/50 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-zinc-900 dark:text-white leading-tight">
+                      Cancel Scheduled Trip
+                    </h3>
+                    <p className="text-[11px] text-zinc-400 font-bold">
+                      {cancelModalTrip.busNumber} • {cancelModalTrip.source} ➔ {cancelModalTrip.destination}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCancelModalTrip(null)}
+                  className="h-8 w-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Are you sure you want to cancel this trip scheduled for <strong className="text-zinc-900 dark:text-white">{formatDateString(cancelModalTrip.date)} at {formatTimeString(cancelModalTrip.departureTime)}</strong>?
+              </p>
+
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl text-[11px] font-bold text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 shrink-0 text-rose-500" />
+                <span>This will permanently mark the trip as CANCELLED and notify all booked passengers.</span>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={statusActionLoading}
+                  onClick={() => setCancelModalTrip(null)}
+                  className="w-1/2 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer transition-colors"
+                >
+                  Keep Trip
+                </button>
+                <button
+                  type="button"
+                  disabled={statusActionLoading}
+                  onClick={() => handleUpdateStatus(cancelModalTrip.id, 'CANCELLED')}
+                  className="w-1/2 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md shadow-rose-600/20 cursor-pointer transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {statusActionLoading ? 'Cancelling...' : 'Yes, Cancel Trip'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

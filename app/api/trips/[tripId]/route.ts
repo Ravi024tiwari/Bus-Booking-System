@@ -51,13 +51,15 @@ export async function GET(
       ]
     });
 
-    // Format occupied seats as a key-value lookup: { "L-1A": { status: "BOOKED" }, "2C": { status: "HELD" } }
-    const occupiedSeats: Record<string, { status: string; heldBy?: string; heldUntil?: string }> = {};
+    // Format occupied seats as a key-value lookup with segment sequence bounds
+    const occupiedSeats: Record<string, { status: string; heldBy?: string; heldUntil?: string; fromSequence: number; toSequence: number }> = {};
     activeSeats.forEach((seat: any) => {
       occupiedSeats[seat.seatNumber] = {
         status: seat.status,
         heldBy: seat.heldBy?.toString(),
-        heldUntil: seat.heldUntil?.toISOString()
+        heldUntil: seat.heldUntil?.toISOString(),
+        fromSequence: seat.fromSequence,
+        toSequence: seat.toSequence
       };
     });
 
@@ -197,11 +199,62 @@ export async function PATCH(
       }
     }
 
-    // 5. Update status
+    // 5. Production-Grade State Transition Validation
+    const currentStatus = trip.status;
+
+    // If status is already the requested status, return early
+    if (currentStatus === status) {
+      return NextResponse.json({
+        success: true,
+        message: `Trip is already in ${status} status.`,
+        data: trip
+      });
+    }
+
+    // Terminal states cannot be altered
+    if (currentStatus === 'ARRIVED' || currentStatus === 'CANCELLED') {
+      return NextResponse.json({
+        success: false,
+        message: `Cannot change status of a trip that is already ${currentStatus}.`
+      }, { status: 400 });
+    }
+
+    // Allowed transition map (Strict forward-only state machine)
+    const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+      SCHEDULED: ['BOARDING', 'CANCELLED'],
+      BOARDING: ['DEPARTED', 'CANCELLED'],
+      DEPARTED: ['IN_TRANSIT'],
+      IN_TRANSIT: ['ARRIVED'],
+      ARRIVED: [],
+      CANCELLED: [],
+    };
+
+    const validNext = ALLOWED_TRANSITIONS[currentStatus] || [];
+    if (!validNext.includes(status)) {
+      return NextResponse.json({
+        success: false,
+        message: `Invalid status transition from '${currentStatus}' to '${status}'. Allowed next: ${validNext.join(', ') || 'None (Locked)'}.`
+      }, { status: 400 });
+    }
+
+    // Time-based validation checks
+    const now = new Date();
+    if (status === 'BOARDING') {
+      // Boarding cannot be opened more than 2 hours before scheduled departure
+      const twoHoursBefore = new Date(trip.departureTime.getTime() - 2 * 60 * 60 * 1000);
+      if (now < twoHoursBefore) {
+        return NextResponse.json({
+          success: false,
+          message: 'Boarding can only be initiated within 2 hours of scheduled departure time.'
+        }, { status: 400 });
+      }
+    }
+
+    // 6. Update status
     trip.status = status as any;
     await trip.save();
 
-    // 6. Broadcast Socket.io state changes (real-time customer tracking view)
+    // 7. Broadcast Socket.io state changes (real-time customer tracking view)
     const io = (global as any).io;
     if (io) {
       io.to(tripId).emit('trip:status-updated', { tripId, status });

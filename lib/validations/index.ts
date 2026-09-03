@@ -183,6 +183,11 @@ export const routeSchema = z.object({
         fareFromPreviousStop: z
           .number({ message: 'Fare must be a number' })
           .min(0, 'Fare cannot be negative'),
+        distanceFromPreviousStop: z
+          .number({ message: 'Distance must be a number' })
+          .min(0, 'Distance cannot be negative')
+          .optional()
+          .default(0),
       })
     )
   ).refine((stops) => stops.length >= 2, {

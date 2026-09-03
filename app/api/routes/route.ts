@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify first stop has 0 fare from previous
+    // Verify first stop has 0 fare and 0 distance from previous
     if (firstStop.fareFromPreviousStop !== 0) {
       return NextResponse.json(
         {
@@ -84,6 +84,23 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    if (firstStop.distanceFromPreviousStop && firstStop.distanceFromPreviousStop !== 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'The distance from previous stop for the starting stop (source) must be 0.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Auto-calculate cumulative total distance from stops if not provided or to guarantee accuracy
+    const calculatedTotalDistance = sortedStops.reduce(
+      (sum, s) => sum + (Number(s.distanceFromPreviousStop) || 0),
+      0
+    );
+    const finalTotalDistance = calculatedTotalDistance > 0 ? calculatedTotalDistance : (totalDistance || 0);
 
     // Duplicate Route Check (same stop sequence)
     const existingRoutes = await Route.find({
@@ -115,7 +132,7 @@ export async function POST(req: Request) {
       source,
       destination,
       stops: sortedStops,
-      totalDistance: totalDistance || 0,
+      totalDistance: finalTotalDistance,
       description: description || ''
     });
 

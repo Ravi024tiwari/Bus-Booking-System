@@ -115,6 +115,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }, [dispatch, router]);
 
+  // Detect if page was restored from browser back-forward cache (BFCache)
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Force refresh from server to ensure unauthenticated pages are not restored from memory
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
+
   const menuItems = [
     { name: 'Dashboard', path: '/customer/dashboard', icon: LayoutDashboard },
     { name: 'Booking Trips', path: '/customer/book', icon: Ticket },
@@ -135,7 +150,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       await fetch('/api/auth/logout', { method: 'POST' });
       dispatch(clearUser());
       toast.success('Logged out successfully');
-      router.replace('/login');
+      if (typeof window !== 'undefined') {
+        window.location.replace('/login');
+      } else {
+        router.replace('/login');
+      }
     } catch (err) {
       console.error('Logout error:', err);
       toast.error('Failed to log out');

@@ -44,6 +44,7 @@ interface Stop {
   arrivalTime: string;
   offsetMinutes: number;
   fareFromPrev: number;
+  distanceFromPrev?: number;
 }
 
 interface TripDetails {
@@ -54,6 +55,7 @@ interface TripDetails {
   busType: string;
   source: string;
   destination: string;
+  totalDistance?: number;
   date: string;
   departureTime: string;
   arrivalTime: string;
@@ -220,18 +222,27 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
       });
     });
 
-    socket.on('seat:booked', (data: { seatNumbers: string[] }) => {
+    socket.on('seat:booked', (data: { seatNumbers: string[]; fromSequence?: number; toSequence?: number }) => {
       console.log('[WebSocket] seat:booked received:', data);
       setOccupiedSeats(prev => {
         const next = { ...prev };
         data.seatNumbers.forEach(seatNo => {
           next[seatNo] = {
             status: 'BOOKED',
-            fromSequence: boardingStop.sequence,
-            toSequence: droppingStop.sequence
+            fromSequence: data.fromSequence ?? 0,
+            toSequence: data.toSequence ?? 9999
           };
         });
         return next;
+      });
+
+      // If user had one of these seats selected, deselect and notify
+      setSelectedSeats(prev => {
+        const remaining = prev.filter(s => !data.seatNumbers.includes(s));
+        if (remaining.length !== prev.length) {
+          toast.info('A selected seat was just confirmed and booked by another passenger.');
+        }
+        return remaining;
       });
     });
 
@@ -359,7 +370,20 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
     return fareSum === 0 ? tripDetails.fare : fareSum;
   };
 
+  // dynamic segment distance calculator (in KM)
+  const getSelectedSegmentDistance = () => {
+    if (!boardingStop || !droppingStop) return tripDetails.totalDistance || 0;
+    let distSum = 0;
+    tripDetails.stops.forEach((stop: any) => {
+      if (stop.sequence > boardingStop.sequence && stop.sequence <= droppingStop.sequence) {
+        distSum += (stop.distanceFromPrev || 0);
+      }
+    });
+    return distSum;
+  };
+
   const segmentFare = getSelectedSegmentFare();
+  const segmentDistance = getSelectedSegmentDistance();
   const totalPrice = segmentFare * selectedSeats.length;
 
   const offerPercentage = tripDetails.offerPercentage || 0;
@@ -637,21 +661,25 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
         // Get seat status
         const status = getSeatBlockStatus(seatName); // 'BOOKED' | 'HELD' | 'SELECTED' | null
 
-        let bgClass = 'bg-zinc-50 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-355 hover:bg-zinc-100 hover:border-zinc-300';
-        let iconColor = 'text-zinc-400';
+        let bgClass = 'bg-zinc-50 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-[#ff2d88] hover:bg-[#ff2d88]/5';
+        let iconColor = 'text-zinc-400 dark:text-zinc-500';
         let disabled = false;
+        let tooltipText = `Seat ${seatName} is available`;
 
         if (status === 'BOOKED') {
-          bgClass = 'bg-red-500/10 border-red-500/20 text-red-500 cursor-not-allowed';
-          iconColor = 'text-red-500';
+          bgClass = 'bg-red-500/10 dark:bg-red-500/15 border-red-500/30 text-red-500/80 cursor-not-allowed opacity-80 select-none shadow-none';
+          iconColor = 'text-red-400';
           disabled = true;
+          tooltipText = `Seat ${seatName} is already booked for this route segment`;
         } else if (status === 'HELD') {
-          bgClass = 'bg-amber-500/10 border-amber-500/20 text-amber-500 cursor-not-allowed';
+          bgClass = 'bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/30 text-amber-500 cursor-not-allowed select-none animate-pulse';
           iconColor = 'text-amber-500';
           disabled = true;
+          tooltipText = `Seat ${seatName} is currently in checkout by another passenger`;
         } else if (status === 'SELECTED') {
-          bgClass = 'bg-gradient-to-br from-[#ff7c52] to-[#ff2d88] border-[#ff2d88] text-white shadow-lg shadow-[#ff2d88]/20 hover:opacity-95';
+          bgClass = 'bg-gradient-to-br from-[#ff7c52] to-[#ff2d88] border-[#ff2d88] text-white shadow-lg shadow-[#ff2d88]/25 scale-105 hover:opacity-95';
           iconColor = 'text-white';
+          tooltipText = `Seat ${seatName} selected`;
         }
 
         rowElements.push(
@@ -659,6 +687,7 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
             key={seatName}
             type="button"
             disabled={disabled || !isBookingAllowed}
+            title={tooltipText}
             onClick={() => handleSeatClick(seatName)}
             className={`relative rounded-xl border flex flex-col items-center justify-center font-black text-[10px] sm:text-xs shadow-sm transition-all duration-200 cursor-pointer ${
               isSleeper ? 'w-10 h-16' : 'w-10 h-10'
@@ -670,6 +699,11 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
               <Armchair className={`h-3.5 w-3.5 ${iconColor} mb-0.5`} />
             )}
             <span>{seatName}</span>
+
+            {/* Red badge indicator for already booked seats */}
+            {status === 'BOOKED' && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white dark:ring-zinc-900" />
+            )}
           </button>
         );
       }
@@ -821,7 +855,7 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
                 </h1>
               </div>
               
-              <div className="flex items-center gap-4 mt-3 text-xs font-bold text-zinc-400 dark:text-zinc-500">
+              <div className="flex items-center gap-4 mt-3 text-xs font-bold text-zinc-400 dark:text-zinc-500 flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4" />
                   {formatShortDate(tripDetails.date)}
@@ -831,6 +865,15 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
                   <Clock className="h-4 w-4" />
                   {getTravelDuration(tripDetails.departureTime, tripDetails.arrivalTime)} Travel
                 </span>
+                {tripDetails.totalDistance && tripDetails.totalDistance > 0 ? (
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-mono font-bold">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {tripDetails.totalDistance} KM Route
+                    </span>
+                  </>
+                ) : null}
                 <span>•</span>
                 <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                   isBookingAllowed 
@@ -855,14 +898,24 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
 
           {/* B. ROUTE BOARDING & DROPPING POINT SELECTORS */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/60 rounded-[32px] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.2)] flex flex-col gap-5">
-            <div>
-              <h2 className="text-base font-black text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-[#ff2d88]" />
-                Select Journey Stops
-              </h2>
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-extrabold mt-1">
-                Customize your boarding and dropping points on this trip. Fares adjust dynamically.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-black text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-[#ff2d88]" />
+                  Select Journey Stops
+                </h2>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-extrabold mt-1">
+                  Customize your boarding and dropping points on this trip. Fares and distance adjust dynamically.
+                </p>
+              </div>
+
+              {/* Segment Distance Pill */}
+              {segmentDistance > 0 && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 rounded-xl text-xs font-black text-indigo-600 dark:text-indigo-400 select-none">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>{segmentDistance} KM Journey</span>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -980,22 +1033,24 @@ export default function TripDetailsClient({ tripDetails }: TripDetailsClientProp
             {renderSeatingGrid()}
 
             {/* Layout legend */}
-            <div className="flex flex-wrap items-center justify-center gap-5 border-t border-zinc-150 dark:border-zinc-800 pt-4 text-[10px] font-black uppercase tracking-widest text-zinc-450 select-none">
+            <div className="flex flex-wrap items-center justify-center gap-6 border-t border-zinc-150 dark:border-zinc-800 pt-5 text-[10px] font-black uppercase tracking-widest select-none">
               <div className="flex items-center gap-2">
-                <div className="h-4.5 w-4.5 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 rounded-md" />
-                <span>Available</span>
+                <div className="h-4.5 w-4.5 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 rounded-lg" />
+                <span className="text-zinc-500 dark:text-zinc-400">Available</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-4.5 w-4.5 border border-[#ff2d88] bg-gradient-to-br from-[#ff7c52] to-[#ff2d88] rounded-md shadow-sm" />
-                <span>Selected</span>
+                <div className="h-4.5 w-4.5 border border-[#ff2d88] bg-gradient-to-br from-[#ff7c52] to-[#ff2d88] rounded-lg shadow-sm" />
+                <span className="text-zinc-900 dark:text-white font-extrabold">Selected</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-4.5 w-4.5 border border-amber-500/25 bg-amber-500/10 rounded-md" />
-                <span>Held</span>
+                <div className="h-4.5 w-4.5 border border-amber-500/30 bg-amber-500/10 rounded-lg animate-pulse" />
+                <span className="text-amber-500">In Checkout</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-4.5 w-4.5 border border-red-500/25 bg-red-500/10 rounded-md" />
-                <span>Booked</span>
+                <div className="h-4.5 w-4.5 border border-red-500/30 bg-red-500/10 rounded-lg relative">
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                </div>
+                <span className="text-red-500">Already Booked</span>
               </div>
             </div>
           </div>

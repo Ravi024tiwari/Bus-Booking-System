@@ -3,10 +3,12 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
 import { Order, Trip, Review } from '@/models';
+import { reconcileStaleTrips } from '@/lib/reconcile-trips';
 
 export async function GET(req: Request) {
   try {
     await dbConnect();
+    await reconcileStaleTrips();
 
     // 1. Authenticate Passenger from Cookie
     const cookieStore = await cookies();

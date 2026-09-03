@@ -10,6 +10,7 @@ import {
   ArrowUp, 
   ArrowDown, 
   ArrowLeft, 
+  ArrowRight,
   Info, 
   Clock, 
   TrendingUp, 
@@ -17,7 +18,14 @@ import {
   Phone, 
   CheckCircle2, 
   Sparkles,
-  Search
+  Search,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Navigation,
+  Calendar,
+  DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -27,6 +35,7 @@ interface Stop {
   arrivalTime: string;   // e.g., "08:45 AM"
   departureTime: string; // e.g., "08:50 AM"
   fareFromPreviousStop: number;
+  distanceFromPreviousStop: number;
 }
 
 interface RouteTemplate {
@@ -39,6 +48,7 @@ interface RouteTemplate {
     departureOffsetMinutes: number;
     sequence: number;
     fareFromPreviousStop: number;
+    distanceFromPreviousStop: number;
   }>;
   totalDistance: number;
   description: string;
@@ -57,17 +67,20 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Expandable cards & Details Modal state
+  const [expandedCardIds, setExpandedCardIds] = useState<Record<string, boolean>>({});
+  const [selectedRouteForModal, setSelectedRouteForModal] = useState<RouteTemplate | null>(null);
+
   // Form states
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
-  const [distance, setDistance] = useState<number | ''>('');
   const [description, setDescription] = useState('');
   
   // Stops list
   // Default with source and destination stops
   const [stops, setStops] = useState<Stop[]>([
-    { stopName: '', arrivalTime: '-', departureTime: '08:00 AM', fareFromPreviousStop: 0 },
-    { stopName: '', arrivalTime: '06:30 PM', departureTime: '-', fareFromPreviousStop: 500 }
+    { stopName: '', arrivalTime: '-', departureTime: '08:00 AM', fareFromPreviousStop: 0, distanceFromPreviousStop: 0 },
+    { stopName: '', arrivalTime: '06:30 PM', departureTime: '-', fareFromPreviousStop: 500, distanceFromPreviousStop: 0 }
   ]);
 
   // Synchronize first/last stop names with Source/Destination input
@@ -177,6 +190,7 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
         departureOffsetMinutes: isLast ? arrivalOffset : departureOffset,
         sequence: idx + 1,
         fareFromPreviousStop: Number(stop.fareFromPreviousStop) || 0,
+        distanceFromPreviousStop: idx === 0 ? 0 : (Number(stop.distanceFromPreviousStop) || 0),
         arrivalTime: stop.arrivalTime,
         departureTime: isLast ? '-' : stop.departureTime
       };
@@ -194,6 +208,12 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
 
   // Total stops fare sum
   const totalFare = stops.reduce((sum, s) => sum + (Number(s.fareFromPreviousStop) || 0), 0);
+
+  // Auto-calculated cumulative total distance from all sub-stops
+  const totalDistanceCalculated = stops.reduce(
+    (sum, s, idx) => (idx === 0 ? sum : sum + (Number(s.distanceFromPreviousStop) || 0)),
+    0
+  );
 
   // Form control: Add middle stop
   const handleAddStop = () => {
@@ -213,7 +233,8 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
         stopName: '',
         arrivalTime: defaultArr,
         departureTime: defaultDep,
-        fareFromPreviousStop: 100
+        fareFromPreviousStop: 100,
+        distanceFromPreviousStop: 0
       };
       
       updated.splice(insertIndex, 0, newStop);
@@ -262,11 +283,10 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
   const handleResetForm = () => {
     setSource('');
     setDestination('');
-    setDistance('');
     setDescription('');
     setStops([
-      { stopName: '', arrivalTime: '-', departureTime: '08:00 AM', fareFromPreviousStop: 0 },
-      { stopName: '', arrivalTime: '06:30 PM', departureTime: '-', fareFromPreviousStop: 500 }
+      { stopName: '', arrivalTime: '-', departureTime: '08:00 AM', fareFromPreviousStop: 0, distanceFromPreviousStop: 0 },
+      { stopName: '', arrivalTime: '06:30 PM', departureTime: '-', fareFromPreviousStop: 500, distanceFromPreviousStop: 0 }
     ]);
   };
 
@@ -291,14 +311,15 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
         arrivalOffsetMinutes: s.arrivalOffsetMinutes,
         departureOffsetMinutes: s.departureOffsetMinutes,
         sequence: s.sequence,
-        fareFromPreviousStop: s.fareFromPreviousStop
+        fareFromPreviousStop: s.fareFromPreviousStop,
+        distanceFromPreviousStop: s.distanceFromPreviousStop
       }));
 
       const payload = {
         source: source.trim(),
         destination: destination.trim(),
         stops: finalStops,
-        totalDistance: Number(distance) || 0,
+        totalDistance: totalDistanceCalculated,
         description: description.trim()
       };
 
@@ -399,89 +420,329 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredRoutes.map((route) => (
-                  <motion.div
-                    layoutId={route.id}
-                    key={route.id}
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-850 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
-                  >
-                    <div>
-                      {/* Source -> Destination */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-base text-zinc-900 dark:text-white">
-                            {route.source}
-                          </span>
-                          <span className="text-zinc-400 text-xs font-black">➔</span>
-                          <span className="font-black text-base text-zinc-900 dark:text-white">
-                            {route.destination}
-                          </span>
-                        </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredRoutes.map((route) => {
+                  const isExpanded = !!expandedCardIds[route.id];
+                  const totalRouteFare = route.stops.reduce((sum, s) => sum + (s.fareFromPreviousStop || 0), 0);
+                  const lastStop = route.stops[route.stops.length - 1];
+                  const totalDuration = lastStop ? formatMinutesDuration(lastStop.arrivalOffsetMinutes) : '-';
 
-                        <button 
-                          onClick={() => handleDeleteRoute(route.id)}
-                          className="text-zinc-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                  return (
+                    <motion.div
+                      layout
+                      key={route.id}
+                      className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-indigo-500/30 dark:hover:border-indigo-500/30 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+                    >
+                      {/* Top Accent Gradient Bar */}
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-60 group-hover:opacity-100 transition-opacity" />
 
-                      {/* Route Description */}
-                      {route.description && (
-                        <p className="text-xs text-zinc-400 dark:text-zinc-500 font-semibold mt-2 line-clamp-2">
-                          {route.description}
-                        </p>
-                      )}
-
-                      {/* Divider */}
-                      <div className="h-px bg-zinc-100 dark:bg-zinc-800/80 my-4" />
-
-                      {/* Stops Timeline view */}
-                      <div className="flex flex-col gap-3">
-                        <span className="text-[10px] uppercase font-black tracking-wider text-zinc-400">
-                          Route Sequence ({route.stops.length} stops)
-                        </span>
-
-                        <div className="relative pl-5 flex flex-col gap-3.5 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-indigo-150 dark:before:bg-indigo-950/60">
-                          {route.stops.slice(0, 3).map((stop, sIdx) => (
-                            <div key={sIdx} className="flex items-center justify-between text-xs font-bold">
-                              <div className="flex items-center gap-2">
-                                <div className="absolute left-[2px] w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-white dark:border-zinc-900 shadow-sm" />
-                                <span className="text-zinc-800 dark:text-zinc-200">
-                                  {stop.stopName}
-                                </span>
+                      <div className="flex flex-col gap-4">
+                        {/* Header: Source -> Destination & Actions */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-extrabold text-base text-zinc-900 dark:text-white">
+                                {route.source}
+                              </span>
+                              <div className="h-5 px-1.5 bg-indigo-50 dark:bg-indigo-950/60 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                <ArrowRight className="h-3 w-3" />
                               </div>
-                              <span className="text-[10px] text-zinc-400 font-black">
-                                {sIdx === 0 ? 'Start' : `+${stop.arrivalOffsetMinutes}m`}
+                              <span className="font-extrabold text-base text-zinc-900 dark:text-white">
+                                {route.destination}
                               </span>
                             </div>
-                          ))}
-                          {route.stops.length > 3 && (
-                            <div className="flex items-center gap-2 text-xs font-bold text-indigo-500 dark:text-indigo-400 pl-1">
-                              <div className="absolute left-[3px] w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-                              <span>+ {route.stops.length - 3} more stop(s)</span>
-                            </div>
-                          )}
+
+                            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 w-fit">
+                              {route.stops.length} Total Stops
+                            </span>
+                          </div>
+
+                          {/* Quick Action Buttons */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRouteForModal(route)}
+                              title="Inspect Complete Route"
+                              className="p-2 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-xl transition-colors cursor-pointer"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => handleDeleteRoute(route.id)}
+                              title="Delete Route Template"
+                              className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Route Description */}
+                        {route.description ? (
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium line-clamp-2">
+                            {route.description}
+                          </p>
+                        ) : null}
+
+                        {/* Metric Stats Strip */}
+                        <div className="grid grid-cols-3 gap-2 bg-zinc-50/80 dark:bg-zinc-950/50 p-3 rounded-2xl border border-zinc-100 dark:border-zinc-800/80">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] uppercase font-black text-zinc-400 flex items-center gap-1">
+                              <TrendingUp className="h-3 w-3 text-emerald-500" /> Distance
+                            </span>
+                            <span className="text-xs font-black text-zinc-900 dark:text-white mt-0.5">
+                              {route.totalDistance > 0 ? `${route.totalDistance} KM` : '0 KM'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col">
+                            <span className="text-[9px] uppercase font-black text-zinc-400 flex items-center gap-1">
+                              <Clock className="h-3 w-3 text-amber-500" /> Duration
+                            </span>
+                            <span className="text-xs font-black text-zinc-900 dark:text-white mt-0.5">
+                              {totalDuration}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col">
+                            <span className="text-[9px] uppercase font-black text-zinc-400 flex items-center gap-1">
+                              <DollarSign className="h-3 w-3 text-indigo-500" /> Base Fare
+                            </span>
+                            <span className="text-xs font-black text-zinc-900 dark:text-white mt-0.5">
+                              ₹{totalRouteFare}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Stops Timeline Section */}
+                        <div className="flex flex-col gap-2.5 mt-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] uppercase font-black tracking-wider text-zinc-400">
+                              Journey Timeline
+                            </span>
+                            {route.stops.length > 3 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedCardIds(prev => ({ ...prev, [route.id]: !prev[route.id] }));
+                                }}
+                                className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                              >
+                                {isExpanded ? (
+                                  <>Show less <ChevronUp className="h-3 w-3" /></>
+                                ) : (
+                                  <>+{route.stops.length - 2} intermediate <ChevronDown className="h-3 w-3" /></>
+                                )}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Visual Timeline Nodes */}
+                          <div className="relative pl-5 flex flex-col gap-3 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-indigo-100 dark:before:bg-indigo-950/60">
+                            {/* If not expanded and >3 stops, show First, Sample summary, and Last */}
+                            {(!isExpanded && route.stops.length > 3 ? [
+                              route.stops[0],
+                              route.stops[route.stops.length - 1]
+                            ] : route.stops).map((stop, sIdx, arr) => {
+                              const isSource = stop.sequence === 1;
+                              const isDest = stop.sequence === route.stops.length;
+
+                              return (
+                                <div key={sIdx} className="flex items-center justify-between text-xs font-bold">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`absolute left-[2px] w-2.5 h-2.5 rounded-full border-2 border-white dark:border-zinc-900 shadow-sm ${
+                                      isSource ? 'bg-indigo-500' : isDest ? 'bg-emerald-500' : 'bg-purple-500'
+                                    }`} />
+                                    <span className="text-zinc-800 dark:text-zinc-200 truncate max-w-[130px]">
+                                      {stop.stopName}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-bold">
+                                    {!isSource && (
+                                      <span className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded font-mono text-indigo-600 dark:text-indigo-400">
+                                        +{stop.distanceFromPreviousStop || 0} km
+                                      </span>
+                                    )}
+                                    <span className="text-zinc-500">
+                                      {isSource ? 'Start' : `+${stop.arrivalOffsetMinutes}m`}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Footer */}
+                      <div className="mt-5 pt-3.5 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between text-[11px] font-bold text-zinc-400">
+                        <span className="flex items-center gap-1">
+                          <Sparkles className="h-3 w-3 text-indigo-500" />
+                          Auto-Calculated
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRouteForModal(route)}
+                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          View Full Details <ArrowRight className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Complete Route Details Interactive Modal */}
+            <AnimatePresence>
+              {selectedRouteForModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[32px] p-6 sm:p-8 max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                  >
+                    {/* Modal Header */}
+                    <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-5">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-xl font-black text-zinc-900 dark:text-white">
+                            {selectedRouteForModal.source}
+                          </h3>
+                          <ArrowRight className="h-4 w-4 text-indigo-500" />
+                          <h3 className="text-xl font-black text-zinc-900 dark:text-white">
+                            {selectedRouteForModal.destination}
+                          </h3>
+                        </div>
+                        <p className="text-xs text-zinc-400 font-semibold">
+                          Complete Route & Sub-Stops Breakdown
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRouteForModal(null)}
+                        className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-white rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+
+                    {/* Summary Metrics Strip */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-850 flex flex-col">
+                        <span className="text-[10px] font-black uppercase text-zinc-400">Total Distance</span>
+                        <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          {selectedRouteForModal.totalDistance} KM
+                        </span>
+                      </div>
+
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-850 flex flex-col">
+                        <span className="text-[10px] font-black uppercase text-zinc-400">Total Duration</span>
+                        <span className="text-sm font-black text-zinc-900 dark:text-white mt-0.5">
+                          {formatMinutesDuration(selectedRouteForModal.stops[selectedRouteForModal.stops.length - 1]?.arrivalOffsetMinutes)}
+                        </span>
+                      </div>
+
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-850 flex flex-col">
+                        <span className="text-[10px] font-black uppercase text-zinc-400">Total Stops</span>
+                        <span className="text-sm font-black text-zinc-900 dark:text-white mt-0.5">
+                          {selectedRouteForModal.stops.length}
+                        </span>
+                      </div>
+
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-850 flex flex-col">
+                        <span className="text-[10px] font-black uppercase text-zinc-400">Base Fare Sum</span>
+                        <span className="text-sm font-black text-indigo-600 dark:text-indigo-400 mt-0.5">
+                          ₹{selectedRouteForModal.stops.reduce((sum, s) => sum + (s.fareFromPreviousStop || 0), 0)}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Footer properties */}
-                    <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between text-[11px] font-black text-zinc-400">
-                      <div className="flex items-center gap-1.5">
-                        <TrendingUp className="h-3.5 w-3.5 text-zinc-400" />
-                        <span>{route.totalDistance} km</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-zinc-400" />
-                        <span>{formatMinutesDuration(route.stops[route.stops.length - 1]?.arrivalOffsetMinutes)}</span>
-                      </div>
+                    {/* Full Table Breakdown */}
+                    <div className="overflow-y-auto flex-1 pr-1">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-black uppercase text-zinc-400">
+                            <th className="py-2.5 px-3">#</th>
+                            <th className="py-2.5 px-3">Stop Name</th>
+                            <th className="py-2.5 px-3">Arrival Offset</th>
+                            <th className="py-2.5 px-3">Departure Offset</th>
+                            <th className="py-2.5 px-3">Distance</th>
+                            <th className="py-2.5 px-3">Fare</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-xs font-semibold">
+                          {selectedRouteForModal.stops.map((stop, idx) => {
+                            const isSource = idx === 0;
+                            const isDest = idx === selectedRouteForModal.stops.length - 1;
+
+                            return (
+                              <tr key={idx} className="border-b border-zinc-50 dark:border-zinc-800/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
+                                <td className="py-3 px-3">
+                                  <span className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-black text-zinc-500">
+                                    {stop.sequence}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-zinc-900 dark:text-white">
+                                      {stop.stopName}
+                                    </span>
+                                    {isSource && (
+                                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
+                                        Source
+                                      </span>
+                                    )}
+                                    {isDest && (
+                                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                        Destination
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3 text-zinc-500">
+                                  {isSource ? '—' : `+${stop.arrivalOffsetMinutes} mins`}
+                                </td>
+                                <td className="py-3 px-3 text-zinc-500">
+                                  {isDest ? '—' : `+${stop.departureOffsetMinutes} mins`}
+                                </td>
+                                <td className="py-3 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                  {isSource ? '0 KM' : `+${stop.distanceFromPreviousStop || 0} KM`}
+                                </td>
+                                <td className="py-3 px-3 font-bold text-zinc-900 dark:text-white">
+                                  {isSource ? '—' : `₹${stop.fareFromPreviousStop || 0}`}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Modal Footer */}
+                    <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                      <span className="text-[10px] text-zinc-400 font-semibold">
+                        {selectedRouteForModal.description || 'No additional description provided.'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRouteForModal(null)}
+                        className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        Close
+                      </button>
                     </div>
                   </motion.div>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
+            </AnimatePresence>
           </motion.div>
         ) : (
           /* ==============================================================
@@ -613,7 +874,8 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                           <th className="py-3 px-2">Stop & Sequence</th>
                           <th className="py-3 px-2">Arrival Time</th>
                           <th className="py-3 px-2">Departure Time</th>
-                          <th className="py-3 px-2">Fare from Prev Stop</th>
+                          <th className="py-3 px-2">Distance from Prev</th>
+                          <th className="py-3 px-2">Fare from Prev</th>
                           <th className="py-3 px-2 text-center">Actions</th>
                         </tr>
                       </thead>
@@ -663,7 +925,7 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                                           {stop.stopName || (isFirst ? 'Enter Source' : 'Enter Destination')}
                                         </span>
                                         <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full select-none ${
-                                          isFirst ? 'bg-indigo-55 bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
+                                          isFirst ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
                                         }`}>
                                           {isFirst ? 'Source' : 'Destination'}
                                         </span>
@@ -674,7 +936,7 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                                         value={stop.stopName}
                                         onChange={(e) => handleUpdateStop(idx, 'stopName', e.target.value)}
                                         placeholder={`Stop ${idx + 1} Name`}
-                                        className="bg-zinc-55 border-0 focus:ring-0 focus:outline-none w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 px-2 py-1.5 rounded-xl text-xs font-bold placeholder-zinc-400"
+                                        className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 px-2 py-1.5 rounded-xl text-xs font-bold placeholder-zinc-400 focus:outline-none focus:border-indigo-500"
                                       />
                                     )}
                                     <span className="text-[9px] text-zinc-400 font-semibold block leading-none">
@@ -685,9 +947,9 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                               </td>
 
                               {/* Arrival Time */}
-                              <td className="py-4 px-2 min-w-[120px]">
+                              <td className="py-4 px-2 min-w-[110px]">
                                 {isFirst ? (
-                                  <span className="text-zinc-400 pl-3">—</span>
+                                  <span className="text-zinc-400 pl-3 select-none">—</span>
                                 ) : (
                                   <div className="relative w-full max-w-[110px] bg-zinc-50 border border-zinc-200 dark:bg-zinc-950 dark:border-zinc-850 rounded-xl px-2 py-1.5 flex items-center gap-1.5">
                                     <input 
@@ -703,9 +965,9 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                               </td>
 
                               {/* Departure Time */}
-                              <td className="py-4 px-2 min-w-[120px]">
+                              <td className="py-4 px-2 min-w-[110px]">
                                 {isLast ? (
-                                  <span className="text-zinc-400 pl-3">—</span>
+                                  <span className="text-zinc-400 pl-3 select-none">—</span>
                                 ) : (
                                   <div className="relative w-full max-w-[110px] bg-zinc-50 border border-zinc-200 dark:bg-zinc-950 dark:border-zinc-850 rounded-xl px-2 py-1.5 flex items-center gap-1.5">
                                     <input 
@@ -720,19 +982,40 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                                 )}
                               </td>
 
+                              {/* Distance from previous stop (KM) */}
+                              <td className="py-4 px-2 min-w-[120px]">
+                                {isFirst ? (
+                                  <span className="text-zinc-400 pl-3 select-none">—</span>
+                                ) : (
+                                  <div className="relative w-full max-w-[110px] bg-zinc-50 border border-zinc-200 dark:bg-zinc-950 dark:border-zinc-850 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
+                                    <input 
+                                      type="number"
+                                      min="0"
+                                      step="any"
+                                      value={stop.distanceFromPreviousStop === 0 ? '' : stop.distanceFromPreviousStop}
+                                      onChange={(e) => handleUpdateStop(idx, 'distanceFromPreviousStop', e.target.value === '' ? 0 : Number(e.target.value))}
+                                      placeholder="0"
+                                      className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none placeholder-zinc-400"
+                                    />
+                                    <span className="text-[10px] font-black text-indigo-500 select-none ml-1">KM</span>
+                                  </div>
+                                )}
+                              </td>
+
                               {/* Fare from previous stop */}
                               <td className="py-4 px-2 min-w-[120px]">
                                 {isFirst ? (
-                                  <span className="text-zinc-400 pl-3">—</span>
+                                  <span className="text-zinc-400 pl-3 select-none">—</span>
                                 ) : (
                                   <div className="relative w-full max-w-[110px] bg-zinc-50 border border-zinc-200 dark:bg-zinc-950 dark:border-zinc-850 rounded-xl px-3 py-1.5 flex items-center">
                                     <span className="text-zinc-400 font-bold mr-1 text-xs">₹</span>
                                     <input 
                                       type="number"
-                                      value={stop.fareFromPreviousStop}
-                                      onChange={(e) => handleUpdateStop(idx, 'fareFromPreviousStop', Number(e.target.value))}
+                                      min="0"
+                                      value={stop.fareFromPreviousStop === 0 ? '' : stop.fareFromPreviousStop}
+                                      onChange={(e) => handleUpdateStop(idx, 'fareFromPreviousStop', e.target.value === '' ? 0 : Number(e.target.value))}
                                       placeholder="0"
-                                      className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none"
+                                      className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none placeholder-zinc-400"
                                     />
                                   </div>
                                 )}
@@ -749,7 +1032,7 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                                     <Trash2 className="h-4.5 w-4.5" />
                                   </button>
                                 ) : (
-                                  <span className="text-zinc-300 dark:text-zinc-700">—</span>
+                                  <span className="text-zinc-300 dark:text-zinc-700 select-none">—</span>
                                 )}
                               </td>
                             </tr>
@@ -763,7 +1046,7 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                   <div className="bg-indigo-50/20 dark:bg-indigo-950/10 border border-indigo-100/30 dark:border-indigo-950/20 rounded-2xl p-4 flex gap-3 text-xs leading-normal font-semibold text-indigo-700 dark:text-indigo-400">
                     <Info className="h-4.5 w-4.5 text-indigo-500 shrink-0 mt-0.5" />
                     <span>
-                      Fare is the ticket price from the immediately preceding stop to this stop. The sequence adjusts automatically as you move stops.
+                      Enter the distance in KM and fare from the immediately preceding stop. Total route distance is computed automatically in real-time.
                     </span>
                   </div>
 
@@ -794,22 +1077,22 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                       </span>
                     </div>
 
-                    {/* Total distance */}
+                    {/* Total distance (Auto-Calculated) */}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">
-                        Total Distance (km)
-                      </label>
-                      <div className="relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-2xl px-4 py-2 flex items-center">
-                        <input 
-                          type="number"
-                          value={distance}
-                          onChange={(e) => setDistance(e.target.value === '' ? '' : Number(e.target.value))}
-                          placeholder="825"
-                          className="w-full bg-transparent border-0 p-0 text-xs font-bold focus:outline-none"
-                        />
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">
+                          Total Distance (KM)
+                        </label>
+                        <span className="text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1">
+                          <Sparkles className="h-2.5 w-2.5" /> Auto-Calculated
+                        </span>
                       </div>
-                      <span className="text-[9px] font-semibold text-indigo-500 flex items-center gap-1">
-                        <Info className="h-3 w-3 shrink-0" /> Estimated total distance of the route
+                      <div className="relative bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs font-black text-zinc-900 dark:text-white">
+                        <span>{totalDistanceCalculated} KM</span>
+                        <span className="text-[10px] text-zinc-400 font-bold">Sum of sub-stops</span>
+                      </div>
+                      <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3 shrink-0" /> Automatically computed from all stop distances
                       </span>
                     </div>
                   </div>
@@ -865,22 +1148,27 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                 
                 {/* Route Summary */}
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-250/50 dark:border-zinc-850 rounded-3xl p-6 shadow-sm flex flex-col gap-5 select-none">
-                  <h3 className="font-extrabold text-xs uppercase text-zinc-450 tracking-wider text-zinc-550 leading-none">
-                    Route Summary
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-extrabold text-xs uppercase text-zinc-400 tracking-wider leading-none">
+                      Route Summary
+                    </h3>
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                      Live Preview
+                    </span>
+                  </div>
 
                   {/* Route progress line matching mockup screenshot */}
                   <div className="relative bg-zinc-50 dark:bg-zinc-950 rounded-2xl p-6 border border-zinc-150 dark:border-zinc-850 flex flex-col items-center gap-4 text-center mt-2 min-h-[140px] justify-center overflow-hidden">
                     <div className="absolute top-[-30%] left-[-30%] w-[120px] h-[120px] bg-indigo-500/5 rounded-full blur-[35px] pointer-events-none" />
                     
                     {/* Visual diagram */}
-                    <div className="flex items-center justify-between w-full max-w-[220px] relative mt-2">
+                    <div className="flex items-center justify-between w-full max-w-[240px] relative mt-2">
                       <div className="absolute left-6 right-6 top-[13px] h-0.5 border-t border-dashed border-zinc-300 dark:border-zinc-700 z-0" />
                       <div className="flex flex-col items-center gap-1.5 z-10">
                         <div className="h-7 w-7 rounded-full bg-indigo-50 border-2 border-indigo-500 dark:bg-indigo-950 flex items-center justify-center shadow-sm shrink-0">
                           <MapPin className="h-3.5 w-3.5 text-indigo-500" />
                         </div>
-                        <span className="text-[10px] font-black text-zinc-700 dark:text-zinc-300 max-w-[70px] truncate">
+                        <span className="text-[10px] font-black text-zinc-700 dark:text-zinc-300 max-w-[75px] truncate">
                           {source || 'Source'}
                         </span>
                       </div>
@@ -893,10 +1181,10 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                       )}
 
                       <div className="flex flex-col items-center gap-1.5 z-10">
-                        <div className="h-7 w-7 rounded-full bg-emerald-55 bg-emerald-50 border-2 border-emerald-500 dark:bg-emerald-950 flex items-center justify-center shadow-sm shrink-0">
+                        <div className="h-7 w-7 rounded-full bg-emerald-50 border-2 border-emerald-500 dark:bg-emerald-950 flex items-center justify-center shadow-sm shrink-0">
                           <MapPin className="h-3.5 w-3.5 text-emerald-500" />
                         </div>
-                        <span className="text-[10px] font-black text-zinc-700 dark:text-zinc-300 max-w-[70px] truncate">
+                        <span className="text-[10px] font-black text-zinc-700 dark:text-zinc-300 max-w-[75px] truncate">
                           {destination || 'Destination'}
                         </span>
                       </div>
@@ -914,13 +1202,14 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                     <div className="flex flex-col">
                       <span className="text-[9px] uppercase font-black text-zinc-400">Total Stops</span>
                       <span className="text-xs font-black text-zinc-800 dark:text-zinc-200 mt-1">
-                        {stops.length}
+                        {stops.length} Stops
                       </span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[9px] uppercase font-black text-zinc-400">Total Distance</span>
-                      <span className="text-xs font-black text-zinc-800 dark:text-zinc-200 mt-1">
-                        {distance ? `${distance} km` : '—'}
+                      <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        {totalDistanceCalculated > 0 ? `${totalDistanceCalculated} KM` : '0 KM'}
                       </span>
                     </div>
                     <div className="flex flex-col">
@@ -929,14 +1218,49 @@ export default function RoutesClient({ initialRoutes }: RoutesClientProps) {
                         {totalDurationFormatted}
                       </span>
                     </div>
+                    <div className="flex flex-col col-span-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                      <span className="text-[9px] uppercase font-black text-zinc-400">Total Base Fare Sum</span>
+                      <span className="text-sm font-black text-zinc-900 dark:text-white mt-0.5">
+                        ₹{totalFare}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Informational badge */}
-                  <div className="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-150/20 dark:border-indigo-950/20 rounded-2xl p-4 flex gap-3 text-xs leading-normal font-semibold text-indigo-700 dark:text-indigo-400 mt-2">
-                    <Info className="h-4.5 w-4.5 text-indigo-500 shrink-0 mt-0.5" />
-                    <span>
-                      Add stops to see distance, time, and fare summary in real-time.
+                  {/* Stops Milestone Breakdown */}
+                  <div className="flex flex-col gap-2.5 mt-2 border-t border-zinc-100 dark:border-zinc-800 pt-4">
+                    <span className="text-[10px] uppercase font-black tracking-wider text-zinc-400">
+                      Stop-by-Stop Breakdown
                     </span>
+                    <div className="relative pl-5 flex flex-col gap-3 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-indigo-150 dark:before:bg-indigo-950/60 max-h-[220px] overflow-y-auto pr-1">
+                      {stops.map((s, sIdx) => {
+                        const isFirst = sIdx === 0;
+                        const isLast = sIdx === stops.length - 1;
+                        return (
+                          <div key={sIdx} className="flex items-center justify-between text-xs font-bold">
+                            <div className="flex items-center gap-2">
+                              <div className={`absolute left-[2px] w-2.5 h-2.5 rounded-full border-2 border-white dark:border-zinc-900 shadow-sm ${
+                                isFirst ? 'bg-indigo-500' : isLast ? 'bg-emerald-500' : 'bg-zinc-400'
+                              }`} />
+                              <span className="text-zinc-800 dark:text-zinc-200 truncate max-w-[110px]">
+                                {s.stopName || (isFirst ? 'Source' : isLast ? 'Destination' : `Stop ${sIdx + 1}`)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-bold">
+                              {!isFirst && (
+                                <span className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-md font-mono text-indigo-600 dark:text-indigo-400">
+                                  +{s.distanceFromPreviousStop || 0} km
+                                </span>
+                              )}
+                              {!isFirst && (
+                                <span className="text-zinc-500 font-semibold">
+                                  ₹{s.fareFromPreviousStop || 0}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
