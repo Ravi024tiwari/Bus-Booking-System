@@ -56,4 +56,7 @@ const SeatStateSchema = new Schema<ISeatState>({
 // Segment-aware index for checking overlapping seat bookings quickly
 SeatStateSchema.index({ tripId: 1, seatNumber: 1, fromSequence: 1, toSequence: 1 });
 
+// TTL Index: Automatically deletes expired seat holds once heldUntil timestamp is reached
+SeatStateSchema.index({ heldUntil: 1 }, { expireAfterSeconds: 0 });
+
 export const SeatState: Model<ISeatState> = mongoose.models.SeatState || mongoose.model<ISeatState>('SeatState', SeatStateSchema);

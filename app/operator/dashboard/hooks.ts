@@ -23,7 +23,6 @@ export interface RouteStatus {
   status: 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_TRANSIT' | 'COMPLETED' | 'CANCELLED';
   passengersCount: number;
   delayStatus: 'Delayed' | 'On-time';
-  coordinates: { latitude: number; longitude: number } | null;
 }
 
 export interface SalesTrend {

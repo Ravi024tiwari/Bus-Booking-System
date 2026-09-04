@@ -11,15 +11,13 @@ import {
   CreditCard, 
   Star, 
   Bus, 
-  MapPin, 
   User, 
   Users, 
   CheckCircle2, 
-  AlertTriangle,
-  RefreshCw,
-  Eye,
-  MessageSquare,
-  ArrowRight
+  AlertTriangle, 
+  RefreshCw, 
+  MessageSquare, 
+  ArrowRight 
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -368,22 +366,6 @@ export default function OperatorDashboardClient({ operatorName }: { operatorName
                       {route.delayStatus}
                     </span>
                   </div>
-
-                  {/* GPS Telemetry Coordinates */}
-                  {route.coordinates && (
-                    <div className="pt-2 border-t border-dashed border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between text-[11px] sm:text-xs text-zinc-400">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                        GPS: {route.coordinates.latitude.toFixed(4)}, {route.coordinates.longitude.toFixed(4)}
-                      </span>
-                      <button 
-                        onClick={() => toast.info(`Viewing live location coordinates: Lat ${route.coordinates?.latitude}, Lng ${route.coordinates?.longitude}`)}
-                        className="text-violet-600 hover:text-violet-700 font-bold flex items-center gap-0.5 transition-colors duration-150 cursor-pointer"
-                      >
-                        Track <Eye className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
                 </div>
               ))
             )}

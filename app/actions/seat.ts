@@ -2,7 +2,6 @@
 
 import dbConnect from '../../lib/db';
 import redis from '../../lib/redis';
-import releaseQueue from '../../lib/queue';
 import { SeatState, Trip } from '../../models';
 
 /**
@@ -53,7 +52,7 @@ export async function holdSeat(
       };
     }
 
-    // 2. Acquire a short-lived Redis mutex lock for race-condition prevention during DB check/write
+    // 2. Acquire a short-lived Redis mutex lock for race-condition prevention during DB check/write (5 seconds TTL)
     const mutexKey = `lock:mutex:${tripId}:${seatNumber}`;
     const acquired = await (redis as any).set(mutexKey, userId, 'NX', 'EX', 5);
 
@@ -93,8 +92,8 @@ export async function holdSeat(
         };
       }
 
-      // 4. Create the segment hold record in MongoDB
-      const heldUntil = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes TTL
+      // 4. Create the segment hold record in MongoDB with 5 minutes TTL
+      const heldUntil = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
       await SeatState.create({
         tripId,
@@ -109,21 +108,7 @@ export async function holdSeat(
       // 5. Release Redis Mutex immediately
       await redis.del(mutexKey);
 
-      // 6. Schedule delayed seat release in BullMQ using segment-specific jobId
-      const jobId = `release-${tripId}-${seatNumber}-${fromSequence}-${toSequence}`;
-      const existingJob = await releaseQueue.getJob(jobId);
-      if (existingJob) {
-        await existingJob.remove();
-      }
-
-      await releaseQueue.add(
-        'seat-release',
-        { tripId, seatNo: seatNumber, fromSequence, toSequence },
-        { delay: 300 * 1000, jobId } // 5 minutes in milliseconds
-      );
-      console.log(`[HoldSeat] Scheduled BullMQ release job: ${jobId}`);
-
-      // 7. Broadcast WebSocket state update to active clients
+      // 6. Broadcast WebSocket state update to active clients
       const io = (global as any).io;
       if (io) {
         io.to(tripId).emit('seat:held', {
@@ -223,15 +208,7 @@ export async function releaseSeat(
     // 3. Remove hold record from MongoDB
     await SeatState.deleteOne({ _id: seatState._id });
 
-    // 4. Cancel the scheduled release queue job
-    const jobId = `release-${tripId}-${seatNumber}-${fromSequence}-${toSequence}`;
-    const job = await releaseQueue.getJob(jobId);
-    if (job) {
-      await job.remove();
-      console.log(`[ReleaseSeat] Cancelled BullMQ job: ${jobId}`);
-    }
-
-    // 5. Broadcast WebSocket release update
+    // 4. Broadcast WebSocket release update
     const io = (global as any).io;
     if (io) {
       io.to(tripId).emit('seat:released', {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import redis from '@/lib/redis';
-import { Trip, Order, TrackingSession } from '@/models';
+import { Trip, Order } from '@/models';
 import { getOperatorContext } from '../helper';
 
 export const dynamic = 'force-dynamic';
@@ -42,36 +42,8 @@ export async function GET(req: Request) {
       status: { $in: ['BOARDING', 'DEPARTED', 'IN_TRANSIT'] }
     }).populate('routeId');
 
-    const liveTripIds = liveTrips.map((lt) => lt._id);
-    const trackingSessions = await TrackingSession.find({ tripId: { $in: liveTripIds } });
-
     const routeStatus = await Promise.all(
       liveTrips.map(async (trip) => {
-        // Try getting live coordinates from Redis first
-        let coordinates: { latitude: number; longitude: number } | null = null;
-        try {
-          const cachedLocation = await redis.hgetall(`trip:${trip._id}:location`);
-          if (cachedLocation && cachedLocation.latitude && cachedLocation.longitude) {
-            coordinates = {
-              latitude: parseFloat(cachedLocation.latitude),
-              longitude: parseFloat(cachedLocation.longitude)
-            };
-          }
-        } catch (redisErr) {
-          console.error(`[Redis] Error fetching location for trip ${trip._id}:`, redisErr);
-        }
-
-        // Fall back to MongoDB if Redis cache misses
-        if (!coordinates) {
-          const session = trackingSessions.find((s) => s.tripId.toString() === trip._id.toString());
-          if (session) {
-            coordinates = {
-              latitude: session.latitude,
-              longitude: session.longitude
-            };
-          }
-        }
-
         const [passengerStats] = await Order.aggregate([
           { $match: { tripId: trip._id, status: 'CONFIRMED' } },
           { $project: { count: { $size: '$seatNumbers' } } },
@@ -89,8 +61,7 @@ export async function GET(req: Request) {
           busType: trip.busType,
           status: trip.status,
           passengersCount: passengerStats?.total || 0,
-          delayStatus: isDelayed ? 'Delayed' : 'On-time',
-          coordinates
+          delayStatus: isDelayed ? 'Delayed' : 'On-time'
         };
       })
     );

@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
-import redis from '@/lib/redis';
-import releaseQueue from '@/lib/queue';
 import { Order, SeatState, Trip } from '@/models';
 
 export async function POST(
@@ -71,15 +69,6 @@ export async function POST(
       fromSequence: order.fromSequence,
       toSequence: order.toSequence
     });
-
-    // Cancel matching segment BullMQ release jobs
-    for (const seatNo of order.seatNumbers) {
-      const jobId = `release:${order.tripId}:${seatNo}:${order.fromSequence}:${order.toSequence}`;
-      const job = await releaseQueue.getJob(jobId);
-      if (job) {
-        await job.remove();
-      }
-    }
 
     // 4. Update local order status to CANCELLED
     const oldStatus = order.status;

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import dbConnect from '@/lib/db';
-import redis from '@/lib/redis';
-import releaseQueue from '@/lib/queue';
 import { Order, SeatState, IdempotencyLog, Trip } from '@/models';
 
 // Handles secure Razorpay webhook posts
@@ -90,15 +88,6 @@ export async function POST(req: Request) {
         $unset: { heldBy: '', heldUntil: '' }
       }
     );
-
-    // Cancel matching segment BullMQ release jobs
-    for (const seatNo of order.seatNumbers) {
-      const jobId = `release:${order.tripId}:${seatNo}:${order.fromSequence}:${order.toSequence}`;
-      const job = await releaseQueue.getJob(jobId);
-      if (job) {
-        await job.remove();
-      }
-    }
 
     // Update local Order record status
     order.status = 'CONFIRMED';

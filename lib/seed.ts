@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
-import { User, Bus, Trip, SeatState, Order, IdempotencyLog, Route, Review, TrackingSession } from '../models';
+import { User, Bus, Trip, SeatState, Order, IdempotencyLog, Route, Review } from '../models';
 import bcrypt from 'bcryptjs';
 import dns from 'dns';
 
@@ -35,7 +35,6 @@ async function seed() {
     SeatState.deleteMany({}),
     Order.deleteMany({}),
     Review.deleteMany({}),
-    TrackingSession.deleteMany({}),
     IdempotencyLog.deleteMany({}),
   ]);
 
@@ -276,15 +275,7 @@ async function seed() {
     createdAt: new Date(now.getTime() - 10 * 60 * 1000)
   });
 
-  console.log('[Seeding] Reviews created. Creating live tracking sessions...');
 
-  // Create tracking session for Trip 2 (which is IN_TRANSIT)
-  await TrackingSession.create({
-    tripId: trip2._id,
-    latitude: 19.0760, // Near Mumbai/Navi Mumbai
-    longitude: 72.8777,
-    updatedAt: now
-  });
 
   console.log('----------------------------------------------------');
   console.log('[Seeding] Seeding successfully completed!');
